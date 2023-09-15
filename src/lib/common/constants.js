@@ -14,11 +14,12 @@ const constants = {
     merchantName: "GD Test Merchant",
     country: "US",
     currency: "USD",
-    locale: "en-US",
+    locale: "en-CA",
     // enableReCaptcha: true,
     // reCaptchaOptions: {
     //   type: "TEXT",
     // },
+    inlineErrors: true,
     enableCardOnFile: true,
     forceSaveCardOnFile: false,
     // cardAgreementOptions: {
@@ -80,8 +81,6 @@ const constants = {
       // ecommerceFirstName: true,
       // ecommerceLastName: true,
       // ecommerceEmailAddress: true,
-      ecommerceNotes: true,
-      submitButton: true,
       // submitTokenButton: true,
       collectShippingAddress: true,
       shippingLine1: true,
@@ -96,13 +95,13 @@ const constants = {
       "lastName",
       "emailAddress",
       "line1",
-      "line2",
+      // "line2",
       "city",
       "territory",
       "countryCode",
       "phone",
       "shippingLine1",
-      "shippingLine2",
+      // "shippingLine2",
       "shippingCity",
       "shippingTerritory",
       "shippingZip"
@@ -111,12 +110,12 @@ const constants = {
       firstName: "Susie",
       lastName: "Hickle",
       emailAddress: "test@test.test",
-      // phone: "(603) 893-2225",
-      zipCode: "12345",
-      // line1: "184 N Broadway",
-      // city: "Salem",
-      // territory: "New Jersey",
-      // countryCode: "CA",
+      phone: "(514) 842-1336",
+      zipCode: "H2L 2G8",
+      line1: "1171 Rue Sainte-Catherine Est",
+      city: "Montréal",
+      territory: "Quebec",
+      countryCode: "CA",
     },
     style: {
       theme: "ecommerce",
@@ -147,11 +146,14 @@ const constants = {
         "text-transform": "capitalize",
         "letter-spacing": "0px",
       },
-      "inputDefault": {
+      inputDefault: {
         "color": "#111",
         "font-family": "Roboto, sans-serif",
         "font-size": "15px",
         "line-height": "20px",
+      },
+      inputErrored: {
+        "border": "1px solid #b61717"
       },
       sectionLabel: {
         "font-size": "13px",
@@ -226,6 +228,12 @@ const constants = {
       },
       rowPhone: {
         "width": "50%",
+        "padding-left": "0px",
+        "padding-right": "0px",
+      },
+      rowShippingZip: {
+        "width": "100%",
+        "padding-left": "0px",
         "padding-right": "0px",
       },
       rowSameAsBillingCheckbox: {
