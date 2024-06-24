@@ -6,7 +6,7 @@ const constants = {
     // businessId: "f36d3d71-5249-45c5-9104-38b07fe84f30", //TEST US
     // businessId: "ee606574-dcb8-4805-9461-f823081d2737", //TEST CA
     // businessId: "f36d3d71-5249-45c5-9104-38b07fe84f30", //OTE
-    applicationId: "urn:aid:9c2cc0f7-e2ed-4617-b57c-88dd0b36c3d8", //DEV
+    applicationId: "urn:aid:postman-runner", //DEV
     // applicationId: "urn:aid:8f0096f7-fd60-4fb4-8eae-51ec75739866", //TEST
     // applicationId: "urn:aid:b666c3a2-ccc3-4acb-a166-eb905258f42b", //OTE
     // applicationId: "urn:aid:postman-runner",
@@ -19,9 +19,17 @@ const constants = {
     // reCaptchaOptions: {
     //   type: "TEXT",
     // },
-    inlineErrors: true,
     enableCardOnFile: true,
-    forceSaveCardOnFile: false,
+    inlineErrors: true,
+    cardOnFile: {
+      show: true,
+      forceSave: false,
+      businessMetadata: {
+        businessName: "GoDaddy",
+        businessWebsite: "https://www.godaddy.com/",
+        businessPhone: "(555) 555-5555",
+      },
+    },
     // cardAgreementOptions: {
     //   businessName: "GoDaddy",
     //   businessWebsite: "https://www.godaddy.com/",
@@ -82,7 +90,7 @@ const constants = {
       // ecommerceLastName: true,
       // ecommerceEmailAddress: true,
       // submitTokenButton: true,
-      collectShippingAddress: true,
+      // collectShippingAddress: true,
       shippingLine1: true,
       shippingLine2: true,
       shippingCity: true,
@@ -106,16 +114,28 @@ const constants = {
       "shippingTerritory",
       "shippingZip"
     ],
+    // fields: {
+    //   firstName: "Susie",
+    //   lastName: "Hickle",
+    //   emailAddress: "test@test.test",
+    //   phone: "(514) 842-1336",
+    //   zipCode: "H2L 2G8",
+    //   line1: "1171 Rue Sainte-Catherine Est",
+    //   city: "Montréal",
+    //   territory: "Quebec",
+    //   countryCode: "CA",
+    // },
     fields: {
-      firstName: "Susie",
-      lastName: "Hickle",
-      emailAddress: "test@test.test",
-      phone: "(514) 842-1336",
-      zipCode: "H2L 2G8",
-      line1: "1171 Rue Sainte-Catherine Est",
-      city: "Montréal",
-      territory: "Quebec",
-      countryCode: "CA",
+      firstName: "Ethan",
+      lastName: "Ledner",
+      emailAddress: "test2@test.test",
+      phone: "(978) 779-0200",
+      zipCode: "01740",
+      line1: "2566 Dow ST",
+      line2: "Box 168",
+      city: "Bolton",
+      territory: "Maine",
+      countryCode: "US",
     },
     style: {
       theme: "ecommerce",

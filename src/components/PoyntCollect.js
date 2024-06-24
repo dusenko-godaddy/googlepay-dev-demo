@@ -7,19 +7,19 @@ import constants from '../lib/common/constants';
 import { availableCouponCodes } from '../lib/common/data';
 import { createOrder, buildLineItems, buildTotal, getShippingMethods } from '../lib/helpers/wallet';
 
-const parseMesasge = (event) => {
+const parseMesasge = (data) => {
   ///http request error
-  if (event?.data?.developerMessage || event?.data?.message) {
+  if (data?.developerMessage || data?.message) {
     return {
       message: event.data.developerMessage || event.data.message,
       type: 'ERROR',
     };
   }
 
-  if (event?.data?.error?.source === 'submit') {
-    const message = event.data.error.message;
+  if (data?.error?.source === 'submit') {
+    const message = data.error.message;
 
-    if (event.data.error.type === 'card_on_file') {
+    if (data.error.type === 'card_on_file') {
       return {
         message: 'Unable to save card on file: ' + message,
         type: 'WARN',
@@ -35,12 +35,23 @@ const parseMesasge = (event) => {
 
 const PoyntCollect = ({setLoading, options, collectId, onNonce, cartItems, cartTotal, couponCode}) => {
   const alert = useAlert();
-  const collect = useRef();
+  const paymentForm = useRef();
+  const wallets = useRef();
   const order = useRef();
+  const [collect] = useState(new window.PoyntCollectSDK({
+    businessId: constants.poyntCollect.businessId,
+    applicationId: constants.poyntCollect.applicationId,
+    merchantInfo: {
+      name: constants.poyntCollect.merchantName,
+      country: constants.poyntCollect.country,
+      currency: constants.poyntCollect.currency,
+      locale: "en_US",
+    }
+  }));
 
   const [orderLoaded, setOrderLoaded] = useState(false);
   const [buttonLoading, setButtonLoading] = useState(false);
-  const [savedCard, setSavedCard] = useState("");
+  const [savedCard, _setSavedCard] = useState("");
 
   const getNonce = async () => {
     setButtonLoading(true);
@@ -52,17 +63,17 @@ const PoyntCollect = ({setLoading, options, collectId, onNonce, cartItems, cartT
       return;
     }
   
-    collect.current.getNonce({
-      // firstName: "Ethan",
-      // lastName: "Ledner",
-      // emailAddress: "test2@test.test",
-      // phone: "(978) 779-0200",
-      // zipCode: "01740",
-      // line1: "2566 Dow ST",
-      // line2: "Box 168",
-      // city: "Bolton",
-      // territory: "Maine",
-      // countryCode: "US",
+    paymentForm.current.getNonce({
+      firstName: "Ethan",
+      lastName: "Ledner",
+      emailAddress: "test2@test.test",
+      phone: "(978) 779-0200",
+      zipCode: "01740",
+      line1: "2566 Dow ST",
+      line2: "Box 168",
+      city: "Bolton",
+      territory: "Maine",
+      countryCode: "US",
     });
   };
 
@@ -80,130 +91,56 @@ const PoyntCollect = ({setLoading, options, collectId, onNonce, cartItems, cartT
       setLoading(true);
     }
 
-    const walletRequest = {
-      merchantName: "GoDaddy Merchant",
-      country: constants.poyntCollect.country,
-      currency: constants.poyntCollect.currency,
-      lineItems: buildLineItems(order.current),
-      total: buildTotal(order.current),
-      requireEmail: options.requireEmail,
-      requirePhone: options.requirePhone,
-      requireShippingAddress: options.requireShippingAddress,
-      supportCouponCode: options.supportCouponCode,
-      couponCode: order.current.coupon,
-      disableWallets: {
-        applePay: !options.paymentMethods?.applePay,
-        googlePay: !options.paymentMethods?.googlePay,
+    const walletOptions = {
+      orderDetails: {
+        lineItems: buildLineItems(order.current),
+        total: buildTotal(order.current),
+        couponCode: order.current.coupon,
+      },
+      preferences: {
+        requireEmail: options.requireEmail,
+        requirePhone: options.requirePhone,
+        requireShippingAddress: options.requireShippingAddress,
+        displayCouponCode: options.supportCouponCode,
+        disableWallets: {
+          applePay: !options.paymentMethods?.applePay,
+          googlePay: !options.paymentMethods?.googlePay,
+        },
       },
     };
 
-    collect.current = new window.TokenizeJs(
-      constants.poyntCollect.businessId,
-      constants.poyntCollect.applicationId,
-      walletRequest
-    );
-
-    console.log('current collect instance: ', collect.current);
-    window.poyntCollect = collect.current;
-
-    (async () => {
-      try {
-        // const t0 = performance.now();
-
-        const result = await collect.current.supportWalletPayments({
-          // emailAddress: "pazesmangal@godaddy.com",
-          // emailAddress: "dusenko@godaddy.com",
-        });
-
-        // const t1 = performance.now();
-        // console.log(`supportWalletPayments execution took ${t1 - t0} milliseconds.`);
-
-        if (!collect.current) {
+    const handleError = (error) => {
+      console.log("error", error);
+  
+      if (error) {
+        if ($("#__react-alert__ span").text() === error.message) {
           return;
         }
 
-        const paymentMethods = [];
+        alert.error(error.message);
+      }
 
-        if (options.paymentMethods?.card) {
-          paymentMethods.push("card");
-        }
+      setLoading(false);
+      setButtonLoading(false);
+    };
 
-        if (options.paymentMethods?.paze&& result.paze) {
-          paymentMethods.push("paze");
-        }
-        
-        if (options.paymentMethods?.applePay && result.applePay) {
-          paymentMethods.push("apple_pay");
-        }
-        
-        if (options.paymentMethods?.googlePay && result.googlePay) {
-          paymentMethods.push("google_pay");
-        }
+    const onError = (error) => {
+      handleError(parseMesasge(error));
+    };
 
-        if (!paymentMethods.length) {
-          return setLoading(false);
-        }
-
-        collect.current.mount(collectId, document, {
-          ...constants.poyntCollect,
-          paymentMethods: paymentMethods,
-          buttonOptions: {
-            color: "black",
-            onClick: (event) => {
-              console.log("ORDER", order.current);
-
-              const update = {
-                total: buildTotal(order.current),
-                lineItems: buildLineItems(order.current),
-                couponCode: { ...order.current.coupon },
-              };
-
-              if (event.source === "paze") {
-                collect.current.startPazeSession(update);
-              } else if (event.source === "apple_pay") {
-                collect.current.startApplePaySession(update);
-              } else {
-                collect.current.startGooglePaySession(update);
-              }
-            },
-          },
-          pazeButtonOptions: {
-            color: 'default',
-          },
-        });
+    const onCollectNonce = async (nonce) => {
+      try {
+        await Promise.resolve(onNonce(nonce));
       } catch(error) {
-        console.log(error);
-        setLoading(false);
+        handleError(error);
       }
-    })();
+    };
 
-    collect.current.on("iframe_ready", () => {
-      if (setLoading) {
-        setLoading(false);
-      }
-    });
-
-    collect.current.on("iframe_height_change", (event) => {
-      console.log("iframe_height_change", event.data.height);
-  
-      if (event?.data?.height) {
-        const iFrame = document.getElementById("poynt-collect-v2-iframe");
-        iFrame.style.setProperty("height", event.data.height + 10 + "px");
-      }
-    });
-
-    collect.current.on("card_on_file_card_select", (event) => {
-      console.log("card_on_file_card_select", event.data.cardId);
-
-      setTimeout(() => {
-        document.getElementById(collectId + "_button")?.scrollIntoView({ behavior: 'smooth' });
-      }, 100);
-
-      setSavedCard(event.data.cardId);
-    });
+    console.log('current collect instance: ', collect.current);
+    window.poyntCollect = collect;
 
     if (options.requireShippingAddress) {
-      collect.current.on("shipping_address_change", (event) => {
+      walletOptions.onShippingAddressChange = (event) => {
         console.log("shipping_address_change", event);
         order.current.shippingCountry = event.shippingAddress.countryCode;
       
@@ -216,12 +153,10 @@ const PoyntCollect = ({setLoading, options, collectId, onNonce, cartItems, cartT
         const shippingMethods = getShippingMethods(order.current);
 
         if (!shippingMethods?.length) {
-          return event.updateWith({
-            error: {
-              code: "unserviceable_address",
-              contactField: "country",
-              message: "No shipping methods available for selected shipping address",
-            }
+          return event.error({
+            code: "unserviceable_address",
+            contactField: "country",
+            message: "No shipping methods available for selected shipping address",
           });
         }
       
@@ -235,16 +170,16 @@ const PoyntCollect = ({setLoading, options, collectId, onNonce, cartItems, cartT
           total: total,
         };
 
-        event.updateWith(options);
+        event.update(options);
 
         // console.log("googlePayPaymentDataChangedHandler: wait 15 sec.");
 
         // setTimeout(() => {
-        //   event.updateWith(options);
+        //   event.update(options);
         // }, 15000);
-      });
+      };
       
-      collect.current.on("shipping_method_change", (event) => {
+      walletOptions.onShippingMethodChange = (event) => {
         console.log("shipping_method_change", event);
         const total = buildTotal(order.current, event.shippingMethod);
         const lineItems = buildLineItems(order.current, event.shippingMethod);
@@ -254,12 +189,12 @@ const PoyntCollect = ({setLoading, options, collectId, onNonce, cartItems, cartT
           total: total
         };
   
-        event.updateWith(options);
-      });
+        event.update(options);
+      };
     }
 
     if (options.supportCouponCode) {
-      collect.current.on("coupon_code_change", (event) => {
+      walletOptions.onCouponCodeChange = (event) => {
         console.log("coupon_code_change", event);
         if (!event.couponCode) {
           order.current.coupon = {
@@ -271,21 +206,19 @@ const PoyntCollect = ({setLoading, options, collectId, onNonce, cartItems, cartT
           const couponCode = availableCouponCodes.find(item => item.code === event.couponCode);
   
           if (!couponCode) {
-            const options = {
-              error: {
-                code: "invalid_coupon_code",
-                message: "Coupon code " + event.couponCode + " does not exists", 
-              }
-            };
+            const error = {
+              code: "invalid_coupon_code",
+              message: "Coupon code " + event.couponCode + " does not exists", 
+            }
       
-            return event.updateWith(options);
+            return event.error(error);
           }
       
           order.current.coupon = couponCode;
         }
 
-        const shippingMethods = walletRequest.requireShippingAddress ? getShippingMethods(order.current) : null;
-        const selectedShippingMethod = walletRequest.requireShippingAddress ? shippingMethods[0] : null;
+        const shippingMethods = walletOptions.requireShippingAddress ? getShippingMethods(order.current) : null;
+        const selectedShippingMethod = walletOptions.requireShippingAddress ? shippingMethods[0] : null;
         const total = buildTotal(order.current, selectedShippingMethod);
         const lineItems = buildLineItems(order.current, selectedShippingMethod);
           
@@ -296,40 +229,11 @@ const PoyntCollect = ({setLoading, options, collectId, onNonce, cartItems, cartT
           total: total,
         };
       
-        event.updateWith(options);
-      });
+        event.update(options);
+      };
     }
 
-    collect.current.on("wallet_button_click", (event) => {
-      console.log("wallet_button_click", event);
-
-      if (event.source === "paze") {
-        setLoading(true);
-      }
-    });
-
-    collect.current.on("close_wallet", (event) => {
-      console.log('close_wallet', event);
-
-      if (event.source === "paze") {
-        setLoading(false);
-
-        if (event.error?.message) {
-          if ($("#__react-alert__ span").text() === event.error.message) {
-            return;
-          }
-  
-          alert.error(event.error.message);
-        }
-      }
-    });
-
-    collect.current.on("payment_method_change", (event) => {
-      console.log("payment_method_change", event);
-      event.updateWith({});
-    });
-
-    collect.current.on("payment_authorized", async (event) => {
+    walletOptions.onNonce = async (event) => {
       if (event.source === "google_pay") {
         console.log("GOOGLE PAY TOKEN RECEIVED", event);
       }
@@ -348,7 +252,7 @@ const PoyntCollect = ({setLoading, options, collectId, onNonce, cartItems, cartT
           emailAddress: event.billingAddress?.emailAddress,
         };
 
-        await Promise.resolve(onNonce(data, walletRequest));
+        await Promise.resolve(onNonce(data, walletOptions));
         // setLoading(false);
         event.complete();
       } catch(error) {
@@ -366,41 +270,94 @@ const PoyntCollect = ({setLoading, options, collectId, onNonce, cartItems, cartT
 
         event.complete({ error });
       }
-    });
+    };
+
+    async function init() {
+      if (options.paymentMethods?.card) {
+        paymentForm.current = collect.createPaymentForm({
+          ...constants.poyntCollect,
+          onError,
+          onNonce: onCollectNonce,
+        });
+        console.log('paymentForm: ', paymentForm);
+
+        await paymentForm.current.mount({elementId: collectId});
+      }
+
+      if (
+        options.paymentMethods?.applePay ||
+        options.paymentMethods?.googlePay ||
+        options.paymentMethods?.paze
+      ) {
+        wallets.current = collect.createWallets(walletOptions);
+
+        await wallets.current.mount({elementId: collectId});
+      }
+
+      setLoading(false);
+    }
+
+    init();
+
+    // collect.current.on("wallet_button_click", (event) => {
+    //   console.log("wallet_button_click", event);
+
+    //   if (event.source === "paze") {
+    //     setLoading(true);
+    //   }
+    // });
+
+    // collect.current.on("close_wallet", (event) => {
+    //   console.log('close_wallet', event);
+
+    //   if (event.source === "paze") {
+    //     setLoading(false);
+
+    //     if (event.error?.message) {
+    //       if ($("#__react-alert__ span").text() === event.error.message) {
+    //         return;
+    //       }
+  
+    //       alert.error(event.error.message);
+    //     }
+    //   }
+    // });
     
-    collect.current.on("nonce", async (event) => {
-      try {
-        await Promise.resolve(onNonce(event.data, walletRequest));
-        setButtonLoading(false);
-      } catch(error) {
-        setButtonLoading(false);
-        console.log(error);
-      }
-    });
+    // collect.current.on("nonce", async (event) => {
+    //   try {
+    //     await Promise.resolve(onNonce(event.data, walletOptions));
+    //     setButtonLoading(false);
+    //   } catch(error) {
+    //     setButtonLoading(false);
+    //     console.log(error);
+    //   }
+    // });
 
-    collect.current.on("error", (event) => {
-      console.log("error", event);
+    // collect.current.on("error", (event) => {
+    //   console.log("error", event);
 
-      const error = parseMesasge(event);
+    //   const error = parseMesasge(event);
 
-      if (error) {
-        if (error.type === 'WARN') {
-          return alert.info(error.message);
-        }
+    //   if (error) {
+    //     if (error.type === 'WARN') {
+    //       return alert.info(error.message);
+    //     }
 
-        setButtonLoading(false);
+    //     setButtonLoading(false);
 
-        if ($("#__react-alert__ span").text() === error.message) {
-          return;
-        }
+    //     if ($("#__react-alert__ span").text() === error.message) {
+    //       return;
+    //     }
 
-        alert.error(error.message);
-      }
-    });
+    //     alert.error(error.message);
+    //   }
+    // });
 
     return () => {
-      collect.current.unmount(collectId, document);
-      collect.current = null;
+      paymentForm.current?.unmount();
+      paymentForm.current = null;
+      wallets.current?.unmount();
+      wallets.current = null;
     };
   }, [
     orderLoaded,
