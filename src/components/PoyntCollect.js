@@ -128,7 +128,11 @@ const PoyntCollect = ({setLoading, options, collectId, onNonce, cartItems, cartT
           paymentMethods.push("card");
         }
 
-        if (options.paymentMethods?.paze&& result.paze) {
+        if (options.paymentMethods?.ach) {
+          paymentMethods.push("ach");
+        }
+
+        if (options.paymentMethods?.paze && result.paze) {
           paymentMethods.push("paze");
         }
         
@@ -406,6 +410,7 @@ const PoyntCollect = ({setLoading, options, collectId, onNonce, cartItems, cartT
     orderLoaded,
     collectId,
     options.paymentMethods?.card,
+    options.paymentMethods?.ach,
     options.paymentMethods?.applePay,
     options.paymentMethods?.googlePay,
     options.requireEmail,
@@ -430,7 +435,7 @@ const PoyntCollect = ({setLoading, options, collectId, onNonce, cartItems, cartT
 
   return ( 
     <div id={collectId} className="poynt-collect flex flex-wrap justify-end max-w-90 collect-wallet:w-full sm:collect-wallet:w-auto">
-      {options.paymentMethods?.card ? button : null}
+      {(options.paymentMethods?.card || options.paymentMethods?.ach) ? button : null}
     </div>
   );
 };

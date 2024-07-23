@@ -118,168 +118,168 @@ const constants = {
       countryCode: "CA",
     },
     style: {
-      theme: "ecommerce",
+      theme: "paylink",
     },
     iFrame: {
       width: "100%",
       height: "425px",
       border: "0px",
     },
-    customCss: {
-      container: {
-        color: "#111",
-        "font-family": "Roboto, sans-serif",
-        "height": "auto",
-        "flex-flow": "row wrap",
-        "justify-content": "normal",
-        "align-content": "center",
-        "margin": "0 auto",
-      },
-      inputLabel: {
-        "color": "#111",
-        "display": "block",
-        "font-size": "15px",
-        "font-weight": "700",
-        "line-height": "20px",
-        "margin-bottom": "7.5px",
-        "margin-top": "5px",
-        "text-transform": "capitalize",
-        "letter-spacing": "0px",
-      },
-      inputDefault: {
-        "color": "#111",
-        "font-family": "Roboto, sans-serif",
-        "font-size": "15px",
-        "line-height": "20px",
-      },
-      inputErrored: {
-        "border": "1px solid #b61717"
-      },
-      sectionLabel: {
-        "font-size": "13px",
-        "line-height": "18px",
-        "font-weight": "500",
-        "letter-spacing": "0.5px",
-        "color": "#767676",
-        "text-transform": "uppercase",
-        "margin-top": "15px",
-        "margin-bottom": "10px",
-        "padding-left": "0px",
-        "padding-right": "0px",
-      },
-      requiredMark: {
-        "color": "#ae1302",
-        "font-size": "15px",
-        "line-height": "20px",
-        "margin-left": "3px",
-      },
-      rowFirstName: {
-        "width": "50%",
-        "padding-left": "0px",
-        // "order": "1",
-      },
-      rowLastName: {
-        "width": "50%",
-        "padding-right": "0px",
-        // "order": "1",
-      },
-      rowCardNumber: {
-        "width": "75%",
-        "padding-left": "0px",
-        // "order": "1",
-      },
-      rowCVV: {
-        "width": "35%",
-        "padding-left": "0px",
-        // "order": "1",
-      },
-      rowExpiration: {
-        "width": "25%",
-        "padding-right": "0px",
-        // "order": "1",
-      },
-      rowZip: {
-        "width": "65%",
-        "padding-right": "0px",
-        // "order": "1",
-      },
-      rowEmailAddress: {
-        "width": "100%",
-        "padding-left": "0px",
-        "padding-right": "0px",
-        // "order": "1",
-      },
-      rowAddress: {
-        "width": "100%",
-        "padding-left": "0px",
-        "padding-right": "0px",
-      },
-      rowCity: {
-        "width": "50%",
-        "padding-left": "0px",
-      },
-      rowTerritory: {
-        "width": "50%",
-        "padding-right": "0px",
-      },
-      rowCountry: {
-        "width": "50%",
-        "padding-left": "0px",
-      },
-      rowPhone: {
-        "width": "50%",
-        "padding-left": "0px",
-        "padding-right": "0px",
-      },
-      rowShippingZip: {
-        "width": "100%",
-        "padding-left": "0px",
-        "padding-right": "0px",
-      },
-      rowSameAsBillingCheckbox: {
-        "width": "100%",
-        "padding-left": "0px",
-        "padding-right": "0px",
-      },
-      cardOnFile: {
-        container: {
-          "width": "100%",
-          "padding-left": "0px",
-          "padding-right": "0px",
-          "margin-left": "4px",
-        },
-        checkbox: {
-          "width": "13px",
-          "height": "13px",
-        },
-        label: {
-          "font-size": "14px",
-          "letter-spacing": "0.71px",
-        },
-        savedCards: {
-          container: {},
-          containerCard: {},
-          containerNewCard: {},
-          cardBox: {},
-          cardBoxActive: {},
-          cardBoxCheck: {},
-          cardBoxCheckmark: {},
-          cardBoxLogo: {},
-          cardBoxContent: {},
-          cardBoxTitle: {},
-          cardBoxText: {},
-          cardLogo: {},
-          addNewCardBox: {},
-          addNewCardBoxIcon: {},
-          addNewCardBoxText: {},
-        }
-      },
-      // reCaptcha: {
-      //   text: {
-      //     "font-size": "20px",
-      //   }
-      // },
-    },
+    // customCss: {
+    //   container: {
+    //     color: "#111",
+    //     "font-family": "Roboto, sans-serif",
+    //     "height": "auto",
+    //     "flex-flow": "row wrap",
+    //     "justify-content": "normal",
+    //     "align-content": "center",
+    //     "margin": "0 auto",
+    //   },
+    //   inputLabel: {
+    //     "color": "#111",
+    //     "display": "block",
+    //     "font-size": "15px",
+    //     "font-weight": "700",
+    //     "line-height": "20px",
+    //     "margin-bottom": "7.5px",
+    //     "margin-top": "5px",
+    //     "text-transform": "capitalize",
+    //     "letter-spacing": "0px",
+    //   },
+    //   inputDefault: {
+    //     "color": "#111",
+    //     "font-family": "Roboto, sans-serif",
+    //     "font-size": "15px",
+    //     "line-height": "20px",
+    //   },
+    //   inputErrored: {
+    //     "border": "1px solid #b61717"
+    //   },
+    //   sectionLabel: {
+    //     "font-size": "13px",
+    //     "line-height": "18px",
+    //     "font-weight": "500",
+    //     "letter-spacing": "0.5px",
+    //     "color": "#767676",
+    //     "text-transform": "uppercase",
+    //     "margin-top": "15px",
+    //     "margin-bottom": "10px",
+    //     "padding-left": "0px",
+    //     "padding-right": "0px",
+    //   },
+    //   requiredMark: {
+    //     "color": "#ae1302",
+    //     "font-size": "15px",
+    //     "line-height": "20px",
+    //     "margin-left": "3px",
+    //   },
+    //   rowFirstName: {
+    //     "width": "50%",
+    //     "padding-left": "0px",
+    //     // "order": "1",
+    //   },
+    //   rowLastName: {
+    //     "width": "50%",
+    //     "padding-right": "0px",
+    //     // "order": "1",
+    //   },
+    //   rowCardNumber: {
+    //     "width": "75%",
+    //     "padding-left": "0px",
+    //     // "order": "1",
+    //   },
+    //   rowCVV: {
+    //     "width": "35%",
+    //     "padding-left": "0px",
+    //     // "order": "1",
+    //   },
+    //   rowExpiration: {
+    //     "width": "25%",
+    //     "padding-right": "0px",
+    //     // "order": "1",
+    //   },
+    //   rowZip: {
+    //     "width": "65%",
+    //     "padding-right": "0px",
+    //     // "order": "1",
+    //   },
+    //   rowEmailAddress: {
+    //     "width": "100%",
+    //     "padding-left": "0px",
+    //     "padding-right": "0px",
+    //     // "order": "1",
+    //   },
+    //   rowAddress: {
+    //     "width": "100%",
+    //     "padding-left": "0px",
+    //     "padding-right": "0px",
+    //   },
+    //   rowCity: {
+    //     "width": "50%",
+    //     "padding-left": "0px",
+    //   },
+    //   rowTerritory: {
+    //     "width": "50%",
+    //     "padding-right": "0px",
+    //   },
+    //   rowCountry: {
+    //     "width": "50%",
+    //     "padding-left": "0px",
+    //   },
+    //   rowPhone: {
+    //     "width": "50%",
+    //     "padding-left": "0px",
+    //     "padding-right": "0px",
+    //   },
+    //   rowShippingZip: {
+    //     "width": "100%",
+    //     "padding-left": "0px",
+    //     "padding-right": "0px",
+    //   },
+    //   rowSameAsBillingCheckbox: {
+    //     "width": "100%",
+    //     "padding-left": "0px",
+    //     "padding-right": "0px",
+    //   },
+    //   cardOnFile: {
+    //     container: {
+    //       "width": "100%",
+    //       "padding-left": "0px",
+    //       "padding-right": "0px",
+    //       "margin-left": "4px",
+    //     },
+    //     checkbox: {
+    //       "width": "13px",
+    //       "height": "13px",
+    //     },
+    //     label: {
+    //       "font-size": "14px",
+    //       "letter-spacing": "0.71px",
+    //     },
+    //     savedCards: {
+    //       container: {},
+    //       containerCard: {},
+    //       containerNewCard: {},
+    //       cardBox: {},
+    //       cardBoxActive: {},
+    //       cardBoxCheck: {},
+    //       cardBoxCheckmark: {},
+    //       cardBoxLogo: {},
+    //       cardBoxContent: {},
+    //       cardBoxTitle: {},
+    //       cardBoxText: {},
+    //       cardLogo: {},
+    //       addNewCardBox: {},
+    //       addNewCardBoxIcon: {},
+    //       addNewCardBoxText: {},
+    //     }
+    //   },
+    //   // reCaptcha: {
+    //   //   text: {
+    //   //     "font-size": "20px",
+    //   //   }
+    //   // },
+    // },
   },
 };
 
