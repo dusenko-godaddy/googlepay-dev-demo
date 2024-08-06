@@ -7,7 +7,7 @@ app.use(bodyParser.json());
 app.use(express.static("public"));
 
 // global configs
-global.configs = require("./lib/configs-ci");
+global.configs = require("./lib/configs-ci-my-business");
 
 app.use("/collect", require("./routes/collect"));
 

@@ -1,1 +1,0 @@
-../../../collect/sdk/dist/collect-development.js

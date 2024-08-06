@@ -29,7 +29,7 @@ const Cart = () => {
         },
         body: JSON.stringify({
           ...data,
-          amount: Number(request.total.amount) * 100,
+          amount: Number(request?.orderDetails?.total?.amount || 1) * 100,
         }),
       });
 

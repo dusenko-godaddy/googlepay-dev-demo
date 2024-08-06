@@ -29,7 +29,7 @@ const Checkout = () => {
         },
         body: JSON.stringify({
           ...data,
-          amount: Number(request.total.amount) * 100,
+          amount: Number(request?.orderDetails?.total?.amount || 1) * 100,
         }),
       });
 
@@ -56,6 +56,7 @@ const Checkout = () => {
       supportCouponCode: true,
       paymentMethods: {
         card: true,
+        ach: true,
         googlePay: true,
         applePay: true,
         paze: true,

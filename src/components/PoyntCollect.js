@@ -136,6 +136,15 @@ const PoyntCollect = ({setLoading, options, collectId, onNonce, cartItems, cartT
       }
     };
 
+    const onIFrameHeightChange = (height) => {
+      console.log("iframe_height_change", height);
+    
+      if (height) {
+        const iFrame = document.getElementById("payment-form-iframe");
+        iFrame.style.setProperty("height", height + 10 + "px");
+      }
+    };
+
     console.log('current collect instance: ', collect.current);
     window.poyntCollect = collect;
 
@@ -273,12 +282,25 @@ const PoyntCollect = ({setLoading, options, collectId, onNonce, cartItems, cartT
     };
 
     async function init() {
+      const paymentMethods = [];
+
       if (options.paymentMethods?.card) {
+        paymentMethods.push("card");
+      }
+
+      if (options.paymentMethods?.ach) {
+        paymentMethods.push("ach");
+      }
+
+      if (paymentMethods.length) {
         paymentForm.current = collect.createPaymentForm({
           ...constants.poyntCollect,
+          paymentMethods,
           onError,
           onNonce: onCollectNonce,
+          onIFrameHeightChange,
         });
+
         console.log('paymentForm: ', paymentForm);
 
         await paymentForm.current.mount({elementId: collectId});
