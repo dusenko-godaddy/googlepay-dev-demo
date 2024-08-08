@@ -65,33 +65,59 @@ if ($defineProperty) {
 
 /* eslint no-invalid-this: 1 */
 var ERROR_MESSAGE = 'Function.prototype.bind called on incompatible ';
-var slice = Array.prototype.slice;
 var toStr = Object.prototype.toString;
+var max = Math.max;
 var funcType = '[object Function]';
+var concatty = function concatty(a, b) {
+  var arr = [];
+  for (var i = 0; i < a.length; i += 1) {
+    arr[i] = a[i];
+  }
+  for (var j = 0; j < b.length; j += 1) {
+    arr[j + a.length] = b[j];
+  }
+  return arr;
+};
+var slicy = function slicy(arrLike, offset) {
+  var arr = [];
+  for (var i = offset || 0, j = 0; i < arrLike.length; i += 1, j += 1) {
+    arr[j] = arrLike[i];
+  }
+  return arr;
+};
+var joiny = function joiny(arr, joiner) {
+  var str = '';
+  for (var i = 0; i < arr.length; i += 1) {
+    str += arr[i];
+    if (i + 1 < arr.length) {
+      str += joiner;
+    }
+  }
+  return str;
+};
 module.exports = function bind(that) {
   var target = this;
-  if (typeof target !== 'function' || toStr.call(target) !== funcType) {
+  if (typeof target !== 'function' || toStr.apply(target) !== funcType) {
     throw new TypeError(ERROR_MESSAGE + target);
   }
-  var args = slice.call(arguments, 1);
+  var args = slicy(arguments, 1);
   var bound;
   var binder = function binder() {
     if (this instanceof bound) {
-      var result = target.apply(this, args.concat(slice.call(arguments)));
+      var result = target.apply(this, concatty(args, arguments));
       if (Object(result) === result) {
         return result;
       }
       return this;
-    } else {
-      return target.apply(that, args.concat(slice.call(arguments)));
     }
+    return target.apply(that, concatty(args, arguments));
   };
-  var boundLength = Math.max(0, target.length - args.length);
+  var boundLength = max(0, target.length - args.length);
   var boundArgs = [];
   for (var i = 0; i < boundLength; i++) {
-    boundArgs.push('$' + i);
+    boundArgs[i] = '$' + i;
   }
-  bound = Function('binder', 'return function (' + boundArgs.join(',') + '){ return binder.apply(this,arguments); }')(binder);
+  bound = Function('binder', 'return function (' + joiny(boundArgs, ',') + '){ return binder.apply(this,arguments); }')(binder);
   if (target.prototype) {
     var Empty = function Empty() {};
     Empty.prototype = target.prototype;
@@ -110,7 +136,7 @@ module.exports = Function.prototype.bind || implementation;
 },{"./implementation":4}],6:[function(require,module,exports){
 'use strict';
 
-function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
+function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
 var undefined;
 var $SyntaxError = SyntaxError;
 var $Function = Function;
@@ -149,17 +175,18 @@ var ThrowTypeError = $gOPD ? function () {
   }
 }() : throwTypeError;
 var hasSymbols = require('has-symbols')();
-var getProto = Object.getPrototypeOf || function (x) {
+var hasProto = require('has-proto')();
+var getProto = Object.getPrototypeOf || (hasProto ? function (x) {
   return x.__proto__;
-}; // eslint-disable-line no-proto
-
+} // eslint-disable-line no-proto
+: null);
 var needsEval = {};
-var TypedArray = typeof Uint8Array === 'undefined' ? undefined : getProto(Uint8Array);
+var TypedArray = typeof Uint8Array === 'undefined' || !getProto ? undefined : getProto(Uint8Array);
 var INTRINSICS = {
   '%AggregateError%': typeof AggregateError === 'undefined' ? undefined : AggregateError,
   '%Array%': Array,
   '%ArrayBuffer%': typeof ArrayBuffer === 'undefined' ? undefined : ArrayBuffer,
-  '%ArrayIteratorPrototype%': hasSymbols ? getProto([][Symbol.iterator]()) : undefined,
+  '%ArrayIteratorPrototype%': hasSymbols && getProto ? getProto([][Symbol.iterator]()) : undefined,
   '%AsyncFromSyncIteratorPrototype%': undefined,
   '%AsyncFunction%': needsEval,
   '%AsyncGenerator%': needsEval,
@@ -190,10 +217,10 @@ var INTRINSICS = {
   '%Int32Array%': typeof Int32Array === 'undefined' ? undefined : Int32Array,
   '%isFinite%': isFinite,
   '%isNaN%': isNaN,
-  '%IteratorPrototype%': hasSymbols ? getProto(getProto([][Symbol.iterator]())) : undefined,
+  '%IteratorPrototype%': hasSymbols && getProto ? getProto(getProto([][Symbol.iterator]())) : undefined,
   '%JSON%': (typeof JSON === "undefined" ? "undefined" : _typeof(JSON)) === 'object' ? JSON : undefined,
   '%Map%': typeof Map === 'undefined' ? undefined : Map,
-  '%MapIteratorPrototype%': typeof Map === 'undefined' || !hasSymbols ? undefined : getProto(new Map()[Symbol.iterator]()),
+  '%MapIteratorPrototype%': typeof Map === 'undefined' || !hasSymbols || !getProto ? undefined : getProto(new Map()[Symbol.iterator]()),
   '%Math%': Math,
   '%Number%': Number,
   '%Object%': Object,
@@ -206,10 +233,10 @@ var INTRINSICS = {
   '%Reflect%': typeof Reflect === 'undefined' ? undefined : Reflect,
   '%RegExp%': RegExp,
   '%Set%': typeof Set === 'undefined' ? undefined : Set,
-  '%SetIteratorPrototype%': typeof Set === 'undefined' || !hasSymbols ? undefined : getProto(new Set()[Symbol.iterator]()),
+  '%SetIteratorPrototype%': typeof Set === 'undefined' || !hasSymbols || !getProto ? undefined : getProto(new Set()[Symbol.iterator]()),
   '%SharedArrayBuffer%': typeof SharedArrayBuffer === 'undefined' ? undefined : SharedArrayBuffer,
   '%String%': String,
-  '%StringIteratorPrototype%': hasSymbols ? getProto(''[Symbol.iterator]()) : undefined,
+  '%StringIteratorPrototype%': hasSymbols && getProto ? getProto(''[Symbol.iterator]()) : undefined,
   '%Symbol%': hasSymbols ? Symbol : undefined,
   '%SyntaxError%': $SyntaxError,
   '%ThrowTypeError%': ThrowTypeError,
@@ -224,12 +251,14 @@ var INTRINSICS = {
   '%WeakRef%': typeof WeakRef === 'undefined' ? undefined : WeakRef,
   '%WeakSet%': typeof WeakSet === 'undefined' ? undefined : WeakSet
 };
-try {
-  null.error; // eslint-disable-line no-unused-expressions
-} catch (e) {
-  // https://github.com/tc39/proposal-shadowrealm/pull/384#issuecomment-1364264229
-  var errorProto = getProto(getProto(e));
-  INTRINSICS['%Error.prototype%'] = errorProto;
+if (getProto) {
+  try {
+    null.error; // eslint-disable-line no-unused-expressions
+  } catch (e) {
+    // https://github.com/tc39/proposal-shadowrealm/pull/384#issuecomment-1364264229
+    var errorProto = getProto(getProto(e));
+    INTRINSICS['%Error.prototype%'] = errorProto;
+  }
 }
 var doEval = function doEval(name) {
   var value;
@@ -246,7 +275,7 @@ var doEval = function doEval(name) {
     }
   } else if (name === '%AsyncIteratorPrototype%') {
     var gen = doEval('%AsyncGenerator%');
-    if (gen) {
+    if (gen && getProto) {
       value = getProto(gen.prototype);
     }
   }
@@ -426,10 +455,25 @@ module.exports = function GetIntrinsic(name, allowMissing) {
   return value;
 };
 
-},{"function-bind":5,"has":9,"has-symbols":7}],7:[function(require,module,exports){
+},{"function-bind":5,"has":10,"has-proto":7,"has-symbols":8}],7:[function(require,module,exports){
 'use strict';
 
-function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
+var test = {
+  foo: {}
+};
+var $Object = Object;
+module.exports = function hasProto() {
+  return {
+    __proto__: test
+  }.foo === test.foo && !({
+    __proto__: null
+  } instanceof $Object);
+};
+
+},{}],8:[function(require,module,exports){
+'use strict';
+
+function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
 var origSymbol = typeof Symbol !== 'undefined' && Symbol;
 var hasSymbolSham = require('./shams');
 module.exports = function hasNativeSymbols() {
@@ -448,11 +492,11 @@ module.exports = function hasNativeSymbols() {
   return hasSymbolSham();
 };
 
-},{"./shams":8}],8:[function(require,module,exports){
+},{"./shams":9}],9:[function(require,module,exports){
 'use strict';
 
 /* eslint complexity: [2, 18], max-statements: [2, 33] */
-function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
+function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
 module.exports = function hasSymbols() {
   if (typeof Symbol !== 'function' || typeof Object.getOwnPropertySymbols !== 'function') {
     return false;
@@ -508,13 +552,16 @@ module.exports = function hasSymbols() {
   return true;
 };
 
-},{}],9:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 'use strict';
 
-var bind = require('function-bind');
-module.exports = bind.call(Function.call, Object.prototype.hasOwnProperty);
+var hasOwnProperty = {}.hasOwnProperty;
+var call = Function.prototype.call;
+module.exports = call.bind ? call.bind(hasOwnProperty) : function (O, P) {
+  return call.call(hasOwnProperty, O, P);
+};
 
-},{"function-bind":5}],10:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 "use strict";
 
 function e(e) {
@@ -568,5679 +615,26 @@ n.prototype = new Error(), n.prototype.name = "InvalidTokenError";
 var a = o;
 a["default"] = o, a.InvalidTokenError = n, module.exports = a;
 
-},{}],11:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 module.exports={
   "cardOnFile.termsAndConditions": "Terms & Conditions",
   "cardOnFile.accept": "ACCEPT",
   "cardOnFile.decline": "DECLINE"
 }
 
-},{}],12:[function(require,module,exports){
-arguments[4][11][0].apply(exports,arguments)
-},{"dup":11}],13:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
+arguments[4][12][0].apply(exports,arguments)
+},{"dup":12}],14:[function(require,module,exports){
 module.exports={
   "cardOnFile.termsAndConditions": "Conditions d’utilisation",
   "cardOnFile.accept": "ACCEPTER",
   "cardOnFile.decline": "REFUSER"
 }
-},{}],14:[function(require,module,exports){
-'use strict';
-
-function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
-var Config = {
-  DEBUG: false,
-  LIB_VERSION: '2.45.0'
-};
-
-// since es6 imports are static and we run unit tests from the console, window won't be defined when importing this file
-var window$1;
-if (typeof window === 'undefined') {
-  var loc = {
-    hostname: ''
-  };
-  window$1 = {
-    navigator: {
-      userAgent: ''
-    },
-    document: {
-      location: loc,
-      referrer: ''
-    },
-    screen: {
-      width: 0,
-      height: 0
-    },
-    location: loc
-  };
-} else {
-  window$1 = window;
-}
-
-/*
- * Saved references to long variable names, so that closure compiler can
- * minimize file size.
- */
-
-var ArrayProto = Array.prototype;
-var FuncProto = Function.prototype;
-var ObjProto = Object.prototype;
-var slice = ArrayProto.slice;
-var toString = ObjProto.toString;
-var hasOwnProperty = ObjProto.hasOwnProperty;
-var windowConsole = window$1.console;
-var navigator = window$1.navigator;
-var document$1 = window$1.document;
-var windowOpera = window$1.opera;
-var screen = window$1.screen;
-var userAgent = navigator.userAgent;
-var nativeBind = FuncProto.bind;
-var nativeForEach = ArrayProto.forEach;
-var nativeIndexOf = ArrayProto.indexOf;
-var nativeMap = ArrayProto.map;
-var nativeIsArray = Array.isArray;
-var breaker = {};
-var _ = {
-  trim: function trim(str) {
-    // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/Trim#Polyfill
-    return str.replace(/^[\s\uFEFF\xA0]+|[\s\uFEFF\xA0]+$/g, '');
-  }
-};
-
-// Console override
-var console = {
-  /** @type {function(...*)} */
-  log: function log() {
-    if (Config.DEBUG && !_.isUndefined(windowConsole) && windowConsole) {
-      try {
-        windowConsole.log.apply(windowConsole, arguments);
-      } catch (err) {
-        _.each(arguments, function (arg) {
-          windowConsole.log(arg);
-        });
-      }
-    }
-  },
-  /** @type {function(...*)} */
-  warn: function warn() {
-    if (Config.DEBUG && !_.isUndefined(windowConsole) && windowConsole) {
-      var args = ['Mixpanel warning:'].concat(_.toArray(arguments));
-      try {
-        windowConsole.warn.apply(windowConsole, args);
-      } catch (err) {
-        _.each(args, function (arg) {
-          windowConsole.warn(arg);
-        });
-      }
-    }
-  },
-  /** @type {function(...*)} */
-  error: function error() {
-    if (Config.DEBUG && !_.isUndefined(windowConsole) && windowConsole) {
-      var args = ['Mixpanel error:'].concat(_.toArray(arguments));
-      try {
-        windowConsole.error.apply(windowConsole, args);
-      } catch (err) {
-        _.each(args, function (arg) {
-          windowConsole.error(arg);
-        });
-      }
-    }
-  },
-  /** @type {function(...*)} */
-  critical: function critical() {
-    if (!_.isUndefined(windowConsole) && windowConsole) {
-      var args = ['Mixpanel error:'].concat(_.toArray(arguments));
-      try {
-        windowConsole.error.apply(windowConsole, args);
-      } catch (err) {
-        _.each(args, function (arg) {
-          windowConsole.error(arg);
-        });
-      }
-    }
-  }
-};
-var log_func_with_prefix = function log_func_with_prefix(func, prefix) {
-  return function () {
-    arguments[0] = '[' + prefix + '] ' + arguments[0];
-    return func.apply(console, arguments);
-  };
-};
-var console_with_prefix = function console_with_prefix(prefix) {
-  return {
-    log: log_func_with_prefix(console.log, prefix),
-    error: log_func_with_prefix(console.error, prefix),
-    critical: log_func_with_prefix(console.critical, prefix)
-  };
-};
-
-// UNDERSCORE
-// Embed part of the Underscore Library
-_.bind = function (func, context) {
-  var args, _bound;
-  if (nativeBind && func.bind === nativeBind) {
-    return nativeBind.apply(func, slice.call(arguments, 1));
-  }
-  if (!_.isFunction(func)) {
-    throw new TypeError();
-  }
-  args = slice.call(arguments, 2);
-  _bound = function bound() {
-    if (!(this instanceof _bound)) {
-      return func.apply(context, args.concat(slice.call(arguments)));
-    }
-    var ctor = {};
-    ctor.prototype = func.prototype;
-    var self = new ctor();
-    ctor.prototype = null;
-    var result = func.apply(self, args.concat(slice.call(arguments)));
-    if (Object(result) === result) {
-      return result;
-    }
-    return self;
-  };
-  return _bound;
-};
-
-/**
- * @param {*=} obj
- * @param {function(...*)=} iterator
- * @param {Object=} context
- */
-_.each = function (obj, iterator, context) {
-  if (obj === null || obj === undefined) {
-    return;
-  }
-  if (nativeForEach && obj.forEach === nativeForEach) {
-    obj.forEach(iterator, context);
-  } else if (obj.length === +obj.length) {
-    for (var i = 0, l = obj.length; i < l; i++) {
-      if (i in obj && iterator.call(context, obj[i], i, obj) === breaker) {
-        return;
-      }
-    }
-  } else {
-    for (var key in obj) {
-      if (hasOwnProperty.call(obj, key)) {
-        if (iterator.call(context, obj[key], key, obj) === breaker) {
-          return;
-        }
-      }
-    }
-  }
-};
-_.extend = function (obj) {
-  _.each(slice.call(arguments, 1), function (source) {
-    for (var prop in source) {
-      if (source[prop] !== void 0) {
-        obj[prop] = source[prop];
-      }
-    }
-  });
-  return obj;
-};
-_.isArray = nativeIsArray || function (obj) {
-  return toString.call(obj) === '[object Array]';
-};
-
-// from a comment on http://dbj.org/dbj/?p=286
-// fails on only one very rare and deliberate custom object:
-// var bomb = { toString : undefined, valueOf: function(o) { return "function BOMBA!"; }};
-_.isFunction = function (f) {
-  try {
-    return /^\s*\bfunction\b/.test(f);
-  } catch (x) {
-    return false;
-  }
-};
-_.isArguments = function (obj) {
-  return !!(obj && hasOwnProperty.call(obj, 'callee'));
-};
-_.toArray = function (iterable) {
-  if (!iterable) {
-    return [];
-  }
-  if (iterable.toArray) {
-    return iterable.toArray();
-  }
-  if (_.isArray(iterable)) {
-    return slice.call(iterable);
-  }
-  if (_.isArguments(iterable)) {
-    return slice.call(iterable);
-  }
-  return _.values(iterable);
-};
-_.map = function (arr, callback, context) {
-  if (nativeMap && arr.map === nativeMap) {
-    return arr.map(callback, context);
-  } else {
-    var results = [];
-    _.each(arr, function (item) {
-      results.push(callback.call(context, item));
-    });
-    return results;
-  }
-};
-_.keys = function (obj) {
-  var results = [];
-  if (obj === null) {
-    return results;
-  }
-  _.each(obj, function (value, key) {
-    results[results.length] = key;
-  });
-  return results;
-};
-_.values = function (obj) {
-  var results = [];
-  if (obj === null) {
-    return results;
-  }
-  _.each(obj, function (value) {
-    results[results.length] = value;
-  });
-  return results;
-};
-_.include = function (obj, target) {
-  var found = false;
-  if (obj === null) {
-    return found;
-  }
-  if (nativeIndexOf && obj.indexOf === nativeIndexOf) {
-    return obj.indexOf(target) != -1;
-  }
-  _.each(obj, function (value) {
-    if (found || (found = value === target)) {
-      return breaker;
-    }
-  });
-  return found;
-};
-_.includes = function (str, needle) {
-  return str.indexOf(needle) !== -1;
-};
-
-// Underscore Addons
-_.inherit = function (subclass, superclass) {
-  subclass.prototype = new superclass();
-  subclass.prototype.constructor = subclass;
-  subclass.superclass = superclass.prototype;
-  return subclass;
-};
-_.isObject = function (obj) {
-  return obj === Object(obj) && !_.isArray(obj);
-};
-_.isEmptyObject = function (obj) {
-  if (_.isObject(obj)) {
-    for (var key in obj) {
-      if (hasOwnProperty.call(obj, key)) {
-        return false;
-      }
-    }
-    return true;
-  }
-  return false;
-};
-_.isUndefined = function (obj) {
-  return obj === void 0;
-};
-_.isString = function (obj) {
-  return toString.call(obj) == '[object String]';
-};
-_.isDate = function (obj) {
-  return toString.call(obj) == '[object Date]';
-};
-_.isNumber = function (obj) {
-  return toString.call(obj) == '[object Number]';
-};
-_.isElement = function (obj) {
-  return !!(obj && obj.nodeType === 1);
-};
-_.encodeDates = function (obj) {
-  _.each(obj, function (v, k) {
-    if (_.isDate(v)) {
-      obj[k] = _.formatDate(v);
-    } else if (_.isObject(v)) {
-      obj[k] = _.encodeDates(v); // recurse
-    }
-  });
-
-  return obj;
-};
-_.timestamp = function () {
-  Date.now = Date.now || function () {
-    return +new Date();
-  };
-  return Date.now();
-};
-_.formatDate = function (d) {
-  // YYYY-MM-DDTHH:MM:SS in UTC
-  function pad(n) {
-    return n < 10 ? '0' + n : n;
-  }
-  return d.getUTCFullYear() + '-' + pad(d.getUTCMonth() + 1) + '-' + pad(d.getUTCDate()) + 'T' + pad(d.getUTCHours()) + ':' + pad(d.getUTCMinutes()) + ':' + pad(d.getUTCSeconds());
-};
-_.strip_empty_properties = function (p) {
-  var ret = {};
-  _.each(p, function (v, k) {
-    if (_.isString(v) && v.length > 0) {
-      ret[k] = v;
-    }
-  });
-  return ret;
-};
-
-/*
- * this function returns a copy of object after truncating it.  If
- * passed an Array or Object it will iterate through obj and
- * truncate all the values recursively.
- */
-_.truncate = function (obj, length) {
-  var ret;
-  if (typeof obj === 'string') {
-    ret = obj.slice(0, length);
-  } else if (_.isArray(obj)) {
-    ret = [];
-    _.each(obj, function (val) {
-      ret.push(_.truncate(val, length));
-    });
-  } else if (_.isObject(obj)) {
-    ret = {};
-    _.each(obj, function (val, key) {
-      ret[key] = _.truncate(val, length);
-    });
-  } else {
-    ret = obj;
-  }
-  return ret;
-};
-_.JSONEncode = function () {
-  return function (mixed_val) {
-    var value = mixed_val;
-    var quote = function quote(string) {
-      var escapable = /[\\"\x00-\x1f\x7f-\x9f\u00ad\u0600-\u0604\u070f\u17b4\u17b5\u200c-\u200f\u2028-\u202f\u2060-\u206f\ufeff\ufff0-\uffff]/g; // eslint-disable-line no-control-regex
-      var meta = {
-        // table of character substitutions
-        '\b': '\\b',
-        '\t': '\\t',
-        '\n': '\\n',
-        '\f': '\\f',
-        '\r': '\\r',
-        '"': '\\"',
-        '\\': '\\\\'
-      };
-      escapable.lastIndex = 0;
-      return escapable.test(string) ? '"' + string.replace(escapable, function (a) {
-        var c = meta[a];
-        return typeof c === 'string' ? c : "\\u" + ('0000' + a.charCodeAt(0).toString(16)).slice(-4);
-      }) + '"' : '"' + string + '"';
-    };
-    var str = function str(key, holder) {
-      var gap = '';
-      var indent = '    ';
-      var i = 0; // The loop counter.
-      var k = ''; // The member key.
-      var v = ''; // The member value.
-      var length = 0;
-      var mind = gap;
-      var partial = [];
-      var value = holder[key];
-
-      // If the value has a toJSON method, call it to obtain a replacement value.
-      if (value && _typeof(value) === 'object' && typeof value.toJSON === 'function') {
-        value = value.toJSON(key);
-      }
-
-      // What happens next depends on the value's type.
-      switch (_typeof(value)) {
-        case 'string':
-          return quote(value);
-        case 'number':
-          // JSON numbers must be finite. Encode non-finite numbers as null.
-          return isFinite(value) ? String(value) : 'null';
-        case 'boolean':
-        case 'null':
-          // If the value is a boolean or null, convert it to a string. Note:
-          // typeof null does not produce 'null'. The case is included here in
-          // the remote chance that this gets fixed someday.
-
-          return String(value);
-        case 'object':
-          // If the type is 'object', we might be dealing with an object or an array or
-          // null.
-          // Due to a specification blunder in ECMAScript, typeof null is 'object',
-          // so watch out for that case.
-          if (!value) {
-            return 'null';
-          }
-
-          // Make an array to hold the partial results of stringifying this object value.
-          gap += indent;
-          partial = [];
-
-          // Is the value an array?
-          if (toString.apply(value) === '[object Array]') {
-            // The value is an array. Stringify every element. Use null as a placeholder
-            // for non-JSON values.
-
-            length = value.length;
-            for (i = 0; i < length; i += 1) {
-              partial[i] = str(i, value) || 'null';
-            }
-
-            // Join all of the elements together, separated with commas, and wrap them in
-            // brackets.
-            v = partial.length === 0 ? '[]' : gap ? '[\n' + gap + partial.join(',\n' + gap) + '\n' + mind + ']' : '[' + partial.join(',') + ']';
-            gap = mind;
-            return v;
-          }
-
-          // Iterate through all of the keys in the object.
-          for (k in value) {
-            if (hasOwnProperty.call(value, k)) {
-              v = str(k, value);
-              if (v) {
-                partial.push(quote(k) + (gap ? ': ' : ':') + v);
-              }
-            }
-          }
-
-          // Join all of the member texts together, separated with commas,
-          // and wrap them in braces.
-          v = partial.length === 0 ? '{}' : gap ? '{' + partial.join(',') + '' + mind + '}' : '{' + partial.join(',') + '}';
-          gap = mind;
-          return v;
-      }
-    };
-
-    // Make a fake root object containing our value under the key of ''.
-    // Return the result of stringifying the value.
-    return str('', {
-      '': value
-    });
-  };
-}();
-
-/**
- * From https://github.com/douglascrockford/JSON-js/blob/master/json_parse.js
- * Slightly modified to throw a real Error rather than a POJO
- */
-_.JSONDecode = function () {
-  var at,
-    // The index of the current character
-    ch,
-    // The current character
-    escapee = {
-      '"': '"',
-      '\\': '\\',
-      '/': '/',
-      'b': '\b',
-      'f': '\f',
-      'n': '\n',
-      'r': '\r',
-      't': '\t'
-    },
-    text,
-    error = function error(m) {
-      var e = new SyntaxError(m);
-      e.at = at;
-      e.text = text;
-      throw e;
-    },
-    next = function next(c) {
-      // If a c parameter is provided, verify that it matches the current character.
-      if (c && c !== ch) {
-        error('Expected \'' + c + '\' instead of \'' + ch + '\'');
-      }
-      // Get the next character. When there are no more characters,
-      // return the empty string.
-      ch = text.charAt(at);
-      at += 1;
-      return ch;
-    },
-    number = function number() {
-      // Parse a number value.
-      var number,
-        string = '';
-      if (ch === '-') {
-        string = '-';
-        next('-');
-      }
-      while (ch >= '0' && ch <= '9') {
-        string += ch;
-        next();
-      }
-      if (ch === '.') {
-        string += '.';
-        while (next() && ch >= '0' && ch <= '9') {
-          string += ch;
-        }
-      }
-      if (ch === 'e' || ch === 'E') {
-        string += ch;
-        next();
-        if (ch === '-' || ch === '+') {
-          string += ch;
-          next();
-        }
-        while (ch >= '0' && ch <= '9') {
-          string += ch;
-          next();
-        }
-      }
-      number = +string;
-      if (!isFinite(number)) {
-        error('Bad number');
-      } else {
-        return number;
-      }
-    },
-    string = function string() {
-      // Parse a string value.
-      var hex,
-        i,
-        string = '',
-        uffff;
-      // When parsing for string values, we must look for " and \ characters.
-      if (ch === '"') {
-        while (next()) {
-          if (ch === '"') {
-            next();
-            return string;
-          }
-          if (ch === '\\') {
-            next();
-            if (ch === 'u') {
-              uffff = 0;
-              for (i = 0; i < 4; i += 1) {
-                hex = parseInt(next(), 16);
-                if (!isFinite(hex)) {
-                  break;
-                }
-                uffff = uffff * 16 + hex;
-              }
-              string += String.fromCharCode(uffff);
-            } else if (typeof escapee[ch] === 'string') {
-              string += escapee[ch];
-            } else {
-              break;
-            }
-          } else {
-            string += ch;
-          }
-        }
-      }
-      error('Bad string');
-    },
-    white = function white() {
-      // Skip whitespace.
-      while (ch && ch <= ' ') {
-        next();
-      }
-    },
-    word = function word() {
-      // true, false, or null.
-      switch (ch) {
-        case 't':
-          next('t');
-          next('r');
-          next('u');
-          next('e');
-          return true;
-        case 'f':
-          next('f');
-          next('a');
-          next('l');
-          next('s');
-          next('e');
-          return false;
-        case 'n':
-          next('n');
-          next('u');
-          next('l');
-          next('l');
-          return null;
-      }
-      error('Unexpected "' + ch + '"');
-    },
-    value,
-    // Placeholder for the value function.
-    array = function array() {
-      // Parse an array value.
-      var array = [];
-      if (ch === '[') {
-        next('[');
-        white();
-        if (ch === ']') {
-          next(']');
-          return array; // empty array
-        }
-
-        while (ch) {
-          array.push(value());
-          white();
-          if (ch === ']') {
-            next(']');
-            return array;
-          }
-          next(',');
-          white();
-        }
-      }
-      error('Bad array');
-    },
-    object = function object() {
-      // Parse an object value.
-      var key,
-        object = {};
-      if (ch === '{') {
-        next('{');
-        white();
-        if (ch === '}') {
-          next('}');
-          return object; // empty object
-        }
-
-        while (ch) {
-          key = string();
-          white();
-          next(':');
-          if (Object.hasOwnProperty.call(object, key)) {
-            error('Duplicate key "' + key + '"');
-          }
-          object[key] = value();
-          white();
-          if (ch === '}') {
-            next('}');
-            return object;
-          }
-          next(',');
-          white();
-        }
-      }
-      error('Bad object');
-    };
-  value = function value() {
-    // Parse a JSON value. It could be an object, an array, a string,
-    // a number, or a word.
-    white();
-    switch (ch) {
-      case '{':
-        return object();
-      case '[':
-        return array();
-      case '"':
-        return string();
-      case '-':
-        return number();
-      default:
-        return ch >= '0' && ch <= '9' ? number() : word();
-    }
-  };
-
-  // Return the json_parse function. It will have access to all of the
-  // above functions and variables.
-  return function (source) {
-    var result;
-    text = source;
-    at = 0;
-    ch = ' ';
-    result = value();
-    white();
-    if (ch) {
-      error('Syntax error');
-    }
-    return result;
-  };
-}();
-_.base64Encode = function (data) {
-  var b64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
-  var o1,
-    o2,
-    o3,
-    h1,
-    h2,
-    h3,
-    h4,
-    bits,
-    i = 0,
-    ac = 0,
-    enc = '',
-    tmp_arr = [];
-  if (!data) {
-    return data;
-  }
-  data = _.utf8Encode(data);
-  do {
-    // pack three octets into four hexets
-    o1 = data.charCodeAt(i++);
-    o2 = data.charCodeAt(i++);
-    o3 = data.charCodeAt(i++);
-    bits = o1 << 16 | o2 << 8 | o3;
-    h1 = bits >> 18 & 0x3f;
-    h2 = bits >> 12 & 0x3f;
-    h3 = bits >> 6 & 0x3f;
-    h4 = bits & 0x3f;
-
-    // use hexets to index into b64, and append result to encoded string
-    tmp_arr[ac++] = b64.charAt(h1) + b64.charAt(h2) + b64.charAt(h3) + b64.charAt(h4);
-  } while (i < data.length);
-  enc = tmp_arr.join('');
-  switch (data.length % 3) {
-    case 1:
-      enc = enc.slice(0, -2) + '==';
-      break;
-    case 2:
-      enc = enc.slice(0, -1) + '=';
-      break;
-  }
-  return enc;
-};
-_.utf8Encode = function (string) {
-  string = (string + '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-  var utftext = '',
-    start,
-    end;
-  var stringl = 0,
-    n;
-  start = end = 0;
-  stringl = string.length;
-  for (n = 0; n < stringl; n++) {
-    var c1 = string.charCodeAt(n);
-    var enc = null;
-    if (c1 < 128) {
-      end++;
-    } else if (c1 > 127 && c1 < 2048) {
-      enc = String.fromCharCode(c1 >> 6 | 192, c1 & 63 | 128);
-    } else {
-      enc = String.fromCharCode(c1 >> 12 | 224, c1 >> 6 & 63 | 128, c1 & 63 | 128);
-    }
-    if (enc !== null) {
-      if (end > start) {
-        utftext += string.substring(start, end);
-      }
-      utftext += enc;
-      start = end = n + 1;
-    }
-  }
-  if (end > start) {
-    utftext += string.substring(start, string.length);
-  }
-  return utftext;
-};
-_.UUID = function () {
-  // Time/ticks information
-  // 1*new Date() is a cross browser version of Date.now()
-  var T = function T() {
-    var d = 1 * new Date(),
-      i = 0;
-
-    // this while loop figures how many browser ticks go by
-    // before 1*new Date() returns a new number, ie the amount
-    // of ticks that go by per millisecond
-    while (d == 1 * new Date()) {
-      i++;
-    }
-    return d.toString(16) + i.toString(16);
-  };
-
-  // Math.Random entropy
-  var R = function R() {
-    return Math.random().toString(16).replace('.', '');
-  };
-
-  // User agent entropy
-  // This function takes the user agent string, and then xors
-  // together each sequence of 8 bytes.  This produces a final
-  // sequence of 8 bytes which it returns as hex.
-  var UA = function UA() {
-    var ua = userAgent,
-      i,
-      ch,
-      buffer = [],
-      ret = 0;
-    function xor(result, byte_array) {
-      var j,
-        tmp = 0;
-      for (j = 0; j < byte_array.length; j++) {
-        tmp |= buffer[j] << j * 8;
-      }
-      return result ^ tmp;
-    }
-    for (i = 0; i < ua.length; i++) {
-      ch = ua.charCodeAt(i);
-      buffer.unshift(ch & 0xFF);
-      if (buffer.length >= 4) {
-        ret = xor(ret, buffer);
-        buffer = [];
-      }
-    }
-    if (buffer.length > 0) {
-      ret = xor(ret, buffer);
-    }
-    return ret.toString(16);
-  };
-  return function () {
-    var se = (screen.height * screen.width).toString(16);
-    return T() + '-' + R() + '-' + UA() + '-' + se + '-' + T();
-  };
-}();
-
-// _.isBlockedUA()
-// This is to block various web spiders from executing our JS and
-// sending false tracking data
-var BLOCKED_UA_STRS = ['ahrefsbot', 'baiduspider', 'bingbot', 'bingpreview', 'facebookexternal', 'petalbot', 'pinterest', 'screaming frog', 'yahoo! slurp', 'yandexbot',
-// a whole bunch of goog-specific crawlers
-// https://developers.google.com/search/docs/advanced/crawling/overview-google-crawlers
-'adsbot-google', 'apis-google', 'duplexweb-google', 'feedfetcher-google', 'google favicon', 'google web preview', 'google-read-aloud', 'googlebot', 'googleweblight', 'mediapartners-google', 'storebot-google'];
-_.isBlockedUA = function (ua) {
-  var i;
-  ua = ua.toLowerCase();
-  for (i = 0; i < BLOCKED_UA_STRS.length; i++) {
-    if (ua.indexOf(BLOCKED_UA_STRS[i]) !== -1) {
-      return true;
-    }
-  }
-  return false;
-};
-
-/**
- * @param {Object=} formdata
- * @param {string=} arg_separator
- */
-_.HTTPBuildQuery = function (formdata, arg_separator) {
-  var use_val,
-    use_key,
-    tmp_arr = [];
-  if (_.isUndefined(arg_separator)) {
-    arg_separator = '&';
-  }
-  _.each(formdata, function (val, key) {
-    use_val = encodeURIComponent(val.toString());
-    use_key = encodeURIComponent(key);
-    tmp_arr[tmp_arr.length] = use_key + '=' + use_val;
-  });
-  return tmp_arr.join(arg_separator);
-};
-_.getQueryParam = function (url, param) {
-  // Expects a raw URL
-
-  param = param.replace(/[[]/, '\\[').replace(/[\]]/, '\\]');
-  var regexS = '[\\?&]' + param + '=([^&#]*)',
-    regex = new RegExp(regexS),
-    results = regex.exec(url);
-  if (results === null || results && typeof results[1] !== 'string' && results[1].length) {
-    return '';
-  } else {
-    var result = results[1];
-    try {
-      result = decodeURIComponent(result);
-    } catch (err) {
-      console.error('Skipping decoding for malformed query param: ' + result);
-    }
-    return result.replace(/\+/g, ' ');
-  }
-};
-
-// _.cookie
-// Methods partially borrowed from quirksmode.org/js/cookies.html
-_.cookie = {
-  get: function get(name) {
-    var nameEQ = name + '=';
-    var ca = document$1.cookie.split(';');
-    for (var i = 0; i < ca.length; i++) {
-      var c = ca[i];
-      while (c.charAt(0) == ' ') {
-        c = c.substring(1, c.length);
-      }
-      if (c.indexOf(nameEQ) === 0) {
-        return decodeURIComponent(c.substring(nameEQ.length, c.length));
-      }
-    }
-    return null;
-  },
-  parse: function parse(name) {
-    var cookie;
-    try {
-      cookie = _.JSONDecode(_.cookie.get(name)) || {};
-    } catch (err) {
-      // noop
-    }
-    return cookie;
-  },
-  set_seconds: function set_seconds(name, value, seconds, is_cross_subdomain, is_secure, is_cross_site, domain_override) {
-    var cdomain = '',
-      expires = '',
-      secure = '';
-    if (domain_override) {
-      cdomain = '; domain=' + domain_override;
-    } else if (is_cross_subdomain) {
-      var domain = extract_domain(document$1.location.hostname);
-      cdomain = domain ? '; domain=.' + domain : '';
-    }
-    if (seconds) {
-      var date = new Date();
-      date.setTime(date.getTime() + seconds * 1000);
-      expires = '; expires=' + date.toGMTString();
-    }
-    if (is_cross_site) {
-      is_secure = true;
-      secure = '; SameSite=None';
-    }
-    if (is_secure) {
-      secure += '; secure';
-    }
-    document$1.cookie = name + '=' + encodeURIComponent(value) + expires + '; path=/' + cdomain + secure;
-  },
-  set: function set(name, value, days, is_cross_subdomain, is_secure, is_cross_site, domain_override) {
-    var cdomain = '',
-      expires = '',
-      secure = '';
-    if (domain_override) {
-      cdomain = '; domain=' + domain_override;
-    } else if (is_cross_subdomain) {
-      var domain = extract_domain(document$1.location.hostname);
-      cdomain = domain ? '; domain=.' + domain : '';
-    }
-    if (days) {
-      var date = new Date();
-      date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000);
-      expires = '; expires=' + date.toGMTString();
-    }
-    if (is_cross_site) {
-      is_secure = true;
-      secure = '; SameSite=None';
-    }
-    if (is_secure) {
-      secure += '; secure';
-    }
-    var new_cookie_val = name + '=' + encodeURIComponent(value) + expires + '; path=/' + cdomain + secure;
-    document$1.cookie = new_cookie_val;
-    return new_cookie_val;
-  },
-  remove: function remove(name, is_cross_subdomain, domain_override) {
-    _.cookie.set(name, '', -1, is_cross_subdomain, false, false, domain_override);
-  }
-};
-var _localStorageSupported = null;
-var localStorageSupported = function localStorageSupported(storage, forceCheck) {
-  if (_localStorageSupported !== null && !forceCheck) {
-    return _localStorageSupported;
-  }
-  var supported = true;
-  try {
-    storage = storage || window.localStorage;
-    var key = '__mplss_' + cheap_guid(8),
-      val = 'xyz';
-    storage.setItem(key, val);
-    if (storage.getItem(key) !== val) {
-      supported = false;
-    }
-    storage.removeItem(key);
-  } catch (err) {
-    supported = false;
-  }
-  _localStorageSupported = supported;
-  return supported;
-};
-
-// _.localStorage
-_.localStorage = {
-  is_supported: function is_supported(force_check) {
-    var supported = localStorageSupported(null, force_check);
-    if (!supported) {
-      console.error('localStorage unsupported; falling back to cookie store');
-    }
-    return supported;
-  },
-  error: function error(msg) {
-    console.error('localStorage error: ' + msg);
-  },
-  get: function get(name) {
-    try {
-      return window.localStorage.getItem(name);
-    } catch (err) {
-      _.localStorage.error(err);
-    }
-    return null;
-  },
-  parse: function parse(name) {
-    try {
-      return _.JSONDecode(_.localStorage.get(name)) || {};
-    } catch (err) {
-      // noop
-    }
-    return null;
-  },
-  set: function set(name, value) {
-    try {
-      window.localStorage.setItem(name, value);
-    } catch (err) {
-      _.localStorage.error(err);
-    }
-  },
-  remove: function remove(name) {
-    try {
-      window.localStorage.removeItem(name);
-    } catch (err) {
-      _.localStorage.error(err);
-    }
-  }
-};
-_.register_event = function () {
-  // written by Dean Edwards, 2005
-  // with input from Tino Zijdel - crisp@xs4all.nl
-  // with input from Carl Sverre - mail@carlsverre.com
-  // with input from Mixpanel
-  // http://dean.edwards.name/weblog/2005/10/add-event/
-  // https://gist.github.com/1930440
-
-  /**
-   * @param {Object} element
-   * @param {string} type
-   * @param {function(...*)} handler
-   * @param {boolean=} oldSchool
-   * @param {boolean=} useCapture
-   */
-  var register_event = function register_event(element, type, handler, oldSchool, useCapture) {
-    if (!element) {
-      console.error('No valid element provided to register_event');
-      return;
-    }
-    if (element.addEventListener && !oldSchool) {
-      element.addEventListener(type, handler, !!useCapture);
-    } else {
-      var ontype = 'on' + type;
-      var old_handler = element[ontype]; // can be undefined
-      element[ontype] = makeHandler(element, handler, old_handler);
-    }
-  };
-  function makeHandler(element, new_handler, old_handlers) {
-    var handler = function handler(event) {
-      event = event || fixEvent(window.event);
-
-      // this basically happens in firefox whenever another script
-      // overwrites the onload callback and doesn't pass the event
-      // object to previously defined callbacks.  All the browsers
-      // that don't define window.event implement addEventListener
-      // so the dom_loaded handler will still be fired as usual.
-      if (!event) {
-        return undefined;
-      }
-      var ret = true;
-      var old_result, new_result;
-      if (_.isFunction(old_handlers)) {
-        old_result = old_handlers(event);
-      }
-      new_result = new_handler.call(element, event);
-      if (false === old_result || false === new_result) {
-        ret = false;
-      }
-      return ret;
-    };
-    return handler;
-  }
-  function fixEvent(event) {
-    if (event) {
-      event.preventDefault = fixEvent.preventDefault;
-      event.stopPropagation = fixEvent.stopPropagation;
-    }
-    return event;
-  }
-  fixEvent.preventDefault = function () {
-    this.returnValue = false;
-  };
-  fixEvent.stopPropagation = function () {
-    this.cancelBubble = true;
-  };
-  return register_event;
-}();
-var TOKEN_MATCH_REGEX = new RegExp('^(\\w*)\\[(\\w+)([=~\\|\\^\\$\\*]?)=?"?([^\\]"]*)"?\\]$');
-_.dom_query = function () {
-  /* document.getElementsBySelector(selector)
-  - returns an array of element objects from the current document
-  matching the CSS selector. Selectors can contain element names,
-  class names and ids and can be nested. For example:
-   elements = document.getElementsBySelector('div#main p a.external')
-   Will return an array of all 'a' elements with 'external' in their
-  class attribute that are contained inside 'p' elements that are
-  contained inside the 'div' element which has id="main"
-   New in version 0.4: Support for CSS2 and CSS3 attribute selectors:
-  See http://www.w3.org/TR/css3-selectors/#attribute-selectors
-   Version 0.4 - Simon Willison, March 25th 2003
-  -- Works in Phoenix 0.5, Mozilla 1.3, Opera 7, Internet Explorer 6, Internet Explorer 5 on Windows
-  -- Opera 7 fails
-   Version 0.5 - Carl Sverre, Jan 7th 2013
-  -- Now uses jQuery-esque `hasClass` for testing class name
-  equality.  This fixes a bug related to '-' characters being
-  considered not part of a 'word' in regex.
-  */
-
-  function getAllChildren(e) {
-    // Returns all children of element. Workaround required for IE5/Windows. Ugh.
-    return e.all ? e.all : e.getElementsByTagName('*');
-  }
-  var bad_whitespace = /[\t\r\n]/g;
-  function hasClass(elem, selector) {
-    var className = ' ' + selector + ' ';
-    return (' ' + elem.className + ' ').replace(bad_whitespace, ' ').indexOf(className) >= 0;
-  }
-  function getElementsBySelector(selector) {
-    // Attempt to fail gracefully in lesser browsers
-    if (!document$1.getElementsByTagName) {
-      return [];
-    }
-    // Split selector in to tokens
-    var tokens = selector.split(' ');
-    var token, bits, tagName, found, foundCount, i, j, k, elements, currentContextIndex;
-    var currentContext = [document$1];
-    for (i = 0; i < tokens.length; i++) {
-      token = tokens[i].replace(/^\s+/, '').replace(/\s+$/, '');
-      if (token.indexOf('#') > -1) {
-        // Token is an ID selector
-        bits = token.split('#');
-        tagName = bits[0];
-        var id = bits[1];
-        var element = document$1.getElementById(id);
-        if (!element || tagName && element.nodeName.toLowerCase() != tagName) {
-          // element not found or tag with that ID not found, return false
-          return [];
-        }
-        // Set currentContext to contain just this element
-        currentContext = [element];
-        continue; // Skip to next token
-      }
-
-      if (token.indexOf('.') > -1) {
-        // Token contains a class selector
-        bits = token.split('.');
-        tagName = bits[0];
-        var className = bits[1];
-        if (!tagName) {
-          tagName = '*';
-        }
-        // Get elements matching tag, filter them for class selector
-        found = [];
-        foundCount = 0;
-        for (j = 0; j < currentContext.length; j++) {
-          if (tagName == '*') {
-            elements = getAllChildren(currentContext[j]);
-          } else {
-            elements = currentContext[j].getElementsByTagName(tagName);
-          }
-          for (k = 0; k < elements.length; k++) {
-            found[foundCount++] = elements[k];
-          }
-        }
-        currentContext = [];
-        currentContextIndex = 0;
-        for (j = 0; j < found.length; j++) {
-          if (found[j].className && _.isString(found[j].className) &&
-          // some SVG elements have classNames which are not strings
-          hasClass(found[j], className)) {
-            currentContext[currentContextIndex++] = found[j];
-          }
-        }
-        continue; // Skip to next token
-      }
-      // Code to deal with attribute selectors
-      var token_match = token.match(TOKEN_MATCH_REGEX);
-      if (token_match) {
-        tagName = token_match[1];
-        var attrName = token_match[2];
-        var attrOperator = token_match[3];
-        var attrValue = token_match[4];
-        if (!tagName) {
-          tagName = '*';
-        }
-        // Grab all of the tagName elements within current context
-        found = [];
-        foundCount = 0;
-        for (j = 0; j < currentContext.length; j++) {
-          if (tagName == '*') {
-            elements = getAllChildren(currentContext[j]);
-          } else {
-            elements = currentContext[j].getElementsByTagName(tagName);
-          }
-          for (k = 0; k < elements.length; k++) {
-            found[foundCount++] = elements[k];
-          }
-        }
-        currentContext = [];
-        currentContextIndex = 0;
-        var checkFunction; // This function will be used to filter the elements
-        switch (attrOperator) {
-          case '=':
-            // Equality
-            checkFunction = function checkFunction(e) {
-              return e.getAttribute(attrName) == attrValue;
-            };
-            break;
-          case '~':
-            // Match one of space seperated words
-            checkFunction = function checkFunction(e) {
-              return e.getAttribute(attrName).match(new RegExp('\\b' + attrValue + '\\b'));
-            };
-            break;
-          case '|':
-            // Match start with value followed by optional hyphen
-            checkFunction = function checkFunction(e) {
-              return e.getAttribute(attrName).match(new RegExp('^' + attrValue + '-?'));
-            };
-            break;
-          case '^':
-            // Match starts with value
-            checkFunction = function checkFunction(e) {
-              return e.getAttribute(attrName).indexOf(attrValue) === 0;
-            };
-            break;
-          case '$':
-            // Match ends with value - fails with "Warning" in Opera 7
-            checkFunction = function checkFunction(e) {
-              return e.getAttribute(attrName).lastIndexOf(attrValue) == e.getAttribute(attrName).length - attrValue.length;
-            };
-            break;
-          case '*':
-            // Match ends with value
-            checkFunction = function checkFunction(e) {
-              return e.getAttribute(attrName).indexOf(attrValue) > -1;
-            };
-            break;
-          default:
-            // Just test for existence of attribute
-            checkFunction = function checkFunction(e) {
-              return e.getAttribute(attrName);
-            };
-        }
-        currentContext = [];
-        currentContextIndex = 0;
-        for (j = 0; j < found.length; j++) {
-          if (checkFunction(found[j])) {
-            currentContext[currentContextIndex++] = found[j];
-          }
-        }
-        // alert('Attribute Selector: '+tagName+' '+attrName+' '+attrOperator+' '+attrValue);
-        continue; // Skip to next token
-      }
-      // If we get here, token is JUST an element (not a class or ID selector)
-      tagName = token;
-      found = [];
-      foundCount = 0;
-      for (j = 0; j < currentContext.length; j++) {
-        elements = currentContext[j].getElementsByTagName(tagName);
-        for (k = 0; k < elements.length; k++) {
-          found[foundCount++] = elements[k];
-        }
-      }
-      currentContext = found;
-    }
-    return currentContext;
-  }
-  return function (query) {
-    if (_.isElement(query)) {
-      return [query];
-    } else if (_.isObject(query) && !_.isUndefined(query.length)) {
-      return query;
-    } else {
-      return getElementsBySelector.call(this, query);
-    }
-  };
-}();
-_.info = {
-  campaignParams: function campaignParams() {
-    var campaign_keywords = 'utm_source utm_medium utm_campaign utm_content utm_term'.split(' '),
-      kw = '',
-      params = {};
-    _.each(campaign_keywords, function (kwkey) {
-      kw = _.getQueryParam(document$1.URL, kwkey);
-      if (kw.length) {
-        params[kwkey] = kw;
-      }
-    });
-    return params;
-  },
-  searchEngine: function searchEngine(referrer) {
-    if (referrer.search('https?://(.*)google.([^/?]*)') === 0) {
-      return 'google';
-    } else if (referrer.search('https?://(.*)bing.com') === 0) {
-      return 'bing';
-    } else if (referrer.search('https?://(.*)yahoo.com') === 0) {
-      return 'yahoo';
-    } else if (referrer.search('https?://(.*)duckduckgo.com') === 0) {
-      return 'duckduckgo';
-    } else {
-      return null;
-    }
-  },
-  searchInfo: function searchInfo(referrer) {
-    var search = _.info.searchEngine(referrer),
-      param = search != 'yahoo' ? 'q' : 'p',
-      ret = {};
-    if (search !== null) {
-      ret['$search_engine'] = search;
-      var keyword = _.getQueryParam(referrer, param);
-      if (keyword.length) {
-        ret['mp_keyword'] = keyword;
-      }
-    }
-    return ret;
-  },
-  /**
-   * This function detects which browser is running this script.
-   * The order of the checks are important since many user agents
-   * include key words used in later checks.
-   */
-  browser: function browser(user_agent, vendor, opera) {
-    vendor = vendor || ''; // vendor is undefined for at least IE9
-    if (opera || _.includes(user_agent, ' OPR/')) {
-      if (_.includes(user_agent, 'Mini')) {
-        return 'Opera Mini';
-      }
-      return 'Opera';
-    } else if (/(BlackBerry|PlayBook|BB10)/i.test(user_agent)) {
-      return 'BlackBerry';
-    } else if (_.includes(user_agent, 'IEMobile') || _.includes(user_agent, 'WPDesktop')) {
-      return 'Internet Explorer Mobile';
-    } else if (_.includes(user_agent, 'SamsungBrowser/')) {
-      // https://developer.samsung.com/internet/user-agent-string-format
-      return 'Samsung Internet';
-    } else if (_.includes(user_agent, 'Edge') || _.includes(user_agent, 'Edg/')) {
-      return 'Microsoft Edge';
-    } else if (_.includes(user_agent, 'FBIOS')) {
-      return 'Facebook Mobile';
-    } else if (_.includes(user_agent, 'Chrome')) {
-      return 'Chrome';
-    } else if (_.includes(user_agent, 'CriOS')) {
-      return 'Chrome iOS';
-    } else if (_.includes(user_agent, 'UCWEB') || _.includes(user_agent, 'UCBrowser')) {
-      return 'UC Browser';
-    } else if (_.includes(user_agent, 'FxiOS')) {
-      return 'Firefox iOS';
-    } else if (_.includes(vendor, 'Apple')) {
-      if (_.includes(user_agent, 'Mobile')) {
-        return 'Mobile Safari';
-      }
-      return 'Safari';
-    } else if (_.includes(user_agent, 'Android')) {
-      return 'Android Mobile';
-    } else if (_.includes(user_agent, 'Konqueror')) {
-      return 'Konqueror';
-    } else if (_.includes(user_agent, 'Firefox')) {
-      return 'Firefox';
-    } else if (_.includes(user_agent, 'MSIE') || _.includes(user_agent, 'Trident/')) {
-      return 'Internet Explorer';
-    } else if (_.includes(user_agent, 'Gecko')) {
-      return 'Mozilla';
-    } else {
-      return '';
-    }
-  },
-  /**
-   * This function detects which browser version is running this script,
-   * parsing major and minor version (e.g., 42.1). User agent strings from:
-   * http://www.useragentstring.com/pages/useragentstring.php
-   */
-  browserVersion: function browserVersion(userAgent, vendor, opera) {
-    var browser = _.info.browser(userAgent, vendor, opera);
-    var versionRegexs = {
-      'Internet Explorer Mobile': /rv:(\d+(\.\d+)?)/,
-      'Microsoft Edge': /Edge?\/(\d+(\.\d+)?)/,
-      'Chrome': /Chrome\/(\d+(\.\d+)?)/,
-      'Chrome iOS': /CriOS\/(\d+(\.\d+)?)/,
-      'UC Browser': /(UCBrowser|UCWEB)\/(\d+(\.\d+)?)/,
-      'Safari': /Version\/(\d+(\.\d+)?)/,
-      'Mobile Safari': /Version\/(\d+(\.\d+)?)/,
-      'Opera': /(Opera|OPR)\/(\d+(\.\d+)?)/,
-      'Firefox': /Firefox\/(\d+(\.\d+)?)/,
-      'Firefox iOS': /FxiOS\/(\d+(\.\d+)?)/,
-      'Konqueror': /Konqueror:(\d+(\.\d+)?)/,
-      'BlackBerry': /BlackBerry (\d+(\.\d+)?)/,
-      'Android Mobile': /android\s(\d+(\.\d+)?)/,
-      'Samsung Internet': /SamsungBrowser\/(\d+(\.\d+)?)/,
-      'Internet Explorer': /(rv:|MSIE )(\d+(\.\d+)?)/,
-      'Mozilla': /rv:(\d+(\.\d+)?)/
-    };
-    var regex = versionRegexs[browser];
-    if (regex === undefined) {
-      return null;
-    }
-    var matches = userAgent.match(regex);
-    if (!matches) {
-      return null;
-    }
-    return parseFloat(matches[matches.length - 2]);
-  },
-  os: function os() {
-    var a = userAgent;
-    if (/Windows/i.test(a)) {
-      if (/Phone/.test(a) || /WPDesktop/.test(a)) {
-        return 'Windows Phone';
-      }
-      return 'Windows';
-    } else if (/(iPhone|iPad|iPod)/.test(a)) {
-      return 'iOS';
-    } else if (/Android/.test(a)) {
-      return 'Android';
-    } else if (/(BlackBerry|PlayBook|BB10)/i.test(a)) {
-      return 'BlackBerry';
-    } else if (/Mac/i.test(a)) {
-      return 'Mac OS X';
-    } else if (/Linux/.test(a)) {
-      return 'Linux';
-    } else if (/CrOS/.test(a)) {
-      return 'Chrome OS';
-    } else {
-      return '';
-    }
-  },
-  device: function device(user_agent) {
-    if (/Windows Phone/i.test(user_agent) || /WPDesktop/.test(user_agent)) {
-      return 'Windows Phone';
-    } else if (/iPad/.test(user_agent)) {
-      return 'iPad';
-    } else if (/iPod/.test(user_agent)) {
-      return 'iPod Touch';
-    } else if (/iPhone/.test(user_agent)) {
-      return 'iPhone';
-    } else if (/(BlackBerry|PlayBook|BB10)/i.test(user_agent)) {
-      return 'BlackBerry';
-    } else if (/Android/.test(user_agent)) {
-      return 'Android';
-    } else {
-      return '';
-    }
-  },
-  referringDomain: function referringDomain(referrer) {
-    var split = referrer.split('/');
-    if (split.length >= 3) {
-      return split[2];
-    }
-    return '';
-  },
-  properties: function properties() {
-    return _.extend(_.strip_empty_properties({
-      '$os': _.info.os(),
-      '$browser': _.info.browser(userAgent, navigator.vendor, windowOpera),
-      '$referrer': document$1.referrer,
-      '$referring_domain': _.info.referringDomain(document$1.referrer),
-      '$device': _.info.device(userAgent)
-    }), {
-      '$current_url': window$1.location.href,
-      '$browser_version': _.info.browserVersion(userAgent, navigator.vendor, windowOpera),
-      '$screen_height': screen.height,
-      '$screen_width': screen.width,
-      'mp_lib': 'web',
-      '$lib_version': Config.LIB_VERSION,
-      '$insert_id': cheap_guid(),
-      'time': _.timestamp() / 1000 // epoch time in seconds
-    });
-  },
-
-  people_properties: function people_properties() {
-    return _.extend(_.strip_empty_properties({
-      '$os': _.info.os(),
-      '$browser': _.info.browser(userAgent, navigator.vendor, windowOpera)
-    }), {
-      '$browser_version': _.info.browserVersion(userAgent, navigator.vendor, windowOpera)
-    });
-  },
-  pageviewInfo: function pageviewInfo(page) {
-    return _.strip_empty_properties({
-      'mp_page': page,
-      'mp_referrer': document$1.referrer,
-      'mp_browser': _.info.browser(userAgent, navigator.vendor, windowOpera),
-      'mp_platform': _.info.os()
-    });
-  }
-};
-var cheap_guid = function cheap_guid(maxlen) {
-  var guid = Math.random().toString(36).substring(2, 10) + Math.random().toString(36).substring(2, 10);
-  return maxlen ? guid.substring(0, maxlen) : guid;
-};
-
-// naive way to extract domain name (example.com) from full hostname (my.sub.example.com)
-var SIMPLE_DOMAIN_MATCH_REGEX = /[a-z0-9][a-z0-9-]*\.[a-z]+$/i;
-// this next one attempts to account for some ccSLDs, e.g. extracting oxford.ac.uk from www.oxford.ac.uk
-var DOMAIN_MATCH_REGEX = /[a-z0-9][a-z0-9-]+\.[a-z.]{2,6}$/i;
-/**
- * Attempts to extract main domain name from full hostname, using a few blunt heuristics. For
- * common TLDs like .com/.org that always have a simple SLD.TLD structure (example.com), we
- * simply extract the last two .-separated parts of the hostname (SIMPLE_DOMAIN_MATCH_REGEX).
- * For others, we attempt to account for short ccSLD+TLD combos (.ac.uk) with the legacy
- * DOMAIN_MATCH_REGEX (kept to maintain backwards compatibility with existing Mixpanel
- * integrations). The only _reliable_ way to extract domain from hostname is with an up-to-date
- * list like at https://publicsuffix.org/ so for cases that this helper fails at, the SDK
- * offers the 'cookie_domain' config option to set it explicitly.
- * @example
- * extract_domain('my.sub.example.com')
- * // 'example.com'
- */
-var extract_domain = function extract_domain(hostname) {
-  var domain_regex = DOMAIN_MATCH_REGEX;
-  var parts = hostname.split('.');
-  var tld = parts[parts.length - 1];
-  if (tld.length > 4 || tld === 'com' || tld === 'org') {
-    domain_regex = SIMPLE_DOMAIN_MATCH_REGEX;
-  }
-  var matches = hostname.match(domain_regex);
-  return matches ? matches[0] : '';
-};
-var JSONStringify = null;
-var JSONParse = null;
-if (typeof JSON !== 'undefined') {
-  JSONStringify = JSON.stringify;
-  JSONParse = JSON.parse;
-}
-JSONStringify = JSONStringify || _.JSONEncode;
-JSONParse = JSONParse || _.JSONDecode;
-
-// EXPORTS (for closure compiler)
-_['toArray'] = _.toArray;
-_['isObject'] = _.isObject;
-_['JSONEncode'] = _.JSONEncode;
-_['JSONDecode'] = _.JSONDecode;
-_['isBlockedUA'] = _.isBlockedUA;
-_['isEmptyObject'] = _.isEmptyObject;
-_['info'] = _.info;
-_['info']['device'] = _.info.device;
-_['info']['browser'] = _.info.browser;
-_['info']['browserVersion'] = _.info.browserVersion;
-_['info']['properties'] = _.info.properties;
-
-/**
- * DomTracker Object
- * @constructor
- */
-var DomTracker = function DomTracker() {};
-
-// interface
-DomTracker.prototype.create_properties = function () {};
-DomTracker.prototype.event_handler = function () {};
-DomTracker.prototype.after_track_handler = function () {};
-DomTracker.prototype.init = function (mixpanel_instance) {
-  this.mp = mixpanel_instance;
-  return this;
-};
-
-/**
- * @param {Object|string} query
- * @param {string} event_name
- * @param {Object=} properties
- * @param {function=} user_callback
- */
-DomTracker.prototype.track = function (query, event_name, properties, user_callback) {
-  var that = this;
-  var elements = _.dom_query(query);
-  if (elements.length === 0) {
-    console.error('The DOM query (' + query + ') returned 0 elements');
-    return;
-  }
-  _.each(elements, function (element) {
-    _.register_event(element, this.override_event, function (e) {
-      var options = {};
-      var props = that.create_properties(properties, this);
-      var timeout = that.mp.get_config('track_links_timeout');
-      that.event_handler(e, this, options);
-
-      // in case the mixpanel servers don't get back to us in time
-      window.setTimeout(that.track_callback(user_callback, props, options, true), timeout);
-
-      // fire the tracking event
-      that.mp.track(event_name, props, that.track_callback(user_callback, props, options));
-    });
-  }, this);
-  return true;
-};
-
-/**
- * @param {function} user_callback
- * @param {Object} props
- * @param {boolean=} timeout_occured
- */
-DomTracker.prototype.track_callback = function (user_callback, props, options, timeout_occured) {
-  timeout_occured = timeout_occured || false;
-  var that = this;
-  return function () {
-    // options is referenced from both callbacks, so we can have
-    // a 'lock' of sorts to ensure only one fires
-    if (options.callback_fired) {
-      return;
-    }
-    options.callback_fired = true;
-    if (user_callback && user_callback(timeout_occured, props) === false) {
-      // user can prevent the default functionality by
-      // returning false from their callback
-      return;
-    }
-    that.after_track_handler(props, options, timeout_occured);
-  };
-};
-DomTracker.prototype.create_properties = function (properties, element) {
-  var props;
-  if (typeof properties === 'function') {
-    props = properties(element);
-  } else {
-    props = _.extend({}, properties);
-  }
-  return props;
-};
-
-/**
- * LinkTracker Object
- * @constructor
- * @extends DomTracker
- */
-var LinkTracker = function LinkTracker() {
-  this.override_event = 'click';
-};
-_.inherit(LinkTracker, DomTracker);
-LinkTracker.prototype.create_properties = function (properties, element) {
-  var props = LinkTracker.superclass.create_properties.apply(this, arguments);
-  if (element.href) {
-    props['url'] = element.href;
-  }
-  return props;
-};
-LinkTracker.prototype.event_handler = function (evt, element, options) {
-  options.new_tab = evt.which === 2 || evt.metaKey || evt.ctrlKey || element.target === '_blank';
-  options.href = element.href;
-  if (!options.new_tab) {
-    evt.preventDefault();
-  }
-};
-LinkTracker.prototype.after_track_handler = function (props, options) {
-  if (options.new_tab) {
-    return;
-  }
-  setTimeout(function () {
-    window.location = options.href;
-  }, 0);
-};
-
-/**
- * FormTracker Object
- * @constructor
- * @extends DomTracker
- */
-var FormTracker = function FormTracker() {
-  this.override_event = 'submit';
-};
-_.inherit(FormTracker, DomTracker);
-FormTracker.prototype.event_handler = function (evt, element, options) {
-  options.element = element;
-  evt.preventDefault();
-};
-FormTracker.prototype.after_track_handler = function (props, options) {
-  setTimeout(function () {
-    options.element.submit();
-  }, 0);
-};
-
-// eslint-disable-line camelcase
-
-var logger$2 = console_with_prefix('lock');
-
-/**
- * SharedLock: a mutex built on HTML5 localStorage, to ensure that only one browser
- * window/tab at a time will be able to access shared resources.
- *
- * Based on the Alur and Taubenfeld fast lock
- * (http://www.cs.rochester.edu/research/synchronization/pseudocode/fastlock.html)
- * with an added timeout to ensure there will be eventual progress in the event
- * that a window is closed in the middle of the callback.
- *
- * Implementation based on the original version by David Wolever (https://github.com/wolever)
- * at https://gist.github.com/wolever/5fd7573d1ef6166e8f8c4af286a69432.
- *
- * @example
- * const myLock = new SharedLock('some-key');
- * myLock.withLock(function() {
- *   console.log('I hold the mutex!');
- * });
- *
- * @constructor
- */
-var SharedLock = function SharedLock(key, options) {
-  options = options || {};
-  this.storageKey = key;
-  this.storage = options.storage || window.localStorage;
-  this.pollIntervalMS = options.pollIntervalMS || 100;
-  this.timeoutMS = options.timeoutMS || 2000;
-};
-
-// pass in a specific pid to test contention scenarios; otherwise
-// it is chosen randomly for each acquisition attempt
-SharedLock.prototype.withLock = function (lockedCB, errorCB, pid) {
-  if (!pid && typeof errorCB !== 'function') {
-    pid = errorCB;
-    errorCB = null;
-  }
-  var i = pid || new Date().getTime() + '|' + Math.random();
-  var startTime = new Date().getTime();
-  var key = this.storageKey;
-  var pollIntervalMS = this.pollIntervalMS;
-  var timeoutMS = this.timeoutMS;
-  var storage = this.storage;
-  var keyX = key + ':X';
-  var keyY = key + ':Y';
-  var keyZ = key + ':Z';
-  var reportError = function reportError(err) {
-    errorCB && errorCB(err);
-  };
-  var delay = function delay(cb) {
-    if (new Date().getTime() - startTime > timeoutMS) {
-      logger$2.error('Timeout waiting for mutex on ' + key + '; clearing lock. [' + i + ']');
-      storage.removeItem(keyZ);
-      storage.removeItem(keyY);
-      loop();
-      return;
-    }
-    setTimeout(function () {
-      try {
-        cb();
-      } catch (err) {
-        reportError(err);
-      }
-    }, pollIntervalMS * (Math.random() + 0.1));
-  };
-  var waitFor = function waitFor(predicate, cb) {
-    if (predicate()) {
-      cb();
-    } else {
-      delay(function () {
-        waitFor(predicate, cb);
-      });
-    }
-  };
-  var getSetY = function getSetY() {
-    var valY = storage.getItem(keyY);
-    if (valY && valY !== i) {
-      // if Y == i then this process already has the lock (useful for test cases)
-      return false;
-    } else {
-      storage.setItem(keyY, i);
-      if (storage.getItem(keyY) === i) {
-        return true;
-      } else {
-        if (!localStorageSupported(storage, true)) {
-          throw new Error('localStorage support dropped while acquiring lock');
-        }
-        return false;
-      }
-    }
-  };
-  var loop = function loop() {
-    storage.setItem(keyX, i);
-    waitFor(getSetY, function () {
-      if (storage.getItem(keyX) === i) {
-        criticalSection();
-        return;
-      }
-      delay(function () {
-        if (storage.getItem(keyY) !== i) {
-          loop();
-          return;
-        }
-        waitFor(function () {
-          return !storage.getItem(keyZ);
-        }, criticalSection);
-      });
-    });
-  };
-  var criticalSection = function criticalSection() {
-    storage.setItem(keyZ, '1');
-    try {
-      lockedCB();
-    } finally {
-      storage.removeItem(keyZ);
-      if (storage.getItem(keyY) === i) {
-        storage.removeItem(keyY);
-      }
-      if (storage.getItem(keyX) === i) {
-        storage.removeItem(keyX);
-      }
-    }
-  };
-  try {
-    if (localStorageSupported(storage, true)) {
-      loop();
-    } else {
-      throw new Error('localStorage support check failed');
-    }
-  } catch (err) {
-    reportError(err);
-  }
-};
-
-// eslint-disable-line camelcase
-
-var logger$1 = console_with_prefix('batch');
-
-/**
- * RequestQueue: queue for batching API requests with localStorage backup for retries.
- * Maintains an in-memory queue which represents the source of truth for the current
- * page, but also writes all items out to a copy in the browser's localStorage, which
- * can be read on subsequent pageloads and retried. For batchability, all the request
- * items in the queue should be of the same type (events, people updates, group updates)
- * so they can be sent in a single request to the same API endpoint.
- *
- * LocalStorage keying and locking: In order for reloads and subsequent pageloads of
- * the same site to access the same persisted data, they must share the same localStorage
- * key (for instance based on project token and queue type). Therefore access to the
- * localStorage entry is guarded by an asynchronous mutex (SharedLock) to prevent
- * simultaneously open windows/tabs from overwriting each other's data (which would lead
- * to data loss in some situations).
- * @constructor
- */
-var RequestQueue = function RequestQueue(storageKey, options) {
-  options = options || {};
-  this.storageKey = storageKey;
-  this.storage = options.storage || window.localStorage;
-  this.reportError = options.errorReporter || _.bind(logger$1.error, logger$1);
-  this.lock = new SharedLock(storageKey, {
-    storage: this.storage
-  });
-  this.pid = options.pid || null; // pass pid to test out storage lock contention scenarios
-
-  this.memQueue = [];
-};
-
-/**
- * Add one item to queues (memory and localStorage). The queued entry includes
- * the given item along with an auto-generated ID and a "flush-after" timestamp.
- * It is expected that the item will be sent over the network and dequeued
- * before the flush-after time; if this doesn't happen it is considered orphaned
- * (e.g., the original tab where it was enqueued got closed before it could be
- * sent) and the item can be sent by any tab that finds it in localStorage.
- *
- * The final callback param is called with a param indicating success or
- * failure of the enqueue operation; it is asynchronous because the localStorage
- * lock is asynchronous.
- */
-RequestQueue.prototype.enqueue = function (item, flushInterval, cb) {
-  var queueEntry = {
-    'id': cheap_guid(),
-    'flushAfter': new Date().getTime() + flushInterval * 2,
-    'payload': item
-  };
-  this.lock.withLock(_.bind(function lockAcquired() {
-    var succeeded;
-    try {
-      var storedQueue = this.readFromStorage();
-      storedQueue.push(queueEntry);
-      succeeded = this.saveToStorage(storedQueue);
-      if (succeeded) {
-        // only add to in-memory queue when storage succeeds
-        this.memQueue.push(queueEntry);
-      }
-    } catch (err) {
-      this.reportError('Error enqueueing item', item);
-      succeeded = false;
-    }
-    if (cb) {
-      cb(succeeded);
-    }
-  }, this), _.bind(function lockFailure(err) {
-    this.reportError('Error acquiring storage lock', err);
-    if (cb) {
-      cb(false);
-    }
-  }, this), this.pid);
-};
-
-/**
- * Read out the given number of queue entries. If this.memQueue
- * has fewer than batchSize items, then look for "orphaned" items
- * in the persisted queue (items where the 'flushAfter' time has
- * already passed).
- */
-RequestQueue.prototype.fillBatch = function (batchSize) {
-  var batch = this.memQueue.slice(0, batchSize);
-  if (batch.length < batchSize) {
-    // don't need lock just to read events; localStorage is thread-safe
-    // and the worst that could happen is a duplicate send of some
-    // orphaned events, which will be deduplicated on the server side
-    var storedQueue = this.readFromStorage();
-    if (storedQueue.length) {
-      // item IDs already in batch; don't duplicate out of storage
-      var idsInBatch = {}; // poor man's Set
-      _.each(batch, function (item) {
-        idsInBatch[item['id']] = true;
-      });
-      for (var i = 0; i < storedQueue.length; i++) {
-        var item = storedQueue[i];
-        if (new Date().getTime() > item['flushAfter'] && !idsInBatch[item['id']]) {
-          item.orphaned = true;
-          batch.push(item);
-          if (batch.length >= batchSize) {
-            break;
-          }
-        }
-      }
-    }
-  }
-  return batch;
-};
-
-/**
- * Remove items with matching 'id' from array (immutably)
- * also remove any item without a valid id (e.g., malformed
- * storage entries).
- */
-var filterOutIDsAndInvalid = function filterOutIDsAndInvalid(items, idSet) {
-  var filteredItems = [];
-  _.each(items, function (item) {
-    if (item['id'] && !idSet[item['id']]) {
-      filteredItems.push(item);
-    }
-  });
-  return filteredItems;
-};
-
-/**
- * Remove items with matching IDs from both in-memory queue
- * and persisted queue
- */
-RequestQueue.prototype.removeItemsByID = function (ids, cb) {
-  var idSet = {}; // poor man's Set
-  _.each(ids, function (id) {
-    idSet[id] = true;
-  });
-  this.memQueue = filterOutIDsAndInvalid(this.memQueue, idSet);
-  var removeFromStorage = _.bind(function () {
-    var succeeded;
-    try {
-      var storedQueue = this.readFromStorage();
-      storedQueue = filterOutIDsAndInvalid(storedQueue, idSet);
-      succeeded = this.saveToStorage(storedQueue);
-
-      // an extra check: did storage report success but somehow
-      // the items are still there?
-      if (succeeded) {
-        storedQueue = this.readFromStorage();
-        for (var i = 0; i < storedQueue.length; i++) {
-          var item = storedQueue[i];
-          if (item['id'] && !!idSet[item['id']]) {
-            this.reportError('Item not removed from storage');
-            return false;
-          }
-        }
-      }
-    } catch (err) {
-      this.reportError('Error removing items', ids);
-      succeeded = false;
-    }
-    return succeeded;
-  }, this);
-  this.lock.withLock(function lockAcquired() {
-    var succeeded = removeFromStorage();
-    if (cb) {
-      cb(succeeded);
-    }
-  }, _.bind(function lockFailure(err) {
-    var succeeded = false;
-    this.reportError('Error acquiring storage lock', err);
-    if (!localStorageSupported(this.storage, true)) {
-      // Looks like localStorage writes have stopped working sometime after
-      // initialization (probably full), and so nobody can acquire locks
-      // anymore. Consider it temporarily safe to remove items without the
-      // lock, since nobody's writing successfully anyway.
-      succeeded = removeFromStorage();
-      if (!succeeded) {
-        // OK, we couldn't even write out the smaller queue. Try clearing it
-        // entirely.
-        try {
-          this.storage.removeItem(this.storageKey);
-        } catch (err) {
-          this.reportError('Error clearing queue', err);
-        }
-      }
-    }
-    if (cb) {
-      cb(succeeded);
-    }
-  }, this), this.pid);
-};
-
-// internal helper for RequestQueue.updatePayloads
-var updatePayloads = function updatePayloads(existingItems, itemsToUpdate) {
-  var newItems = [];
-  _.each(existingItems, function (item) {
-    var id = item['id'];
-    if (id in itemsToUpdate) {
-      var newPayload = itemsToUpdate[id];
-      if (newPayload !== null) {
-        item['payload'] = newPayload;
-        newItems.push(item);
-      }
-    } else {
-      // no update
-      newItems.push(item);
-    }
-  });
-  return newItems;
-};
-
-/**
- * Update payloads of given items in both in-memory queue and
- * persisted queue. Items set to null are removed from queues.
- */
-RequestQueue.prototype.updatePayloads = function (itemsToUpdate, cb) {
-  this.memQueue = updatePayloads(this.memQueue, itemsToUpdate);
-  this.lock.withLock(_.bind(function lockAcquired() {
-    var succeeded;
-    try {
-      var storedQueue = this.readFromStorage();
-      storedQueue = updatePayloads(storedQueue, itemsToUpdate);
-      succeeded = this.saveToStorage(storedQueue);
-    } catch (err) {
-      this.reportError('Error updating items', itemsToUpdate);
-      succeeded = false;
-    }
-    if (cb) {
-      cb(succeeded);
-    }
-  }, this), _.bind(function lockFailure(err) {
-    this.reportError('Error acquiring storage lock', err);
-    if (cb) {
-      cb(false);
-    }
-  }, this), this.pid);
-};
-
-/**
- * Read and parse items array from localStorage entry, handling
- * malformed/missing data if necessary.
- */
-RequestQueue.prototype.readFromStorage = function () {
-  var storageEntry;
-  try {
-    storageEntry = this.storage.getItem(this.storageKey);
-    if (storageEntry) {
-      storageEntry = JSONParse(storageEntry);
-      if (!_.isArray(storageEntry)) {
-        this.reportError('Invalid storage entry:', storageEntry);
-        storageEntry = null;
-      }
-    }
-  } catch (err) {
-    this.reportError('Error retrieving queue', err);
-    storageEntry = null;
-  }
-  return storageEntry || [];
-};
-
-/**
- * Serialize the given items array to localStorage.
- */
-RequestQueue.prototype.saveToStorage = function (queue) {
-  try {
-    this.storage.setItem(this.storageKey, JSONStringify(queue));
-    return true;
-  } catch (err) {
-    this.reportError('Error saving queue', err);
-    return false;
-  }
-};
-
-/**
- * Clear out queues (memory and localStorage).
- */
-RequestQueue.prototype.clear = function () {
-  this.memQueue = [];
-  this.storage.removeItem(this.storageKey);
-};
-
-// eslint-disable-line camelcase
-
-// maximum interval between request retries after exponential backoff
-var MAX_RETRY_INTERVAL_MS = 10 * 60 * 1000; // 10 minutes
-
-var logger = console_with_prefix('batch');
-
-/**
- * RequestBatcher: manages the queueing, flushing, retry etc of requests of one
- * type (events, people, groups).
- * Uses RequestQueue to manage the backing store.
- * @constructor
- */
-var RequestBatcher = function RequestBatcher(storageKey, options) {
-  this.errorReporter = options.errorReporter;
-  this.queue = new RequestQueue(storageKey, {
-    errorReporter: _.bind(this.reportError, this),
-    storage: options.storage
-  });
-  this.libConfig = options.libConfig;
-  this.sendRequest = options.sendRequestFunc;
-  this.beforeSendHook = options.beforeSendHook;
-  this.stopAllBatching = options.stopAllBatchingFunc;
-
-  // seed variable batch size + flush interval with configured values
-  this.batchSize = this.libConfig['batch_size'];
-  this.flushInterval = this.libConfig['batch_flush_interval_ms'];
-  this.stopped = !this.libConfig['batch_autostart'];
-  this.consecutiveRemovalFailures = 0;
-};
-
-/**
- * Add one item to queue.
- */
-RequestBatcher.prototype.enqueue = function (item, cb) {
-  this.queue.enqueue(item, this.flushInterval, cb);
-};
-
-/**
- * Start flushing batches at the configured time interval. Must call
- * this method upon SDK init in order to send anything over the network.
- */
-RequestBatcher.prototype.start = function () {
-  this.stopped = false;
-  this.consecutiveRemovalFailures = 0;
-  this.flush();
-};
-
-/**
- * Stop flushing batches. Can be restarted by calling start().
- */
-RequestBatcher.prototype.stop = function () {
-  this.stopped = true;
-  if (this.timeoutID) {
-    clearTimeout(this.timeoutID);
-    this.timeoutID = null;
-  }
-};
-
-/**
- * Clear out queue.
- */
-RequestBatcher.prototype.clear = function () {
-  this.queue.clear();
-};
-
-/**
- * Restore batch size configuration to whatever is set in the main SDK.
- */
-RequestBatcher.prototype.resetBatchSize = function () {
-  this.batchSize = this.libConfig['batch_size'];
-};
-
-/**
- * Restore flush interval time configuration to whatever is set in the main SDK.
- */
-RequestBatcher.prototype.resetFlush = function () {
-  this.scheduleFlush(this.libConfig['batch_flush_interval_ms']);
-};
-
-/**
- * Schedule the next flush in the given number of milliseconds.
- */
-RequestBatcher.prototype.scheduleFlush = function (flushMS) {
-  this.flushInterval = flushMS;
-  if (!this.stopped) {
-    // don't schedule anymore if batching has been stopped
-    this.timeoutID = setTimeout(_.bind(this.flush, this), this.flushInterval);
-  }
-};
-
-/**
- * Flush one batch to network. Depending on success/failure modes, it will either
- * remove the batch from the queue or leave it in for retry, and schedule the next
- * flush. In cases of most network or API failures, it will back off exponentially
- * when retrying.
- * @param {Object} [options]
- * @param {boolean} [options.sendBeacon] - whether to send batch with
- * navigator.sendBeacon (only useful for sending batches before page unloads, as
- * sendBeacon offers no callbacks or status indications)
- */
-RequestBatcher.prototype.flush = function (options) {
-  try {
-    if (this.requestInProgress) {
-      logger.log('Flush: Request already in progress');
-      return;
-    }
-    options = options || {};
-    var timeoutMS = this.libConfig['batch_request_timeout_ms'];
-    var startTime = new Date().getTime();
-    var currentBatchSize = this.batchSize;
-    var batch = this.queue.fillBatch(currentBatchSize);
-    var dataForRequest = [];
-    var transformedItems = {};
-    _.each(batch, function (item) {
-      var payload = item['payload'];
-      if (this.beforeSendHook && !item.orphaned) {
-        payload = this.beforeSendHook(payload);
-      }
-      if (payload) {
-        dataForRequest.push(payload);
-      }
-      transformedItems[item['id']] = payload;
-    }, this);
-    if (dataForRequest.length < 1) {
-      this.resetFlush();
-      return; // nothing to do
-    }
-
-    this.requestInProgress = true;
-    var batchSendCallback = _.bind(function (res) {
-      this.requestInProgress = false;
-      try {
-        // handle API response in a try-catch to make sure we can reset the
-        // flush operation if something goes wrong
-
-        var removeItemsFromQueue = false;
-        if (options.unloading) {
-          // update persisted data to include hook transformations
-          this.queue.updatePayloads(transformedItems);
-        } else if (_.isObject(res) && res.error === 'timeout' && new Date().getTime() - startTime >= timeoutMS) {
-          this.reportError('Network timeout; retrying');
-          this.flush();
-        } else if (_.isObject(res) && res.xhr_req && (res.xhr_req['status'] >= 500 || res.xhr_req['status'] === 429 || res.error === 'timeout')) {
-          // network or API error, or 429 Too Many Requests, retry
-          var retryMS = this.flushInterval * 2;
-          var headers = res.xhr_req['responseHeaders'];
-          if (headers) {
-            var retryAfter = headers['Retry-After'];
-            if (retryAfter) {
-              retryMS = parseInt(retryAfter, 10) * 1000 || retryMS;
-            }
-          }
-          retryMS = Math.min(MAX_RETRY_INTERVAL_MS, retryMS);
-          this.reportError('Error; retry in ' + retryMS + ' ms');
-          this.scheduleFlush(retryMS);
-        } else if (_.isObject(res) && res.xhr_req && res.xhr_req['status'] === 413) {
-          // 413 Payload Too Large
-          if (batch.length > 1) {
-            var halvedBatchSize = Math.max(1, Math.floor(currentBatchSize / 2));
-            this.batchSize = Math.min(this.batchSize, halvedBatchSize, batch.length - 1);
-            this.reportError('413 response; reducing batch size to ' + this.batchSize);
-            this.resetFlush();
-          } else {
-            this.reportError('Single-event request too large; dropping', batch);
-            this.resetBatchSize();
-            removeItemsFromQueue = true;
-          }
-        } else {
-          // successful network request+response; remove each item in batch from queue
-          // (even if it was e.g. a 400, in which case retrying won't help)
-          removeItemsFromQueue = true;
-        }
-        if (removeItemsFromQueue) {
-          this.queue.removeItemsByID(_.map(batch, function (item) {
-            return item['id'];
-          }), _.bind(function (succeeded) {
-            if (succeeded) {
-              this.consecutiveRemovalFailures = 0;
-              this.flush(); // handle next batch if the queue isn't empty
-            } else {
-              this.reportError('Failed to remove items from queue');
-              if (++this.consecutiveRemovalFailures > 5) {
-                this.reportError('Too many queue failures; disabling batching system.');
-                this.stopAllBatching();
-              } else {
-                this.resetFlush();
-              }
-            }
-          }, this));
-        }
-      } catch (err) {
-        this.reportError('Error handling API response', err);
-        this.resetFlush();
-      }
-    }, this);
-    var requestOptions = {
-      method: 'POST',
-      verbose: true,
-      ignore_json_errors: true,
-      // eslint-disable-line camelcase
-      timeout_ms: timeoutMS // eslint-disable-line camelcase
-    };
-
-    if (options.unloading) {
-      requestOptions.transport = 'sendBeacon';
-    }
-    logger.log('MIXPANEL REQUEST:', dataForRequest);
-    this.sendRequest(dataForRequest, requestOptions, batchSendCallback);
-  } catch (err) {
-    this.reportError('Error flushing request queue', err);
-    this.resetFlush();
-  }
-};
-
-/**
- * Log error to global logger and optional user-defined logger.
- */
-RequestBatcher.prototype.reportError = function (msg, err) {
-  logger.error.apply(logger.error, arguments);
-  if (this.errorReporter) {
-    try {
-      if (!(err instanceof Error)) {
-        err = new Error(msg);
-      }
-      this.errorReporter(msg, err);
-    } catch (err) {
-      logger.error(err);
-    }
-  }
-};
-
-/**
- * A function used to track a Mixpanel event (e.g. MixpanelLib.track)
- * @callback trackFunction
- * @param {String} event_name The name of the event. This can be anything the user does - 'Button Click', 'Sign Up', 'Item Purchased', etc.
- * @param {Object} [properties] A set of properties to include with the event you're sending. These describe the user who did the event or details about the event itself.
- * @param {Function} [callback] If provided, the callback function will be called after tracking the event.
- */
-
-/** Public **/
-
-var GDPR_DEFAULT_PERSISTENCE_PREFIX = '__mp_opt_in_out_';
-
-/**
- * Opt the user in to data tracking and cookies/localstorage for the given token
- * @param {string} token - Mixpanel project tracking token
- * @param {Object} [options]
- * @param {trackFunction} [options.track] - function used for tracking a Mixpanel event to record the opt-in action
- * @param {string} [options.trackEventName] - event name to be used for tracking the opt-in action
- * @param {Object} [options.trackProperties] - set of properties to be tracked along with the opt-in action
- * @param {string} [options.persistenceType] Persistence mechanism used - cookie or localStorage
- * @param {string} [options.persistencePrefix=__mp_opt_in_out] - custom prefix to be used in the cookie/localstorage name
- * @param {Number} [options.cookieExpiration] - number of days until the opt-in cookie expires
- * @param {string} [options.cookieDomain] - custom cookie domain
- * @param {boolean} [options.crossSiteCookie] - whether the opt-in cookie is set as cross-site-enabled
- * @param {boolean} [options.crossSubdomainCookie] - whether the opt-in cookie is set as cross-subdomain or not
- * @param {boolean} [options.secureCookie] - whether the opt-in cookie is set as secure or not
- */
-function optIn(token, options) {
-  _optInOut(true, token, options);
-}
-
-/**
- * Opt the user out of data tracking and cookies/localstorage for the given token
- * @param {string} token - Mixpanel project tracking token
- * @param {Object} [options]
- * @param {string} [options.persistenceType] Persistence mechanism used - cookie or localStorage
- * @param {string} [options.persistencePrefix=__mp_opt_in_out] - custom prefix to be used in the cookie/localstorage name
- * @param {Number} [options.cookieExpiration] - number of days until the opt-out cookie expires
- * @param {string} [options.cookieDomain] - custom cookie domain
- * @param {boolean} [options.crossSiteCookie] - whether the opt-in cookie is set as cross-site-enabled
- * @param {boolean} [options.crossSubdomainCookie] - whether the opt-out cookie is set as cross-subdomain or not
- * @param {boolean} [options.secureCookie] - whether the opt-out cookie is set as secure or not
- */
-function optOut(token, options) {
-  _optInOut(false, token, options);
-}
-
-/**
- * Check whether the user has opted in to data tracking and cookies/localstorage for the given token
- * @param {string} token - Mixpanel project tracking token
- * @param {Object} [options]
- * @param {string} [options.persistenceType] Persistence mechanism used - cookie or localStorage
- * @param {string} [options.persistencePrefix=__mp_opt_in_out] - custom prefix to be used in the cookie/localstorage name
- * @returns {boolean} whether the user has opted in to the given opt type
- */
-function hasOptedIn(token, options) {
-  return _getStorageValue(token, options) === '1';
-}
-
-/**
- * Check whether the user has opted out of data tracking and cookies/localstorage for the given token
- * @param {string} token - Mixpanel project tracking token
- * @param {Object} [options]
- * @param {string} [options.persistenceType] Persistence mechanism used - cookie or localStorage
- * @param {string} [options.persistencePrefix=__mp_opt_in_out] - custom prefix to be used in the cookie/localstorage name
- * @param {boolean} [options.ignoreDnt] - flag to ignore browser DNT settings and always return false
- * @returns {boolean} whether the user has opted out of the given opt type
- */
-function hasOptedOut(token, options) {
-  if (_hasDoNotTrackFlagOn(options)) {
-    console.warn('This browser has "Do Not Track" enabled. This will prevent the Mixpanel SDK from sending any data. To ignore the "Do Not Track" browser setting, initialize the Mixpanel instance with the config "ignore_dnt: true"');
-    return true;
-  }
-  var optedOut = _getStorageValue(token, options) === '0';
-  if (optedOut) {
-    console.warn('You are opted out of Mixpanel tracking. This will prevent the Mixpanel SDK from sending any data.');
-  }
-  return optedOut;
-}
-
-/**
- * Wrap a MixpanelLib method with a check for whether the user is opted out of data tracking and cookies/localstorage for the given token
- * If the user has opted out, return early instead of executing the method.
- * If a callback argument was provided, execute it passing the 0 error code.
- * @param {function} method - wrapped method to be executed if the user has not opted out
- * @returns {*} the result of executing method OR undefined if the user has opted out
- */
-function addOptOutCheckMixpanelLib(method) {
-  return _addOptOutCheck(method, function (name) {
-    return this.get_config(name);
-  });
-}
-
-/**
- * Wrap a MixpanelPeople method with a check for whether the user is opted out of data tracking and cookies/localstorage for the given token
- * If the user has opted out, return early instead of executing the method.
- * If a callback argument was provided, execute it passing the 0 error code.
- * @param {function} method - wrapped method to be executed if the user has not opted out
- * @returns {*} the result of executing method OR undefined if the user has opted out
- */
-function addOptOutCheckMixpanelPeople(method) {
-  return _addOptOutCheck(method, function (name) {
-    return this._get_config(name);
-  });
-}
-
-/**
- * Wrap a MixpanelGroup method with a check for whether the user is opted out of data tracking and cookies/localstorage for the given token
- * If the user has opted out, return early instead of executing the method.
- * If a callback argument was provided, execute it passing the 0 error code.
- * @param {function} method - wrapped method to be executed if the user has not opted out
- * @returns {*} the result of executing method OR undefined if the user has opted out
- */
-function addOptOutCheckMixpanelGroup(method) {
-  return _addOptOutCheck(method, function (name) {
-    return this._get_config(name);
-  });
-}
-
-/**
- * Clear the user's opt in/out status of data tracking and cookies/localstorage for the given token
- * @param {string} token - Mixpanel project tracking token
- * @param {Object} [options]
- * @param {string} [options.persistenceType] Persistence mechanism used - cookie or localStorage
- * @param {string} [options.persistencePrefix=__mp_opt_in_out] - custom prefix to be used in the cookie/localstorage name
- * @param {Number} [options.cookieExpiration] - number of days until the opt-in cookie expires
- * @param {string} [options.cookieDomain] - custom cookie domain
- * @param {boolean} [options.crossSiteCookie] - whether the opt-in cookie is set as cross-site-enabled
- * @param {boolean} [options.crossSubdomainCookie] - whether the opt-in cookie is set as cross-subdomain or not
- * @param {boolean} [options.secureCookie] - whether the opt-in cookie is set as secure or not
- */
-function clearOptInOut(token, options) {
-  options = options || {};
-  _getStorage(options).remove(_getStorageKey(token, options), !!options.crossSubdomainCookie, options.cookieDomain);
-}
-
-/** Private **/
-
-/**
- * Get storage util
- * @param {Object} [options]
- * @param {string} [options.persistenceType]
- * @returns {object} either _.cookie or _.localstorage
- */
-function _getStorage(options) {
-  options = options || {};
-  return options.persistenceType === 'localStorage' ? _.localStorage : _.cookie;
-}
-
-/**
- * Get the name of the cookie that is used for the given opt type (tracking, cookie, etc.)
- * @param {string} token - Mixpanel project tracking token
- * @param {Object} [options]
- * @param {string} [options.persistencePrefix=__mp_opt_in_out] - custom prefix to be used in the cookie/localstorage name
- * @returns {string} the name of the cookie for the given opt type
- */
-function _getStorageKey(token, options) {
-  options = options || {};
-  return (options.persistencePrefix || GDPR_DEFAULT_PERSISTENCE_PREFIX) + token;
-}
-
-/**
- * Get the value of the cookie that is used for the given opt type (tracking, cookie, etc.)
- * @param {string} token - Mixpanel project tracking token
- * @param {Object} [options]
- * @param {string} [options.persistencePrefix=__mp_opt_in_out] - custom prefix to be used in the cookie/localstorage name
- * @returns {string} the value of the cookie for the given opt type
- */
-function _getStorageValue(token, options) {
-  return _getStorage(options).get(_getStorageKey(token, options));
-}
-
-/**
- * Check whether the user has set the DNT/doNotTrack setting to true in their browser
- * @param {Object} [options]
- * @param {string} [options.window] - alternate window object to check; used to force various DNT settings in browser tests
- * @param {boolean} [options.ignoreDnt] - flag to ignore browser DNT settings and always return false
- * @returns {boolean} whether the DNT setting is true
- */
-function _hasDoNotTrackFlagOn(options) {
-  if (options && options.ignoreDnt) {
-    return false;
-  }
-  var win = options && options.window || window$1;
-  var nav = win['navigator'] || {};
-  var hasDntOn = false;
-  _.each([nav['doNotTrack'],
-  // standard
-  nav['msDoNotTrack'], win['doNotTrack']], function (dntValue) {
-    if (_.includes([true, 1, '1', 'yes'], dntValue)) {
-      hasDntOn = true;
-    }
-  });
-  return hasDntOn;
-}
-
-/**
- * Set cookie/localstorage for the user indicating that they are opted in or out for the given opt type
- * @param {boolean} optValue - whether to opt the user in or out for the given opt type
- * @param {string} token - Mixpanel project tracking token
- * @param {Object} [options]
- * @param {trackFunction} [options.track] - function used for tracking a Mixpanel event to record the opt-in action
- * @param {string} [options.trackEventName] - event name to be used for tracking the opt-in action
- * @param {Object} [options.trackProperties] - set of properties to be tracked along with the opt-in action
- * @param {string} [options.persistencePrefix=__mp_opt_in_out] - custom prefix to be used in the cookie/localstorage name
- * @param {Number} [options.cookieExpiration] - number of days until the opt-in cookie expires
- * @param {string} [options.cookieDomain] - custom cookie domain
- * @param {boolean} [options.crossSiteCookie] - whether the opt-in cookie is set as cross-site-enabled
- * @param {boolean} [options.crossSubdomainCookie] - whether the opt-in cookie is set as cross-subdomain or not
- * @param {boolean} [options.secureCookie] - whether the opt-in cookie is set as secure or not
- */
-function _optInOut(optValue, token, options) {
-  if (!_.isString(token) || !token.length) {
-    console.error('gdpr.' + (optValue ? 'optIn' : 'optOut') + ' called with an invalid token');
-    return;
-  }
-  options = options || {};
-  _getStorage(options).set(_getStorageKey(token, options), optValue ? 1 : 0, _.isNumber(options.cookieExpiration) ? options.cookieExpiration : null, !!options.crossSubdomainCookie, !!options.secureCookie, !!options.crossSiteCookie, options.cookieDomain);
-  if (options.track && optValue) {
-    // only track event if opting in (optValue=true)
-    options.track(options.trackEventName || '$opt_in', options.trackProperties, {
-      'send_immediately': true
-    });
-  }
-}
-
-/**
- * Wrap a method with a check for whether the user is opted out of data tracking and cookies/localstorage for the given token
- * If the user has opted out, return early instead of executing the method.
- * If a callback argument was provided, execute it passing the 0 error code.
- * @param {function} method - wrapped method to be executed if the user has not opted out
- * @param {function} getConfigValue - getter function for the Mixpanel API token and other options to be used with opt-out check
- * @returns {*} the result of executing method OR undefined if the user has opted out
- */
-function _addOptOutCheck(method, getConfigValue) {
-  return function () {
-    var optedOut = false;
-    try {
-      var token = getConfigValue.call(this, 'token');
-      var ignoreDnt = getConfigValue.call(this, 'ignore_dnt');
-      var persistenceType = getConfigValue.call(this, 'opt_out_tracking_persistence_type');
-      var persistencePrefix = getConfigValue.call(this, 'opt_out_tracking_cookie_prefix');
-      var win = getConfigValue.call(this, 'window'); // used to override window during browser tests
-
-      if (token) {
-        // if there was an issue getting the token, continue method execution as normal
-        optedOut = hasOptedOut(token, {
-          ignoreDnt: ignoreDnt,
-          persistenceType: persistenceType,
-          persistencePrefix: persistencePrefix,
-          window: win
-        });
-      }
-    } catch (err) {
-      console.error('Unexpected error when checking tracking opt-out status: ' + err);
-    }
-    if (!optedOut) {
-      return method.apply(this, arguments);
-    }
-    var callback = arguments[arguments.length - 1];
-    if (typeof callback === 'function') {
-      callback(0);
-    }
-    return;
-  };
-}
-
-/** @const */
-var SET_ACTION = '$set';
-/** @const */
-var SET_ONCE_ACTION = '$set_once';
-/** @const */
-var UNSET_ACTION = '$unset';
-/** @const */
-var ADD_ACTION = '$add';
-/** @const */
-var APPEND_ACTION = '$append';
-/** @const */
-var UNION_ACTION = '$union';
-/** @const */
-var REMOVE_ACTION = '$remove';
-/** @const */
-var DELETE_ACTION = '$delete';
-
-// Common internal methods for mixpanel.people and mixpanel.group APIs.
-// These methods shouldn't involve network I/O.
-var apiActions = {
-  set_action: function set_action(prop, to) {
-    var data = {};
-    var $set = {};
-    if (_.isObject(prop)) {
-      _.each(prop, function (v, k) {
-        if (!this._is_reserved_property(k)) {
-          $set[k] = v;
-        }
-      }, this);
-    } else {
-      $set[prop] = to;
-    }
-    data[SET_ACTION] = $set;
-    return data;
-  },
-  unset_action: function unset_action(prop) {
-    var data = {};
-    var $unset = [];
-    if (!_.isArray(prop)) {
-      prop = [prop];
-    }
-    _.each(prop, function (k) {
-      if (!this._is_reserved_property(k)) {
-        $unset.push(k);
-      }
-    }, this);
-    data[UNSET_ACTION] = $unset;
-    return data;
-  },
-  set_once_action: function set_once_action(prop, to) {
-    var data = {};
-    var $set_once = {};
-    if (_.isObject(prop)) {
-      _.each(prop, function (v, k) {
-        if (!this._is_reserved_property(k)) {
-          $set_once[k] = v;
-        }
-      }, this);
-    } else {
-      $set_once[prop] = to;
-    }
-    data[SET_ONCE_ACTION] = $set_once;
-    return data;
-  },
-  union_action: function union_action(list_name, values) {
-    var data = {};
-    var $union = {};
-    if (_.isObject(list_name)) {
-      _.each(list_name, function (v, k) {
-        if (!this._is_reserved_property(k)) {
-          $union[k] = _.isArray(v) ? v : [v];
-        }
-      }, this);
-    } else {
-      $union[list_name] = _.isArray(values) ? values : [values];
-    }
-    data[UNION_ACTION] = $union;
-    return data;
-  },
-  append_action: function append_action(list_name, value) {
-    var data = {};
-    var $append = {};
-    if (_.isObject(list_name)) {
-      _.each(list_name, function (v, k) {
-        if (!this._is_reserved_property(k)) {
-          $append[k] = v;
-        }
-      }, this);
-    } else {
-      $append[list_name] = value;
-    }
-    data[APPEND_ACTION] = $append;
-    return data;
-  },
-  remove_action: function remove_action(list_name, value) {
-    var data = {};
-    var $remove = {};
-    if (_.isObject(list_name)) {
-      _.each(list_name, function (v, k) {
-        if (!this._is_reserved_property(k)) {
-          $remove[k] = v;
-        }
-      }, this);
-    } else {
-      $remove[list_name] = value;
-    }
-    data[REMOVE_ACTION] = $remove;
-    return data;
-  },
-  delete_action: function delete_action() {
-    var data = {};
-    data[DELETE_ACTION] = '';
-    return data;
-  }
-};
-
-/**
- * Mixpanel Group Object
- * @constructor
- */
-var MixpanelGroup = function MixpanelGroup() {};
-_.extend(MixpanelGroup.prototype, apiActions);
-MixpanelGroup.prototype._init = function (mixpanel_instance, group_key, group_id) {
-  this._mixpanel = mixpanel_instance;
-  this._group_key = group_key;
-  this._group_id = group_id;
-};
-
-/**
- * Set properties on a group.
- *
- * ### Usage:
- *
- *     mixpanel.get_group('company', 'mixpanel').set('Location', '405 Howard');
- *
- *     // or set multiple properties at once
- *     mixpanel.get_group('company', 'mixpanel').set({
- *          'Location': '405 Howard',
- *          'Founded' : 2009,
- *     });
- *     // properties can be strings, integers, dates, or lists
- *
- * @param {Object|String} prop If a string, this is the name of the property. If an object, this is an associative array of names and values.
- * @param {*} [to] A value to set on the given property name
- * @param {Function} [callback] If provided, the callback will be called after the tracking event
- */
-MixpanelGroup.prototype.set = addOptOutCheckMixpanelGroup(function (prop, to, callback) {
-  var data = this.set_action(prop, to);
-  if (_.isObject(prop)) {
-    callback = to;
-  }
-  return this._send_request(data, callback);
-});
-
-/**
- * Set properties on a group, only if they do not yet exist.
- * This will not overwrite previous group property values, unlike
- * group.set().
- *
- * ### Usage:
- *
- *     mixpanel.get_group('company', 'mixpanel').set_once('Location', '405 Howard');
- *
- *     // or set multiple properties at once
- *     mixpanel.get_group('company', 'mixpanel').set_once({
- *          'Location': '405 Howard',
- *          'Founded' : 2009,
- *     });
- *     // properties can be strings, integers, lists or dates
- *
- * @param {Object|String} prop If a string, this is the name of the property. If an object, this is an associative array of names and values.
- * @param {*} [to] A value to set on the given property name
- * @param {Function} [callback] If provided, the callback will be called after the tracking event
- */
-MixpanelGroup.prototype.set_once = addOptOutCheckMixpanelGroup(function (prop, to, callback) {
-  var data = this.set_once_action(prop, to);
-  if (_.isObject(prop)) {
-    callback = to;
-  }
-  return this._send_request(data, callback);
-});
-
-/**
- * Unset properties on a group permanently.
- *
- * ### Usage:
- *
- *     mixpanel.get_group('company', 'mixpanel').unset('Founded');
- *
- * @param {String} prop The name of the property.
- * @param {Function} [callback] If provided, the callback will be called after the tracking event
- */
-MixpanelGroup.prototype.unset = addOptOutCheckMixpanelGroup(function (prop, callback) {
-  var data = this.unset_action(prop);
-  return this._send_request(data, callback);
-});
-
-/**
- * Merge a given list with a list-valued group property, excluding duplicate values.
- *
- * ### Usage:
- *
- *     // merge a value to a list, creating it if needed
- *     mixpanel.get_group('company', 'mixpanel').union('Location', ['San Francisco', 'London']);
- *
- * @param {String} list_name Name of the property.
- * @param {Array} values Values to merge with the given property
- * @param {Function} [callback] If provided, the callback will be called after the tracking event
- */
-MixpanelGroup.prototype.union = addOptOutCheckMixpanelGroup(function (list_name, values, callback) {
-  if (_.isObject(list_name)) {
-    callback = values;
-  }
-  var data = this.union_action(list_name, values);
-  return this._send_request(data, callback);
-});
-
-/**
- * Permanently delete a group.
- *
- * ### Usage:
- *
- *     mixpanel.get_group('company', 'mixpanel').delete();
- *
- * @param {Function} [callback] If provided, the callback will be called after the tracking event
- */
-MixpanelGroup.prototype['delete'] = addOptOutCheckMixpanelGroup(function (callback) {
-  // bracket notation above prevents a minification error related to reserved words
-  var data = this.delete_action();
-  return this._send_request(data, callback);
-});
-
-/**
- * Remove a property from a group. The value will be ignored if doesn't exist.
- *
- * ### Usage:
- *
- *     mixpanel.get_group('company', 'mixpanel').remove('Location', 'London');
- *
- * @param {String} list_name Name of the property.
- * @param {Object} value Value to remove from the given group property
- * @param {Function} [callback] If provided, the callback will be called after the tracking event
- */
-MixpanelGroup.prototype.remove = addOptOutCheckMixpanelGroup(function (list_name, value, callback) {
-  var data = this.remove_action(list_name, value);
-  return this._send_request(data, callback);
-});
-MixpanelGroup.prototype._send_request = function (data, callback) {
-  data['$group_key'] = this._group_key;
-  data['$group_id'] = this._group_id;
-  data['$token'] = this._get_config('token');
-  var date_encoded_data = _.encodeDates(data);
-  return this._mixpanel._track_or_batch({
-    type: 'groups',
-    data: date_encoded_data,
-    endpoint: this._get_config('api_host') + '/groups/',
-    batcher: this._mixpanel.request_batchers.groups
-  }, callback);
-};
-MixpanelGroup.prototype._is_reserved_property = function (prop) {
-  return prop === '$group_key' || prop === '$group_id';
-};
-MixpanelGroup.prototype._get_config = function (conf) {
-  return this._mixpanel.get_config(conf);
-};
-MixpanelGroup.prototype.toString = function () {
-  return this._mixpanel.toString() + '.group.' + this._group_key + '.' + this._group_id;
-};
-
-// MixpanelGroup Exports
-MixpanelGroup.prototype['remove'] = MixpanelGroup.prototype.remove;
-MixpanelGroup.prototype['set'] = MixpanelGroup.prototype.set;
-MixpanelGroup.prototype['set_once'] = MixpanelGroup.prototype.set_once;
-MixpanelGroup.prototype['union'] = MixpanelGroup.prototype.union;
-MixpanelGroup.prototype['unset'] = MixpanelGroup.prototype.unset;
-MixpanelGroup.prototype['toString'] = MixpanelGroup.prototype.toString;
-
-/**
- * Mixpanel People Object
- * @constructor
- */
-var MixpanelPeople = function MixpanelPeople() {};
-_.extend(MixpanelPeople.prototype, apiActions);
-MixpanelPeople.prototype._init = function (mixpanel_instance) {
-  this._mixpanel = mixpanel_instance;
-};
-
-/*
-* Set properties on a user record.
-*
-* ### Usage:
-*
-*     mixpanel.people.set('gender', 'm');
-*
-*     // or set multiple properties at once
-*     mixpanel.people.set({
-*         'Company': 'Acme',
-*         'Plan': 'Premium',
-*         'Upgrade date': new Date()
-*     });
-*     // properties can be strings, integers, dates, or lists
-*
-* @param {Object|String} prop If a string, this is the name of the property. If an object, this is an associative array of names and values.
-* @param {*} [to] A value to set on the given property name
-* @param {Function} [callback] If provided, the callback will be called after tracking the event.
-*/
-MixpanelPeople.prototype.set = addOptOutCheckMixpanelPeople(function (prop, to, callback) {
-  var data = this.set_action(prop, to);
-  if (_.isObject(prop)) {
-    callback = to;
-  }
-  // make sure that the referrer info has been updated and saved
-  if (this._get_config('save_referrer')) {
-    this._mixpanel['persistence'].update_referrer_info(document.referrer);
-  }
-
-  // update $set object with default people properties
-  data[SET_ACTION] = _.extend({}, _.info.people_properties(), this._mixpanel['persistence'].get_referrer_info(), data[SET_ACTION]);
-  return this._send_request(data, callback);
-});
-
-/*
-* Set properties on a user record, only if they do not yet exist.
-* This will not overwrite previous people property values, unlike
-* people.set().
-*
-* ### Usage:
-*
-*     mixpanel.people.set_once('First Login Date', new Date());
-*
-*     // or set multiple properties at once
-*     mixpanel.people.set_once({
-*         'First Login Date': new Date(),
-*         'Starting Plan': 'Premium'
-*     });
-*
-*     // properties can be strings, integers or dates
-*
-* @param {Object|String} prop If a string, this is the name of the property. If an object, this is an associative array of names and values.
-* @param {*} [to] A value to set on the given property name
-* @param {Function} [callback] If provided, the callback will be called after tracking the event.
-*/
-MixpanelPeople.prototype.set_once = addOptOutCheckMixpanelPeople(function (prop, to, callback) {
-  var data = this.set_once_action(prop, to);
-  if (_.isObject(prop)) {
-    callback = to;
-  }
-  return this._send_request(data, callback);
-});
-
-/*
-* Unset properties on a user record (permanently removes the properties and their values from a profile).
-*
-* ### Usage:
-*
-*     mixpanel.people.unset('gender');
-*
-*     // or unset multiple properties at once
-*     mixpanel.people.unset(['gender', 'Company']);
-*
-* @param {Array|String} prop If a string, this is the name of the property. If an array, this is a list of property names.
-* @param {Function} [callback] If provided, the callback will be called after tracking the event.
-*/
-MixpanelPeople.prototype.unset = addOptOutCheckMixpanelPeople(function (prop, callback) {
-  var data = this.unset_action(prop);
-  return this._send_request(data, callback);
-});
-
-/*
-* Increment/decrement numeric people analytics properties.
-*
-* ### Usage:
-*
-*     mixpanel.people.increment('page_views', 1);
-*
-*     // or, for convenience, if you're just incrementing a counter by
-*     // 1, you can simply do
-*     mixpanel.people.increment('page_views');
-*
-*     // to decrement a counter, pass a negative number
-*     mixpanel.people.increment('credits_left', -1);
-*
-*     // like mixpanel.people.set(), you can increment multiple
-*     // properties at once:
-*     mixpanel.people.increment({
-*         counter1: 1,
-*         counter2: 6
-*     });
-*
-* @param {Object|String} prop If a string, this is the name of the property. If an object, this is an associative array of names and numeric values.
-* @param {Number} [by] An amount to increment the given property
-* @param {Function} [callback] If provided, the callback will be called after tracking the event.
-*/
-MixpanelPeople.prototype.increment = addOptOutCheckMixpanelPeople(function (prop, by, callback) {
-  var data = {};
-  var $add = {};
-  if (_.isObject(prop)) {
-    _.each(prop, function (v, k) {
-      if (!this._is_reserved_property(k)) {
-        if (isNaN(parseFloat(v))) {
-          console.error('Invalid increment value passed to mixpanel.people.increment - must be a number');
-          return;
-        } else {
-          $add[k] = v;
-        }
-      }
-    }, this);
-    callback = by;
-  } else {
-    // convenience: mixpanel.people.increment('property'); will
-    // increment 'property' by 1
-    if (_.isUndefined(by)) {
-      by = 1;
-    }
-    $add[prop] = by;
-  }
-  data[ADD_ACTION] = $add;
-  return this._send_request(data, callback);
-});
-
-/*
-* Append a value to a list-valued people analytics property.
-*
-* ### Usage:
-*
-*     // append a value to a list, creating it if needed
-*     mixpanel.people.append('pages_visited', 'homepage');
-*
-*     // like mixpanel.people.set(), you can append multiple
-*     // properties at once:
-*     mixpanel.people.append({
-*         list1: 'bob',
-*         list2: 123
-*     });
-*
-* @param {Object|String} list_name If a string, this is the name of the property. If an object, this is an associative array of names and values.
-* @param {*} [value] value An item to append to the list
-* @param {Function} [callback] If provided, the callback will be called after tracking the event.
-*/
-MixpanelPeople.prototype.append = addOptOutCheckMixpanelPeople(function (list_name, value, callback) {
-  if (_.isObject(list_name)) {
-    callback = value;
-  }
-  var data = this.append_action(list_name, value);
-  return this._send_request(data, callback);
-});
-
-/*
-* Remove a value from a list-valued people analytics property.
-*
-* ### Usage:
-*
-*     mixpanel.people.remove('School', 'UCB');
-*
-* @param {Object|String} list_name If a string, this is the name of the property. If an object, this is an associative array of names and values.
-* @param {*} [value] value Item to remove from the list
-* @param {Function} [callback] If provided, the callback will be called after tracking the event.
-*/
-MixpanelPeople.prototype.remove = addOptOutCheckMixpanelPeople(function (list_name, value, callback) {
-  if (_.isObject(list_name)) {
-    callback = value;
-  }
-  var data = this.remove_action(list_name, value);
-  return this._send_request(data, callback);
-});
-
-/*
-* Merge a given list with a list-valued people analytics property,
-* excluding duplicate values.
-*
-* ### Usage:
-*
-*     // merge a value to a list, creating it if needed
-*     mixpanel.people.union('pages_visited', 'homepage');
-*
-*     // like mixpanel.people.set(), you can append multiple
-*     // properties at once:
-*     mixpanel.people.union({
-*         list1: 'bob',
-*         list2: 123
-*     });
-*
-*     // like mixpanel.people.append(), you can append multiple
-*     // values to the same list:
-*     mixpanel.people.union({
-*         list1: ['bob', 'billy']
-*     });
-*
-* @param {Object|String} list_name If a string, this is the name of the property. If an object, this is an associative array of names and values.
-* @param {*} [value] Value / values to merge with the given property
-* @param {Function} [callback] If provided, the callback will be called after tracking the event.
-*/
-MixpanelPeople.prototype.union = addOptOutCheckMixpanelPeople(function (list_name, values, callback) {
-  if (_.isObject(list_name)) {
-    callback = values;
-  }
-  var data = this.union_action(list_name, values);
-  return this._send_request(data, callback);
-});
-
-/*
-* Record that you have charged the current user a certain amount
-* of money. Charges recorded with track_charge() will appear in the
-* Mixpanel revenue report.
-*
-* ### Usage:
-*
-*     // charge a user $50
-*     mixpanel.people.track_charge(50);
-*
-*     // charge a user $30.50 on the 2nd of january
-*     mixpanel.people.track_charge(30.50, {
-*         '$time': new Date('jan 1 2012')
-*     });
-*
-* @param {Number} amount The amount of money charged to the current user
-* @param {Object} [properties] An associative array of properties associated with the charge
-* @param {Function} [callback] If provided, the callback will be called when the server responds
-*/
-MixpanelPeople.prototype.track_charge = addOptOutCheckMixpanelPeople(function (amount, properties, callback) {
-  if (!_.isNumber(amount)) {
-    amount = parseFloat(amount);
-    if (isNaN(amount)) {
-      console.error('Invalid value passed to mixpanel.people.track_charge - must be a number');
-      return;
-    }
-  }
-  return this.append('$transactions', _.extend({
-    '$amount': amount
-  }, properties), callback);
-});
-
-/*
-* Permanently clear all revenue report transactions from the
-* current user's people analytics profile.
-*
-* ### Usage:
-*
-*     mixpanel.people.clear_charges();
-*
-* @param {Function} [callback] If provided, the callback will be called after tracking the event.
-*/
-MixpanelPeople.prototype.clear_charges = function (callback) {
-  return this.set('$transactions', [], callback);
-};
-
-/*
-* Permanently deletes the current people analytics profile from
-* Mixpanel (using the current distinct_id).
-*
-* ### Usage:
-*
-*     // remove the all data you have stored about the current user
-*     mixpanel.people.delete_user();
-*
-*/
-MixpanelPeople.prototype.delete_user = function () {
-  if (!this._identify_called()) {
-    console.error('mixpanel.people.delete_user() requires you to call identify() first');
-    return;
-  }
-  var data = {
-    '$delete': this._mixpanel.get_distinct_id()
-  };
-  return this._send_request(data);
-};
-MixpanelPeople.prototype.toString = function () {
-  return this._mixpanel.toString() + '.people';
-};
-MixpanelPeople.prototype._send_request = function (data, callback) {
-  data['$token'] = this._get_config('token');
-  data['$distinct_id'] = this._mixpanel.get_distinct_id();
-  var device_id = this._mixpanel.get_property('$device_id');
-  var user_id = this._mixpanel.get_property('$user_id');
-  var had_persisted_distinct_id = this._mixpanel.get_property('$had_persisted_distinct_id');
-  if (device_id) {
-    data['$device_id'] = device_id;
-  }
-  if (user_id) {
-    data['$user_id'] = user_id;
-  }
-  if (had_persisted_distinct_id) {
-    data['$had_persisted_distinct_id'] = had_persisted_distinct_id;
-  }
-  var date_encoded_data = _.encodeDates(data);
-  if (!this._identify_called()) {
-    this._enqueue(data);
-    if (!_.isUndefined(callback)) {
-      if (this._get_config('verbose')) {
-        callback({
-          status: -1,
-          error: null
-        });
-      } else {
-        callback(-1);
-      }
-    }
-    return _.truncate(date_encoded_data, 255);
-  }
-  return this._mixpanel._track_or_batch({
-    type: 'people',
-    data: date_encoded_data,
-    endpoint: this._get_config('api_host') + '/engage/',
-    batcher: this._mixpanel.request_batchers.people
-  }, callback);
-};
-MixpanelPeople.prototype._get_config = function (conf_var) {
-  return this._mixpanel.get_config(conf_var);
-};
-MixpanelPeople.prototype._identify_called = function () {
-  return this._mixpanel._flags.identify_called === true;
-};
-
-// Queue up engage operations if identify hasn't been called yet.
-MixpanelPeople.prototype._enqueue = function (data) {
-  if (SET_ACTION in data) {
-    this._mixpanel['persistence']._add_to_people_queue(SET_ACTION, data);
-  } else if (SET_ONCE_ACTION in data) {
-    this._mixpanel['persistence']._add_to_people_queue(SET_ONCE_ACTION, data);
-  } else if (UNSET_ACTION in data) {
-    this._mixpanel['persistence']._add_to_people_queue(UNSET_ACTION, data);
-  } else if (ADD_ACTION in data) {
-    this._mixpanel['persistence']._add_to_people_queue(ADD_ACTION, data);
-  } else if (APPEND_ACTION in data) {
-    this._mixpanel['persistence']._add_to_people_queue(APPEND_ACTION, data);
-  } else if (REMOVE_ACTION in data) {
-    this._mixpanel['persistence']._add_to_people_queue(REMOVE_ACTION, data);
-  } else if (UNION_ACTION in data) {
-    this._mixpanel['persistence']._add_to_people_queue(UNION_ACTION, data);
-  } else {
-    console.error('Invalid call to _enqueue():', data);
-  }
-};
-MixpanelPeople.prototype._flush_one_queue = function (action, action_method, callback, queue_to_params_fn) {
-  var _this = this;
-  var queued_data = _.extend({}, this._mixpanel['persistence']._get_queue(action));
-  var action_params = queued_data;
-  if (!_.isUndefined(queued_data) && _.isObject(queued_data) && !_.isEmptyObject(queued_data)) {
-    _this._mixpanel['persistence']._pop_from_people_queue(action, queued_data);
-    if (queue_to_params_fn) {
-      action_params = queue_to_params_fn(queued_data);
-    }
-    action_method.call(_this, action_params, function (response, data) {
-      // on bad response, we want to add it back to the queue
-      if (response === 0) {
-        _this._mixpanel['persistence']._add_to_people_queue(action, queued_data);
-      }
-      if (!_.isUndefined(callback)) {
-        callback(response, data);
-      }
-    });
-  }
-};
-
-// Flush queued engage operations - order does not matter,
-// and there are network level race conditions anyway
-MixpanelPeople.prototype._flush = function (_set_callback, _add_callback, _append_callback, _set_once_callback, _union_callback, _unset_callback, _remove_callback) {
-  var _this = this;
-  var $append_queue = this._mixpanel['persistence']._get_queue(APPEND_ACTION);
-  var $remove_queue = this._mixpanel['persistence']._get_queue(REMOVE_ACTION);
-  this._flush_one_queue(SET_ACTION, this.set, _set_callback);
-  this._flush_one_queue(SET_ONCE_ACTION, this.set_once, _set_once_callback);
-  this._flush_one_queue(UNSET_ACTION, this.unset, _unset_callback, function (queue) {
-    return _.keys(queue);
-  });
-  this._flush_one_queue(ADD_ACTION, this.increment, _add_callback);
-  this._flush_one_queue(UNION_ACTION, this.union, _union_callback);
-
-  // we have to fire off each $append individually since there is
-  // no concat method server side
-  if (!_.isUndefined($append_queue) && _.isArray($append_queue) && $append_queue.length) {
-    var $append_item;
-    var append_callback = function append_callback(response, data) {
-      if (response === 0) {
-        _this._mixpanel['persistence']._add_to_people_queue(APPEND_ACTION, $append_item);
-      }
-      if (!_.isUndefined(_append_callback)) {
-        _append_callback(response, data);
-      }
-    };
-    for (var i = $append_queue.length - 1; i >= 0; i--) {
-      $append_item = $append_queue.pop();
-      if (!_.isEmptyObject($append_item)) {
-        _this.append($append_item, append_callback);
-      }
-    }
-    // Save the shortened append queue
-    _this._mixpanel['persistence'].save();
-  }
-
-  // same for $remove
-  if (!_.isUndefined($remove_queue) && _.isArray($remove_queue) && $remove_queue.length) {
-    var $remove_item;
-    var remove_callback = function remove_callback(response, data) {
-      if (response === 0) {
-        _this._mixpanel['persistence']._add_to_people_queue(REMOVE_ACTION, $remove_item);
-      }
-      if (!_.isUndefined(_remove_callback)) {
-        _remove_callback(response, data);
-      }
-    };
-    for (var j = $remove_queue.length - 1; j >= 0; j--) {
-      $remove_item = $remove_queue.pop();
-      if (!_.isEmptyObject($remove_item)) {
-        _this.remove($remove_item, remove_callback);
-      }
-    }
-    _this._mixpanel['persistence'].save();
-  }
-};
-MixpanelPeople.prototype._is_reserved_property = function (prop) {
-  return prop === '$distinct_id' || prop === '$token' || prop === '$device_id' || prop === '$user_id' || prop === '$had_persisted_distinct_id';
-};
-
-// MixpanelPeople Exports
-MixpanelPeople.prototype['set'] = MixpanelPeople.prototype.set;
-MixpanelPeople.prototype['set_once'] = MixpanelPeople.prototype.set_once;
-MixpanelPeople.prototype['unset'] = MixpanelPeople.prototype.unset;
-MixpanelPeople.prototype['increment'] = MixpanelPeople.prototype.increment;
-MixpanelPeople.prototype['append'] = MixpanelPeople.prototype.append;
-MixpanelPeople.prototype['remove'] = MixpanelPeople.prototype.remove;
-MixpanelPeople.prototype['union'] = MixpanelPeople.prototype.union;
-MixpanelPeople.prototype['track_charge'] = MixpanelPeople.prototype.track_charge;
-MixpanelPeople.prototype['clear_charges'] = MixpanelPeople.prototype.clear_charges;
-MixpanelPeople.prototype['delete_user'] = MixpanelPeople.prototype.delete_user;
-MixpanelPeople.prototype['toString'] = MixpanelPeople.prototype.toString;
-
-/*
- * Constants
- */
-/** @const */
-var SET_QUEUE_KEY = '__mps';
-/** @const */
-var SET_ONCE_QUEUE_KEY = '__mpso';
-/** @const */
-var UNSET_QUEUE_KEY = '__mpus';
-/** @const */
-var ADD_QUEUE_KEY = '__mpa';
-/** @const */
-var APPEND_QUEUE_KEY = '__mpap';
-/** @const */
-var REMOVE_QUEUE_KEY = '__mpr';
-/** @const */
-var UNION_QUEUE_KEY = '__mpu';
-// This key is deprecated, but we want to check for it to see whether aliasing is allowed.
-/** @const */
-var PEOPLE_DISTINCT_ID_KEY = '$people_distinct_id';
-/** @const */
-var ALIAS_ID_KEY = '__alias';
-/** @const */
-var EVENT_TIMERS_KEY = '__timers';
-/** @const */
-var RESERVED_PROPERTIES = [SET_QUEUE_KEY, SET_ONCE_QUEUE_KEY, UNSET_QUEUE_KEY, ADD_QUEUE_KEY, APPEND_QUEUE_KEY, REMOVE_QUEUE_KEY, UNION_QUEUE_KEY, PEOPLE_DISTINCT_ID_KEY, ALIAS_ID_KEY, EVENT_TIMERS_KEY];
-
-/**
- * Mixpanel Persistence Object
- * @constructor
- */
-var MixpanelPersistence = function MixpanelPersistence(config) {
-  this['props'] = {};
-  this.campaign_params_saved = false;
-  if (config['persistence_name']) {
-    this.name = 'mp_' + config['persistence_name'];
-  } else {
-    this.name = 'mp_' + config['token'] + '_mixpanel';
-  }
-  var storage_type = config['persistence'];
-  if (storage_type !== 'cookie' && storage_type !== 'localStorage') {
-    console.critical('Unknown persistence type ' + storage_type + '; falling back to cookie');
-    storage_type = config['persistence'] = 'cookie';
-  }
-  if (storage_type === 'localStorage' && _.localStorage.is_supported()) {
-    this.storage = _.localStorage;
-  } else {
-    this.storage = _.cookie;
-  }
-  this.load();
-  this.update_config(config);
-  this.upgrade(config);
-  this.save();
-};
-MixpanelPersistence.prototype.properties = function () {
-  var p = {};
-  // Filter out reserved properties
-  _.each(this['props'], function (v, k) {
-    if (!_.include(RESERVED_PROPERTIES, k)) {
-      p[k] = v;
-    }
-  });
-  return p;
-};
-MixpanelPersistence.prototype.load = function () {
-  if (this.disabled) {
-    return;
-  }
-  var entry = this.storage.parse(this.name);
-  if (entry) {
-    this['props'] = _.extend({}, entry);
-  }
-};
-MixpanelPersistence.prototype.upgrade = function (config) {
-  var upgrade_from_old_lib = config['upgrade'],
-    old_cookie_name,
-    old_cookie;
-  if (upgrade_from_old_lib) {
-    old_cookie_name = 'mp_super_properties';
-    // Case where they had a custom cookie name before.
-    if (typeof upgrade_from_old_lib === 'string') {
-      old_cookie_name = upgrade_from_old_lib;
-    }
-    old_cookie = this.storage.parse(old_cookie_name);
-
-    // remove the cookie
-    this.storage.remove(old_cookie_name);
-    this.storage.remove(old_cookie_name, true);
-    if (old_cookie) {
-      this['props'] = _.extend(this['props'], old_cookie['all'], old_cookie['events']);
-    }
-  }
-  if (!config['cookie_name'] && config['name'] !== 'mixpanel') {
-    // special case to handle people with cookies of the form
-    // mp_TOKEN_INSTANCENAME from the first release of this library
-    old_cookie_name = 'mp_' + config['token'] + '_' + config['name'];
-    old_cookie = this.storage.parse(old_cookie_name);
-    if (old_cookie) {
-      this.storage.remove(old_cookie_name);
-      this.storage.remove(old_cookie_name, true);
-
-      // Save the prop values that were in the cookie from before -
-      // this should only happen once as we delete the old one.
-      this.register_once(old_cookie);
-    }
-  }
-  if (this.storage === _.localStorage) {
-    old_cookie = _.cookie.parse(this.name);
-    _.cookie.remove(this.name);
-    _.cookie.remove(this.name, true);
-    if (old_cookie) {
-      this.register_once(old_cookie);
-    }
-  }
-};
-MixpanelPersistence.prototype.save = function () {
-  if (this.disabled) {
-    return;
-  }
-  this.storage.set(this.name, _.JSONEncode(this['props']), this.expire_days, this.cross_subdomain, this.secure, this.cross_site, this.cookie_domain);
-};
-MixpanelPersistence.prototype.remove = function () {
-  // remove both domain and subdomain cookies
-  this.storage.remove(this.name, false, this.cookie_domain);
-  this.storage.remove(this.name, true, this.cookie_domain);
-};
-
-// removes the storage entry and deletes all loaded data
-// forced name for tests
-MixpanelPersistence.prototype.clear = function () {
-  this.remove();
-  this['props'] = {};
-};
-
-/**
-* @param {Object} props
-* @param {*=} default_value
-* @param {number=} days
-*/
-MixpanelPersistence.prototype.register_once = function (props, default_value, days) {
-  if (_.isObject(props)) {
-    if (typeof default_value === 'undefined') {
-      default_value = 'None';
-    }
-    this.expire_days = typeof days === 'undefined' ? this.default_expiry : days;
-    _.each(props, function (val, prop) {
-      if (!this['props'].hasOwnProperty(prop) || this['props'][prop] === default_value) {
-        this['props'][prop] = val;
-      }
-    }, this);
-    this.save();
-    return true;
-  }
-  return false;
-};
-
-/**
-* @param {Object} props
-* @param {number=} days
-*/
-MixpanelPersistence.prototype.register = function (props, days) {
-  if (_.isObject(props)) {
-    this.expire_days = typeof days === 'undefined' ? this.default_expiry : days;
-    _.extend(this['props'], props);
-    this.save();
-    return true;
-  }
-  return false;
-};
-MixpanelPersistence.prototype.unregister = function (prop) {
-  if (prop in this['props']) {
-    delete this['props'][prop];
-    this.save();
-  }
-};
-MixpanelPersistence.prototype.update_campaign_params = function () {
-  if (!this.campaign_params_saved) {
-    this.register_once(_.info.campaignParams());
-    this.campaign_params_saved = true;
-  }
-};
-MixpanelPersistence.prototype.update_search_keyword = function (referrer) {
-  this.register(_.info.searchInfo(referrer));
-};
-
-// EXPORTED METHOD, we test this directly.
-MixpanelPersistence.prototype.update_referrer_info = function (referrer) {
-  // If referrer doesn't exist, we want to note the fact that it was type-in traffic.
-  this.register_once({
-    '$initial_referrer': referrer || '$direct',
-    '$initial_referring_domain': _.info.referringDomain(referrer) || '$direct'
-  }, '');
-};
-MixpanelPersistence.prototype.get_referrer_info = function () {
-  return _.strip_empty_properties({
-    '$initial_referrer': this['props']['$initial_referrer'],
-    '$initial_referring_domain': this['props']['$initial_referring_domain']
-  });
-};
-
-// safely fills the passed in object with stored properties,
-// does not override any properties defined in both
-// returns the passed in object
-MixpanelPersistence.prototype.safe_merge = function (props) {
-  _.each(this['props'], function (val, prop) {
-    if (!(prop in props)) {
-      props[prop] = val;
-    }
-  });
-  return props;
-};
-MixpanelPersistence.prototype.update_config = function (config) {
-  this.default_expiry = this.expire_days = config['cookie_expiration'];
-  this.set_disabled(config['disable_persistence']);
-  this.set_cookie_domain(config['cookie_domain']);
-  this.set_cross_site(config['cross_site_cookie']);
-  this.set_cross_subdomain(config['cross_subdomain_cookie']);
-  this.set_secure(config['secure_cookie']);
-};
-MixpanelPersistence.prototype.set_disabled = function (disabled) {
-  this.disabled = disabled;
-  if (this.disabled) {
-    this.remove();
-  } else {
-    this.save();
-  }
-};
-MixpanelPersistence.prototype.set_cookie_domain = function (cookie_domain) {
-  if (cookie_domain !== this.cookie_domain) {
-    this.remove();
-    this.cookie_domain = cookie_domain;
-    this.save();
-  }
-};
-MixpanelPersistence.prototype.set_cross_site = function (cross_site) {
-  if (cross_site !== this.cross_site) {
-    this.cross_site = cross_site;
-    this.remove();
-    this.save();
-  }
-};
-MixpanelPersistence.prototype.set_cross_subdomain = function (cross_subdomain) {
-  if (cross_subdomain !== this.cross_subdomain) {
-    this.cross_subdomain = cross_subdomain;
-    this.remove();
-    this.save();
-  }
-};
-MixpanelPersistence.prototype.get_cross_subdomain = function () {
-  return this.cross_subdomain;
-};
-MixpanelPersistence.prototype.set_secure = function (secure) {
-  if (secure !== this.secure) {
-    this.secure = secure ? true : false;
-    this.remove();
-    this.save();
-  }
-};
-MixpanelPersistence.prototype._add_to_people_queue = function (queue, data) {
-  var q_key = this._get_queue_key(queue),
-    q_data = data[queue],
-    set_q = this._get_or_create_queue(SET_ACTION),
-    set_once_q = this._get_or_create_queue(SET_ONCE_ACTION),
-    unset_q = this._get_or_create_queue(UNSET_ACTION),
-    add_q = this._get_or_create_queue(ADD_ACTION),
-    union_q = this._get_or_create_queue(UNION_ACTION),
-    remove_q = this._get_or_create_queue(REMOVE_ACTION, []),
-    append_q = this._get_or_create_queue(APPEND_ACTION, []);
-  if (q_key === SET_QUEUE_KEY) {
-    // Update the set queue - we can override any existing values
-    _.extend(set_q, q_data);
-    // if there was a pending increment, override it
-    // with the set.
-    this._pop_from_people_queue(ADD_ACTION, q_data);
-    // if there was a pending union, override it
-    // with the set.
-    this._pop_from_people_queue(UNION_ACTION, q_data);
-    this._pop_from_people_queue(UNSET_ACTION, q_data);
-  } else if (q_key === SET_ONCE_QUEUE_KEY) {
-    // only queue the data if there is not already a set_once call for it.
-    _.each(q_data, function (v, k) {
-      if (!(k in set_once_q)) {
-        set_once_q[k] = v;
-      }
-    });
-    this._pop_from_people_queue(UNSET_ACTION, q_data);
-  } else if (q_key === UNSET_QUEUE_KEY) {
-    _.each(q_data, function (prop) {
-      // undo previously-queued actions on this key
-      _.each([set_q, set_once_q, add_q, union_q], function (enqueued_obj) {
-        if (prop in enqueued_obj) {
-          delete enqueued_obj[prop];
-        }
-      });
-      _.each(append_q, function (append_obj) {
-        if (prop in append_obj) {
-          delete append_obj[prop];
-        }
-      });
-      unset_q[prop] = true;
-    });
-  } else if (q_key === ADD_QUEUE_KEY) {
-    _.each(q_data, function (v, k) {
-      // If it exists in the set queue, increment
-      // the value
-      if (k in set_q) {
-        set_q[k] += v;
-      } else {
-        // If it doesn't exist, update the add
-        // queue
-        if (!(k in add_q)) {
-          add_q[k] = 0;
-        }
-        add_q[k] += v;
-      }
-    }, this);
-    this._pop_from_people_queue(UNSET_ACTION, q_data);
-  } else if (q_key === UNION_QUEUE_KEY) {
-    _.each(q_data, function (v, k) {
-      if (_.isArray(v)) {
-        if (!(k in union_q)) {
-          union_q[k] = [];
-        }
-        // We may send duplicates, the server will dedup them.
-        union_q[k] = union_q[k].concat(v);
-      }
-    });
-    this._pop_from_people_queue(UNSET_ACTION, q_data);
-  } else if (q_key === REMOVE_QUEUE_KEY) {
-    remove_q.push(q_data);
-    this._pop_from_people_queue(APPEND_ACTION, q_data);
-  } else if (q_key === APPEND_QUEUE_KEY) {
-    append_q.push(q_data);
-    this._pop_from_people_queue(UNSET_ACTION, q_data);
-  }
-  console.log('MIXPANEL PEOPLE REQUEST (QUEUED, PENDING IDENTIFY):');
-  console.log(data);
-  this.save();
-};
-MixpanelPersistence.prototype._pop_from_people_queue = function (queue, data) {
-  var q = this._get_queue(queue);
-  if (!_.isUndefined(q)) {
-    _.each(data, function (v, k) {
-      if (queue === APPEND_ACTION || queue === REMOVE_ACTION) {
-        // list actions: only remove if both k+v match
-        // e.g. remove should not override append in a case like
-        // append({foo: 'bar'}); remove({foo: 'qux'})
-        _.each(q, function (queued_action) {
-          if (queued_action[k] === v) {
-            delete queued_action[k];
-          }
-        });
-      } else {
-        delete q[k];
-      }
-    }, this);
-    this.save();
-  }
-};
-MixpanelPersistence.prototype._get_queue_key = function (queue) {
-  if (queue === SET_ACTION) {
-    return SET_QUEUE_KEY;
-  } else if (queue === SET_ONCE_ACTION) {
-    return SET_ONCE_QUEUE_KEY;
-  } else if (queue === UNSET_ACTION) {
-    return UNSET_QUEUE_KEY;
-  } else if (queue === ADD_ACTION) {
-    return ADD_QUEUE_KEY;
-  } else if (queue === APPEND_ACTION) {
-    return APPEND_QUEUE_KEY;
-  } else if (queue === REMOVE_ACTION) {
-    return REMOVE_QUEUE_KEY;
-  } else if (queue === UNION_ACTION) {
-    return UNION_QUEUE_KEY;
-  } else {
-    console.error('Invalid queue:', queue);
-  }
-};
-MixpanelPersistence.prototype._get_queue = function (queue) {
-  return this['props'][this._get_queue_key(queue)];
-};
-MixpanelPersistence.prototype._get_or_create_queue = function (queue, default_val) {
-  var key = this._get_queue_key(queue);
-  default_val = _.isUndefined(default_val) ? {} : default_val;
-  return this['props'][key] || (this['props'][key] = default_val);
-};
-MixpanelPersistence.prototype.set_event_timer = function (event_name, timestamp) {
-  var timers = this['props'][EVENT_TIMERS_KEY] || {};
-  timers[event_name] = timestamp;
-  this['props'][EVENT_TIMERS_KEY] = timers;
-  this.save();
-};
-MixpanelPersistence.prototype.remove_event_timer = function (event_name) {
-  var timers = this['props'][EVENT_TIMERS_KEY] || {};
-  var timestamp = timers[event_name];
-  if (!_.isUndefined(timestamp)) {
-    delete this['props'][EVENT_TIMERS_KEY][event_name];
-    this.save();
-  }
-  return timestamp;
-};
-
-/*
- * Mixpanel JS Library
- *
- * Copyright 2012, Mixpanel, Inc. All Rights Reserved
- * http://mixpanel.com/
- *
- * Includes portions of Underscore.js
- * http://documentcloud.github.com/underscore/
- * (c) 2011 Jeremy Ashkenas, DocumentCloud Inc.
- * Released under the MIT License.
- */
-
-// ==ClosureCompiler==
-// @compilation_level ADVANCED_OPTIMIZATIONS
-// @output_file_name mixpanel-2.8.min.js
-// ==/ClosureCompiler==
-
-/*
-SIMPLE STYLE GUIDE:
-
-this.x === public function
-this._x === internal - only use within this file
-this.__x === private - only use within the class
-
-Globals should be all caps
-*/
-
-var init_type; // MODULE or SNIPPET loader
-var mixpanel_master; // main mixpanel instance / object
-var INIT_MODULE = 0;
-var INIT_SNIPPET = 1;
-var IDENTITY_FUNC = function IDENTITY_FUNC(x) {
-  return x;
-};
-var NOOP_FUNC = function NOOP_FUNC() {};
-
-/** @const */
-var PRIMARY_INSTANCE_NAME = 'mixpanel';
-/** @const */
-var PAYLOAD_TYPE_BASE64 = 'base64';
-/** @const */
-var PAYLOAD_TYPE_JSON = 'json';
-
-/*
- * Dynamic... constants? Is that an oxymoron?
- */
-// http://hacks.mozilla.org/2009/07/cross-site-xmlhttprequest-with-cors/
-// https://developer.mozilla.org/en-US/docs/DOM/XMLHttpRequest#withCredentials
-var USE_XHR = window$1.XMLHttpRequest && 'withCredentials' in new XMLHttpRequest();
-
-// IE<10 does not support cross-origin XHR's but script tags
-// with defer won't block window.onload; ENQUEUE_REQUESTS
-// should only be true for Opera<12
-var ENQUEUE_REQUESTS = !USE_XHR && userAgent.indexOf('MSIE') === -1 && userAgent.indexOf('Mozilla') === -1;
-
-// save reference to navigator.sendBeacon so it can be minified
-var sendBeacon = null;
-if (navigator['sendBeacon']) {
-  sendBeacon = function sendBeacon() {
-    // late reference to navigator.sendBeacon to allow patching/spying
-    return navigator['sendBeacon'].apply(navigator, arguments);
-  };
-}
-
-/*
- * Module-level globals
- */
-var DEFAULT_CONFIG = {
-  'api_host': 'https://api-js.mixpanel.com',
-  'api_method': 'POST',
-  'api_transport': 'XHR',
-  'api_payload_format': PAYLOAD_TYPE_BASE64,
-  'app_host': 'https://mixpanel.com',
-  'cdn': 'https://cdn.mxpnl.com',
-  'cross_site_cookie': false,
-  'cross_subdomain_cookie': true,
-  'error_reporter': NOOP_FUNC,
-  'persistence': 'cookie',
-  'persistence_name': '',
-  'cookie_domain': '',
-  'cookie_name': '',
-  'loaded': NOOP_FUNC,
-  'store_google': true,
-  'save_referrer': true,
-  'test': false,
-  'verbose': false,
-  'img': false,
-  'debug': false,
-  'track_links_timeout': 300,
-  'cookie_expiration': 365,
-  'upgrade': false,
-  'disable_persistence': false,
-  'disable_cookie': false,
-  'secure_cookie': false,
-  'ip': true,
-  'opt_out_tracking_by_default': false,
-  'opt_out_persistence_by_default': false,
-  'opt_out_tracking_persistence_type': 'localStorage',
-  'opt_out_tracking_cookie_prefix': null,
-  'property_blacklist': [],
-  'xhr_headers': {},
-  // { header: value, header2: value }
-  'ignore_dnt': false,
-  'batch_requests': true,
-  'batch_size': 50,
-  'batch_flush_interval_ms': 5000,
-  'batch_request_timeout_ms': 90000,
-  'batch_autostart': true,
-  'hooks': {}
-};
-var DOM_LOADED = false;
-
-/**
- * Mixpanel Library Object
- * @constructor
- */
-var MixpanelLib = function MixpanelLib() {};
-
-/**
- * create_mplib(token:string, config:object, name:string)
- *
- * This function is used by the init method of MixpanelLib objects
- * as well as the main initializer at the end of the JSLib (that
- * initializes document.mixpanel as well as any additional instances
- * declared before this file has loaded).
- */
-var create_mplib = function create_mplib(token, config, name) {
-  var instance,
-    target = name === PRIMARY_INSTANCE_NAME ? mixpanel_master : mixpanel_master[name];
-  if (target && init_type === INIT_MODULE) {
-    instance = target;
-  } else {
-    if (target && !_.isArray(target)) {
-      console.error('You have already initialized ' + name);
-      return;
-    }
-    instance = new MixpanelLib();
-  }
-  instance._cached_groups = {}; // cache groups in a pool
-
-  instance._init(token, config, name);
-  instance['people'] = new MixpanelPeople();
-  instance['people']._init(instance);
-
-  // if any instance on the page has debug = true, we set the
-  // global debug to be true
-  Config.DEBUG = Config.DEBUG || instance.get_config('debug');
-
-  // if target is not defined, we called init after the lib already
-  // loaded, so there won't be an array of things to execute
-  if (!_.isUndefined(target) && _.isArray(target)) {
-    // Crunch through the people queue first - we queue this data up &
-    // flush on identify, so it's better to do all these operations first
-    instance._execute_array.call(instance['people'], target['people']);
-    instance._execute_array(target);
-  }
-  return instance;
-};
-
-// Initialization methods
-
-/**
- * This function initializes a new instance of the Mixpanel tracking object.
- * All new instances are added to the main mixpanel object as sub properties (such as
- * mixpanel.library_name) and also returned by this function. To define a
- * second instance on the page, you would call:
- *
- *     mixpanel.init('new token', { your: 'config' }, 'library_name');
- *
- * and use it like so:
- *
- *     mixpanel.library_name.track(...);
- *
- * @param {String} token   Your Mixpanel API token
- * @param {Object} [config]  A dictionary of config options to override. <a href="https://github.com/mixpanel/mixpanel-js/blob/8b2e1f7b/src/mixpanel-core.js#L87-L110">See a list of default config options</a>.
- * @param {String} [name]    The name for the new mixpanel instance that you want created
- */
-MixpanelLib.prototype.init = function (token, config, name) {
-  if (_.isUndefined(name)) {
-    this.report_error('You must name your new library: init(token, config, name)');
-    return;
-  }
-  if (name === PRIMARY_INSTANCE_NAME) {
-    this.report_error('You must initialize the main mixpanel object right after you include the Mixpanel js snippet');
-    return;
-  }
-  var instance = create_mplib(token, config, name);
-  mixpanel_master[name] = instance;
-  instance._loaded();
-  return instance;
-};
-
-// mixpanel._init(token:string, config:object, name:string)
-//
-// This function sets up the current instance of the mixpanel
-// library.  The difference between this method and the init(...)
-// method is this one initializes the actual instance, whereas the
-// init(...) method sets up a new library and calls _init on it.
-//
-MixpanelLib.prototype._init = function (token, config, name) {
-  config = config || {};
-  this['__loaded'] = true;
-  this['config'] = {};
-  var variable_features = {};
-
-  // default to JSON payload for standard mixpanel.com API hosts
-  if (!('api_payload_format' in config)) {
-    var api_host = config['api_host'] || DEFAULT_CONFIG['api_host'];
-    if (api_host.match(/\.mixpanel\.com$/)) {
-      variable_features['api_payload_format'] = PAYLOAD_TYPE_JSON;
-    }
-  }
-  this.set_config(_.extend({}, DEFAULT_CONFIG, variable_features, config, {
-    'name': name,
-    'token': token,
-    'callback_fn': (name === PRIMARY_INSTANCE_NAME ? name : PRIMARY_INSTANCE_NAME + '.' + name) + '._jsc'
-  }));
-  this['_jsc'] = NOOP_FUNC;
-  this.__dom_loaded_queue = [];
-  this.__request_queue = [];
-  this.__disabled_events = [];
-  this._flags = {
-    'disable_all_events': false,
-    'identify_called': false
-  };
-
-  // set up request queueing/batching
-  this.request_batchers = {};
-  this._batch_requests = this.get_config('batch_requests');
-  if (this._batch_requests) {
-    if (!_.localStorage.is_supported(true) || !USE_XHR) {
-      this._batch_requests = false;
-      console.log('Turning off Mixpanel request-queueing; needs XHR and localStorage support');
-    } else {
-      this.init_batchers();
-      if (sendBeacon && window$1.addEventListener) {
-        // Before page closes or hides (user tabs away etc), attempt to flush any events
-        // queued up via navigator.sendBeacon. Since sendBeacon doesn't report success/failure,
-        // events will not be removed from the persistent store; if the site is loaded again,
-        // the events will be flushed again on startup and deduplicated on the Mixpanel server
-        // side.
-        // There is no reliable way to capture only page close events, so we lean on the
-        // visibilitychange and pagehide events as recommended at
-        // https://developer.mozilla.org/en-US/docs/Web/API/Window/unload_event#usage_notes.
-        // These events fire when the user clicks away from the current page/tab, so will occur
-        // more frequently than page unload, but are the only mechanism currently for capturing
-        // this scenario somewhat reliably.
-        var flush_on_unload = _.bind(function () {
-          if (!this.request_batchers.events.stopped) {
-            this.request_batchers.events.flush({
-              unloading: true
-            });
-          }
-        }, this);
-        window$1.addEventListener('pagehide', function (ev) {
-          if (ev['persisted']) {
-            flush_on_unload();
-          }
-        });
-        window$1.addEventListener('visibilitychange', function () {
-          if (document$1['visibilityState'] === 'hidden') {
-            flush_on_unload();
-          }
-        });
-      }
-    }
-  }
-  this['persistence'] = this['cookie'] = new MixpanelPersistence(this['config']);
-  this.unpersisted_superprops = {};
-  this._gdpr_init();
-  var uuid = _.UUID();
-  if (!this.get_distinct_id()) {
-    // There is no need to set the distinct id
-    // or the device id if something was already stored
-    // in the persitence
-    this.register_once({
-      'distinct_id': uuid,
-      '$device_id': uuid
-    }, '');
-  }
-};
-
-// Private methods
-
-MixpanelLib.prototype._loaded = function () {
-  this.get_config('loaded')(this);
-  this._set_default_superprops();
-};
-
-// update persistence with info on referrer, UTM params, etc
-MixpanelLib.prototype._set_default_superprops = function () {
-  this['persistence'].update_search_keyword(document$1.referrer);
-  if (this.get_config('store_google')) {
-    this['persistence'].update_campaign_params();
-  }
-  if (this.get_config('save_referrer')) {
-    this['persistence'].update_referrer_info(document$1.referrer);
-  }
-};
-MixpanelLib.prototype._dom_loaded = function () {
-  _.each(this.__dom_loaded_queue, function (item) {
-    this._track_dom.apply(this, item);
-  }, this);
-  if (!this.has_opted_out_tracking()) {
-    _.each(this.__request_queue, function (item) {
-      this._send_request.apply(this, item);
-    }, this);
-  }
-  delete this.__dom_loaded_queue;
-  delete this.__request_queue;
-};
-MixpanelLib.prototype._track_dom = function (DomClass, args) {
-  if (this.get_config('img')) {
-    this.report_error('You can\'t use DOM tracking functions with img = true.');
-    return false;
-  }
-  if (!DOM_LOADED) {
-    this.__dom_loaded_queue.push([DomClass, args]);
-    return false;
-  }
-  var dt = new DomClass().init(this);
-  return dt.track.apply(dt, args);
-};
-
-/**
- * _prepare_callback() should be called by callers of _send_request for use
- * as the callback argument.
- *
- * If there is no callback, this returns null.
- * If we are going to make XHR/XDR requests, this returns a function.
- * If we are going to use script tags, this returns a string to use as the
- * callback GET param.
- */
-MixpanelLib.prototype._prepare_callback = function (callback, data) {
-  if (_.isUndefined(callback)) {
-    return null;
-  }
-  if (USE_XHR) {
-    var callback_function = function callback_function(response) {
-      callback(response, data);
-    };
-    return callback_function;
-  } else {
-    // if the user gives us a callback, we store as a random
-    // property on this instances jsc function and update our
-    // callback string to reflect that.
-    var jsc = this['_jsc'];
-    var randomized_cb = '' + Math.floor(Math.random() * 100000000);
-    var callback_string = this.get_config('callback_fn') + '[' + randomized_cb + ']';
-    jsc[randomized_cb] = function (response) {
-      delete jsc[randomized_cb];
-      callback(response, data);
-    };
-    return callback_string;
-  }
-};
-MixpanelLib.prototype._send_request = function (url, data, options, callback) {
-  var succeeded = true;
-  if (ENQUEUE_REQUESTS) {
-    this.__request_queue.push(arguments);
-    return succeeded;
-  }
-  var DEFAULT_OPTIONS = {
-    method: this.get_config('api_method'),
-    transport: this.get_config('api_transport'),
-    verbose: this.get_config('verbose')
-  };
-  var body_data = null;
-  if (!callback && (_.isFunction(options) || typeof options === 'string')) {
-    callback = options;
-    options = null;
-  }
-  options = _.extend(DEFAULT_OPTIONS, options || {});
-  if (!USE_XHR) {
-    options.method = 'GET';
-  }
-  var use_post = options.method === 'POST';
-  var use_sendBeacon = sendBeacon && use_post && options.transport.toLowerCase() === 'sendbeacon';
-
-  // needed to correctly format responses
-  var verbose_mode = options.verbose;
-  if (data['verbose']) {
-    verbose_mode = true;
-  }
-  if (this.get_config('test')) {
-    data['test'] = 1;
-  }
-  if (verbose_mode) {
-    data['verbose'] = 1;
-  }
-  if (this.get_config('img')) {
-    data['img'] = 1;
-  }
-  if (!USE_XHR) {
-    if (callback) {
-      data['callback'] = callback;
-    } else if (verbose_mode || this.get_config('test')) {
-      // Verbose output (from verbose mode, or an error in test mode) is a json blob,
-      // which by itself is not valid javascript. Without a callback, this verbose output will
-      // cause an error when returned via jsonp, so we force a no-op callback param.
-      // See the ECMA script spec: http://www.ecma-international.org/ecma-262/5.1/#sec-12.4
-      data['callback'] = '(function(){})';
-    }
-  }
-  data['ip'] = this.get_config('ip') ? 1 : 0;
-  data['_'] = new Date().getTime().toString();
-  if (use_post) {
-    body_data = 'data=' + encodeURIComponent(data['data']);
-    delete data['data'];
-  }
-  url += '?' + _.HTTPBuildQuery(data);
-  var lib = this;
-  if ('img' in data) {
-    var img = document$1.createElement('img');
-    img.src = url;
-    document$1.body.appendChild(img);
-  } else if (use_sendBeacon) {
-    try {
-      succeeded = sendBeacon(url, body_data);
-    } catch (e) {
-      lib.report_error(e);
-      succeeded = false;
-    }
-    try {
-      if (callback) {
-        callback(succeeded ? 1 : 0);
-      }
-    } catch (e) {
-      lib.report_error(e);
-    }
-  } else if (USE_XHR) {
-    try {
-      var req = new XMLHttpRequest();
-      req.open(options.method, url, true);
-      var headers = this.get_config('xhr_headers');
-      if (use_post) {
-        headers['Content-Type'] = 'application/x-www-form-urlencoded';
-      }
-      _.each(headers, function (headerValue, headerName) {
-        req.setRequestHeader(headerName, headerValue);
-      });
-      if (options.timeout_ms && typeof req.timeout !== 'undefined') {
-        req.timeout = options.timeout_ms;
-        var start_time = new Date().getTime();
-      }
-
-      // send the mp_optout cookie
-      // withCredentials cannot be modified until after calling .open on Android and Mobile Safari
-      req.withCredentials = true;
-      req.onreadystatechange = function () {
-        if (req.readyState === 4) {
-          // XMLHttpRequest.DONE == 4, except in safari 4
-          if (req.status === 200) {
-            if (callback) {
-              if (verbose_mode) {
-                var response;
-                try {
-                  response = _.JSONDecode(req.responseText);
-                } catch (e) {
-                  lib.report_error(e);
-                  if (options.ignore_json_errors) {
-                    response = req.responseText;
-                  } else {
-                    return;
-                  }
-                }
-                callback(response);
-              } else {
-                callback(Number(req.responseText));
-              }
-            }
-          } else {
-            var error;
-            if (req.timeout && !req.status && new Date().getTime() - start_time >= req.timeout) {
-              error = 'timeout';
-            } else {
-              error = 'Bad HTTP status: ' + req.status + ' ' + req.statusText;
-            }
-            lib.report_error(error);
-            if (callback) {
-              if (verbose_mode) {
-                callback({
-                  status: 0,
-                  error: error,
-                  xhr_req: req
-                });
-              } else {
-                callback(0);
-              }
-            }
-          }
-        }
-      };
-      req.send(body_data);
-    } catch (e) {
-      lib.report_error(e);
-      succeeded = false;
-    }
-  } else {
-    var script = document$1.createElement('script');
-    script.type = 'text/javascript';
-    script.async = true;
-    script.defer = true;
-    script.src = url;
-    var s = document$1.getElementsByTagName('script')[0];
-    s.parentNode.insertBefore(script, s);
-  }
-  return succeeded;
-};
-
-/**
- * _execute_array() deals with processing any mixpanel function
- * calls that were called before the Mixpanel library were loaded
- * (and are thus stored in an array so they can be called later)
- *
- * Note: we fire off all the mixpanel function calls && user defined
- * functions BEFORE we fire off mixpanel tracking calls. This is so
- * identify/register/set_config calls can properly modify early
- * tracking calls.
- *
- * @param {Array} array
- */
-MixpanelLib.prototype._execute_array = function (array) {
-  var fn_name,
-    alias_calls = [],
-    other_calls = [],
-    tracking_calls = [];
-  _.each(array, function (item) {
-    if (item) {
-      fn_name = item[0];
-      if (_.isArray(fn_name)) {
-        tracking_calls.push(item); // chained call e.g. mixpanel.get_group().set()
-      } else if (typeof item === 'function') {
-        item.call(this);
-      } else if (_.isArray(item) && fn_name === 'alias') {
-        alias_calls.push(item);
-      } else if (_.isArray(item) && fn_name.indexOf('track') !== -1 && typeof this[fn_name] === 'function') {
-        tracking_calls.push(item);
-      } else {
-        other_calls.push(item);
-      }
-    }
-  }, this);
-  var execute = function execute(calls, context) {
-    _.each(calls, function (item) {
-      if (_.isArray(item[0])) {
-        // chained call
-        var caller = context;
-        _.each(item, function (call) {
-          caller = caller[call[0]].apply(caller, call.slice(1));
-        });
-      } else {
-        this[item[0]].apply(this, item.slice(1));
-      }
-    }, context);
-  };
-  execute(alias_calls, this);
-  execute(other_calls, this);
-  execute(tracking_calls, this);
-};
-
-// request queueing utils
-
-MixpanelLib.prototype.are_batchers_initialized = function () {
-  return !!this.request_batchers.events;
-};
-MixpanelLib.prototype.init_batchers = function () {
-  var token = this.get_config('token');
-  if (!this.are_batchers_initialized()) {
-    var batcher_for = _.bind(function (attrs) {
-      return new RequestBatcher('__mpq_' + token + attrs.queue_suffix, {
-        libConfig: this['config'],
-        sendRequestFunc: _.bind(function (data, options, cb) {
-          this._send_request(this.get_config('api_host') + attrs.endpoint, this._encode_data_for_request(data), options, this._prepare_callback(cb, data));
-        }, this),
-        beforeSendHook: _.bind(function (item) {
-          return this._run_hook('before_send_' + attrs.type, item);
-        }, this),
-        errorReporter: this.get_config('error_reporter'),
-        stopAllBatchingFunc: _.bind(this.stop_batch_senders, this)
-      });
-    }, this);
-    this.request_batchers = {
-      events: batcher_for({
-        type: 'events',
-        endpoint: '/track/',
-        queue_suffix: '_ev'
-      }),
-      people: batcher_for({
-        type: 'people',
-        endpoint: '/engage/',
-        queue_suffix: '_pp'
-      }),
-      groups: batcher_for({
-        type: 'groups',
-        endpoint: '/groups/',
-        queue_suffix: '_gr'
-      })
-    };
-  }
-  if (this.get_config('batch_autostart')) {
-    this.start_batch_senders();
-  }
-};
-MixpanelLib.prototype.start_batch_senders = function () {
-  if (this.are_batchers_initialized()) {
-    this._batch_requests = true;
-    _.each(this.request_batchers, function (batcher) {
-      batcher.start();
-    });
-  }
-};
-MixpanelLib.prototype.stop_batch_senders = function () {
-  this._batch_requests = false;
-  _.each(this.request_batchers, function (batcher) {
-    batcher.stop();
-    batcher.clear();
-  });
-};
-
-/**
- * push() keeps the standard async-array-push
- * behavior around after the lib is loaded.
- * This is only useful for external integrations that
- * do not wish to rely on our convenience methods
- * (created in the snippet).
- *
- * ### Usage:
- *     mixpanel.push(['register', { a: 'b' }]);
- *
- * @param {Array} item A [function_name, args...] array to be executed
- */
-MixpanelLib.prototype.push = function (item) {
-  this._execute_array([item]);
-};
-
-/**
- * Disable events on the Mixpanel object. If passed no arguments,
- * this function disables tracking of any event. If passed an
- * array of event names, those events will be disabled, but other
- * events will continue to be tracked.
- *
- * Note: this function does not stop other mixpanel functions from
- * firing, such as register() or people.set().
- *
- * @param {Array} [events] An array of event names to disable
- */
-MixpanelLib.prototype.disable = function (events) {
-  if (typeof events === 'undefined') {
-    this._flags.disable_all_events = true;
-  } else {
-    this.__disabled_events = this.__disabled_events.concat(events);
-  }
-};
-MixpanelLib.prototype._encode_data_for_request = function (data) {
-  var encoded_data = _.JSONEncode(data);
-  if (this.get_config('api_payload_format') === PAYLOAD_TYPE_BASE64) {
-    encoded_data = _.base64Encode(encoded_data);
-  }
-  return {
-    'data': encoded_data
-  };
-};
-
-// internal method for handling track vs batch-enqueue logic
-MixpanelLib.prototype._track_or_batch = function (options, callback) {
-  var truncated_data = _.truncate(options.data, 255);
-  var endpoint = options.endpoint;
-  var batcher = options.batcher;
-  var should_send_immediately = options.should_send_immediately;
-  var send_request_options = options.send_request_options || {};
-  callback = callback || NOOP_FUNC;
-  var request_enqueued_or_initiated = true;
-  var send_request_immediately = _.bind(function () {
-    if (!send_request_options.skip_hooks) {
-      truncated_data = this._run_hook('before_send_' + options.type, truncated_data);
-    }
-    if (truncated_data) {
-      console.log('MIXPANEL REQUEST:');
-      console.log(truncated_data);
-      return this._send_request(endpoint, this._encode_data_for_request(truncated_data), send_request_options, this._prepare_callback(callback, truncated_data));
-    } else {
-      return null;
-    }
-  }, this);
-  if (this._batch_requests && !should_send_immediately) {
-    batcher.enqueue(truncated_data, function (succeeded) {
-      if (succeeded) {
-        callback(1, truncated_data);
-      } else {
-        send_request_immediately();
-      }
-    });
-  } else {
-    request_enqueued_or_initiated = send_request_immediately();
-  }
-  return request_enqueued_or_initiated && truncated_data;
-};
-
-/**
- * Track an event. This is the most important and
- * frequently used Mixpanel function.
- *
- * ### Usage:
- *
- *     // track an event named 'Registered'
- *     mixpanel.track('Registered', {'Gender': 'Male', 'Age': 21});
- *
- *     // track an event using navigator.sendBeacon
- *     mixpanel.track('Left page', {'duration_seconds': 35}, {transport: 'sendBeacon'});
- *
- * To track link clicks or form submissions, see track_links() or track_forms().
- *
- * @param {String} event_name The name of the event. This can be anything the user does - 'Button Click', 'Sign Up', 'Item Purchased', etc.
- * @param {Object} [properties] A set of properties to include with the event you're sending. These describe the user who did the event or details about the event itself.
- * @param {Object} [options] Optional configuration for this track request.
- * @param {String} [options.transport] Transport method for network request ('xhr' or 'sendBeacon').
- * @param {Boolean} [options.send_immediately] Whether to bypass batching/queueing and send track request immediately.
- * @param {Function} [callback] If provided, the callback function will be called after tracking the event.
- * @returns {Boolean|Object} If the tracking request was successfully initiated/queued, an object
- * with the tracking payload sent to the API server is returned; otherwise false.
- */
-MixpanelLib.prototype.track = addOptOutCheckMixpanelLib(function (event_name, properties, options, callback) {
-  if (!callback && typeof options === 'function') {
-    callback = options;
-    options = null;
-  }
-  options = options || {};
-  var transport = options['transport']; // external API, don't minify 'transport' prop
-  if (transport) {
-    options.transport = transport; // 'transport' prop name can be minified internally
-  }
-
-  var should_send_immediately = options['send_immediately'];
-  if (typeof callback !== 'function') {
-    callback = NOOP_FUNC;
-  }
-  if (_.isUndefined(event_name)) {
-    this.report_error('No event name provided to mixpanel.track');
-    return;
-  }
-  if (this._event_is_disabled(event_name)) {
-    callback(0);
-    return;
-  }
-
-  // set defaults
-  properties = properties || {};
-  properties['token'] = this.get_config('token');
-
-  // set $duration if time_event was previously called for this event
-  var start_timestamp = this['persistence'].remove_event_timer(event_name);
-  if (!_.isUndefined(start_timestamp)) {
-    var duration_in_ms = new Date().getTime() - start_timestamp;
-    properties['$duration'] = parseFloat((duration_in_ms / 1000).toFixed(3));
-  }
-  this._set_default_superprops();
-
-  // note: extend writes to the first object, so lets make sure we
-  // don't write to the persistence properties object and info
-  // properties object by passing in a new object
-
-  // update properties with pageview info and super-properties
-  properties = _.extend({}, _.info.properties(), this['persistence'].properties(), this.unpersisted_superprops, properties);
-  var property_blacklist = this.get_config('property_blacklist');
-  if (_.isArray(property_blacklist)) {
-    _.each(property_blacklist, function (blacklisted_prop) {
-      delete properties[blacklisted_prop];
-    });
-  } else {
-    this.report_error('Invalid value for property_blacklist config: ' + property_blacklist);
-  }
-  var data = {
-    'event': event_name,
-    'properties': properties
-  };
-  var ret = this._track_or_batch({
-    type: 'events',
-    data: data,
-    endpoint: this.get_config('api_host') + '/track/',
-    batcher: this.request_batchers.events,
-    should_send_immediately: should_send_immediately,
-    send_request_options: options
-  }, callback);
-  return ret;
-});
-
-/**
- * Register the current user into one/many groups.
- *
- * ### Usage:
- *
- *      mixpanel.set_group('company', ['mixpanel', 'google']) // an array of IDs
- *      mixpanel.set_group('company', 'mixpanel')
- *      mixpanel.set_group('company', 128746312)
- *
- * @param {String} group_key Group key
- * @param {Array|String|Number} group_ids An array of group IDs, or a singular group ID
- * @param {Function} [callback] If provided, the callback will be called after tracking the event.
- *
- */
-MixpanelLib.prototype.set_group = addOptOutCheckMixpanelLib(function (group_key, group_ids, callback) {
-  if (!_.isArray(group_ids)) {
-    group_ids = [group_ids];
-  }
-  var prop = {};
-  prop[group_key] = group_ids;
-  this.register(prop);
-  return this['people'].set(group_key, group_ids, callback);
-});
-
-/**
- * Add a new group for this user.
- *
- * ### Usage:
- *
- *      mixpanel.add_group('company', 'mixpanel')
- *
- * @param {String} group_key Group key
- * @param {*} group_id A valid Mixpanel property type
- * @param {Function} [callback] If provided, the callback will be called after tracking the event.
- */
-MixpanelLib.prototype.add_group = addOptOutCheckMixpanelLib(function (group_key, group_id, callback) {
-  var old_values = this.get_property(group_key);
-  if (old_values === undefined) {
-    var prop = {};
-    prop[group_key] = [group_id];
-    this.register(prop);
-  } else {
-    if (old_values.indexOf(group_id) === -1) {
-      old_values.push(group_id);
-      this.register(prop);
-    }
-  }
-  return this['people'].union(group_key, group_id, callback);
-});
-
-/**
- * Remove a group from this user.
- *
- * ### Usage:
- *
- *      mixpanel.remove_group('company', 'mixpanel')
- *
- * @param {String} group_key Group key
- * @param {*} group_id A valid Mixpanel property type
- * @param {Function} [callback] If provided, the callback will be called after tracking the event.
- */
-MixpanelLib.prototype.remove_group = addOptOutCheckMixpanelLib(function (group_key, group_id, callback) {
-  var old_value = this.get_property(group_key);
-  // if the value doesn't exist, the persistent store is unchanged
-  if (old_value !== undefined) {
-    var idx = old_value.indexOf(group_id);
-    if (idx > -1) {
-      old_value.splice(idx, 1);
-      this.register({
-        group_key: old_value
-      });
-    }
-    if (old_value.length === 0) {
-      this.unregister(group_key);
-    }
-  }
-  return this['people'].remove(group_key, group_id, callback);
-});
-
-/**
- * Track an event with specific groups.
- *
- * ### Usage:
- *
- *      mixpanel.track_with_groups('purchase', {'product': 'iphone'}, {'University': ['UCB', 'UCLA']})
- *
- * @param {String} event_name The name of the event (see `mixpanel.track()`)
- * @param {Object=} properties A set of properties to include with the event you're sending (see `mixpanel.track()`)
- * @param {Object=} groups An object mapping group name keys to one or more values
- * @param {Function} [callback] If provided, the callback will be called after tracking the event.
- */
-MixpanelLib.prototype.track_with_groups = addOptOutCheckMixpanelLib(function (event_name, properties, groups, callback) {
-  var tracking_props = _.extend({}, properties || {});
-  _.each(groups, function (v, k) {
-    if (v !== null && v !== undefined) {
-      tracking_props[k] = v;
-    }
-  });
-  return this.track(event_name, tracking_props, callback);
-});
-MixpanelLib.prototype._create_map_key = function (group_key, group_id) {
-  return group_key + '_' + JSON.stringify(group_id);
-};
-MixpanelLib.prototype._remove_group_from_cache = function (group_key, group_id) {
-  delete this._cached_groups[this._create_map_key(group_key, group_id)];
-};
-
-/**
- * Look up reference to a Mixpanel group
- *
- * ### Usage:
- *
- *       mixpanel.get_group(group_key, group_id)
- *
- * @param {String} group_key Group key
- * @param {Object} group_id A valid Mixpanel property type
- * @returns {Object} A MixpanelGroup identifier
- */
-MixpanelLib.prototype.get_group = function (group_key, group_id) {
-  var map_key = this._create_map_key(group_key, group_id);
-  var group = this._cached_groups[map_key];
-  if (group === undefined || group._group_key !== group_key || group._group_id !== group_id) {
-    group = new MixpanelGroup();
-    group._init(this, group_key, group_id);
-    this._cached_groups[map_key] = group;
-  }
-  return group;
-};
-
-/**
- * Track mp_page_view event. This is now ignored by the server.
- *
- * @param {String} [page] The url of the page to record. If you don't include this, it defaults to the current url.
- * @deprecated
- */
-MixpanelLib.prototype.track_pageview = function (page) {
-  if (_.isUndefined(page)) {
-    page = document$1.location.href;
-  }
-  this.track('mp_page_view', _.info.pageviewInfo(page));
-};
-
-/**
- * Track clicks on a set of document elements. Selector must be a
- * valid query. Elements must exist on the page at the time track_links is called.
- *
- * ### Usage:
- *
- *     // track click for link id #nav
- *     mixpanel.track_links('#nav', 'Clicked Nav Link');
- *
- * ### Notes:
- *
- * This function will wait up to 300 ms for the Mixpanel
- * servers to respond. If they have not responded by that time
- * it will head to the link without ensuring that your event
- * has been tracked.  To configure this timeout please see the
- * set_config() documentation below.
- *
- * If you pass a function in as the properties argument, the
- * function will receive the DOMElement that triggered the
- * event as an argument.  You are expected to return an object
- * from the function; any properties defined on this object
- * will be sent to mixpanel as event properties.
- *
- * @type {Function}
- * @param {Object|String} query A valid DOM query, element or jQuery-esque list
- * @param {String} event_name The name of the event to track
- * @param {Object|Function} [properties] A properties object or function that returns a dictionary of properties when passed a DOMElement
- */
-MixpanelLib.prototype.track_links = function () {
-  return this._track_dom.call(this, LinkTracker, arguments);
-};
-
-/**
- * Track form submissions. Selector must be a valid query.
- *
- * ### Usage:
- *
- *     // track submission for form id 'register'
- *     mixpanel.track_forms('#register', 'Created Account');
- *
- * ### Notes:
- *
- * This function will wait up to 300 ms for the mixpanel
- * servers to respond, if they have not responded by that time
- * it will head to the link without ensuring that your event
- * has been tracked.  To configure this timeout please see the
- * set_config() documentation below.
- *
- * If you pass a function in as the properties argument, the
- * function will receive the DOMElement that triggered the
- * event as an argument.  You are expected to return an object
- * from the function; any properties defined on this object
- * will be sent to mixpanel as event properties.
- *
- * @type {Function}
- * @param {Object|String} query A valid DOM query, element or jQuery-esque list
- * @param {String} event_name The name of the event to track
- * @param {Object|Function} [properties] This can be a set of properties, or a function that returns a set of properties after being passed a DOMElement
- */
-MixpanelLib.prototype.track_forms = function () {
-  return this._track_dom.call(this, FormTracker, arguments);
-};
-
-/**
- * Time an event by including the time between this call and a
- * later 'track' call for the same event in the properties sent
- * with the event.
- *
- * ### Usage:
- *
- *     // time an event named 'Registered'
- *     mixpanel.time_event('Registered');
- *     mixpanel.track('Registered', {'Gender': 'Male', 'Age': 21});
- *
- * When called for a particular event name, the next track call for that event
- * name will include the elapsed time between the 'time_event' and 'track'
- * calls. This value is stored as seconds in the '$duration' property.
- *
- * @param {String} event_name The name of the event.
- */
-MixpanelLib.prototype.time_event = function (event_name) {
-  if (_.isUndefined(event_name)) {
-    this.report_error('No event name provided to mixpanel.time_event');
-    return;
-  }
-  if (this._event_is_disabled(event_name)) {
-    return;
-  }
-  this['persistence'].set_event_timer(event_name, new Date().getTime());
-};
-var REGISTER_DEFAULTS = {
-  'persistent': true
-};
-/**
- * Helper to parse options param for register methods, maintaining
- * legacy support for plain "days" param instead of options object
- * @param {Number|Object} [days_or_options] 'days' option (Number), or Options object for register methods
- * @returns {Object} options object
- */
-var options_for_register = function options_for_register(days_or_options) {
-  var options;
-  if (_.isObject(days_or_options)) {
-    options = days_or_options;
-  } else if (!_.isUndefined(days_or_options)) {
-    options = {
-      'days': days_or_options
-    };
-  } else {
-    options = {};
-  }
-  return _.extend({}, REGISTER_DEFAULTS, options);
-};
-
-/**
- * Register a set of super properties, which are included with all
- * events. This will overwrite previous super property values.
- *
- * ### Usage:
- *
- *     // register 'Gender' as a super property
- *     mixpanel.register({'Gender': 'Female'});
- *
- *     // register several super properties when a user signs up
- *     mixpanel.register({
- *         'Email': 'jdoe@example.com',
- *         'Account Type': 'Free'
- *     });
- *
- *     // register only for the current pageload
- *     mixpanel.register({'Name': 'Pat'}, {persistent: false});
- *
- * @param {Object} properties An associative array of properties to store about the user
- * @param {Number|Object} [days_or_options] Options object or number of days since the user's last visit to store the super properties (only valid for persisted props)
- * @param {boolean} [days_or_options.days] - number of days since the user's last visit to store the super properties (only valid for persisted props)
- * @param {boolean} [days_or_options.persistent=true] - whether to put in persistent storage (cookie/localStorage)
- */
-MixpanelLib.prototype.register = function (props, days_or_options) {
-  var options = options_for_register(days_or_options);
-  if (options['persistent']) {
-    this['persistence'].register(props, options['days']);
-  } else {
-    _.extend(this.unpersisted_superprops, props);
-  }
-};
-
-/**
- * Register a set of super properties only once. This will not
- * overwrite previous super property values, unlike register().
- *
- * ### Usage:
- *
- *     // register a super property for the first time only
- *     mixpanel.register_once({
- *         'First Login Date': new Date().toISOString()
- *     });
- *
- *     // register once, only for the current pageload
- *     mixpanel.register_once({
- *         'First interaction time': new Date().toISOString()
- *     }, 'None', {persistent: false});
- *
- * ### Notes:
- *
- * If default_value is specified, current super properties
- * with that value will be overwritten.
- *
- * @param {Object} properties An associative array of properties to store about the user
- * @param {*} [default_value] Value to override if already set in super properties (ex: 'False') Default: 'None'
- * @param {Number|Object} [days_or_options] Options object or number of days since the user's last visit to store the super properties (only valid for persisted props)
- * @param {boolean} [days_or_options.days] - number of days since the user's last visit to store the super properties (only valid for persisted props)
- * @param {boolean} [days_or_options.persistent=true] - whether to put in persistent storage (cookie/localStorage)
- */
-MixpanelLib.prototype.register_once = function (props, default_value, days_or_options) {
-  var options = options_for_register(days_or_options);
-  if (options['persistent']) {
-    this['persistence'].register_once(props, default_value, options['days']);
-  } else {
-    if (typeof default_value === 'undefined') {
-      default_value = 'None';
-    }
-    _.each(props, function (val, prop) {
-      if (!this.unpersisted_superprops.hasOwnProperty(prop) || this.unpersisted_superprops[prop] === default_value) {
-        this.unpersisted_superprops[prop] = val;
-      }
-    }, this);
-  }
-};
-
-/**
- * Delete a super property stored with the current user.
- *
- * @param {String} property The name of the super property to remove
- * @param {Object} [options]
- * @param {boolean} [options.persistent=true] - whether to look in persistent storage (cookie/localStorage)
- */
-MixpanelLib.prototype.unregister = function (property, options) {
-  options = options_for_register(options);
-  if (options['persistent']) {
-    this['persistence'].unregister(property);
-  } else {
-    delete this.unpersisted_superprops[property];
-  }
-};
-MixpanelLib.prototype._register_single = function (prop, value) {
-  var props = {};
-  props[prop] = value;
-  this.register(props);
-};
-
-/**
- * Identify a user with a unique ID to track user activity across
- * devices, tie a user to their events, and create a user profile.
- * If you never call this method, unique visitors are tracked using
- * a UUID generated the first time they visit the site.
- *
- * Call identify when you know the identity of the current user,
- * typically after login or signup. We recommend against using
- * identify for anonymous visitors to your site.
- *
- * ### Notes:
- * If your project has
- * <a href="https://help.mixpanel.com/hc/en-us/articles/360039133851">ID Merge</a>
- * enabled, the identify method will connect pre- and
- * post-authentication events when appropriate.
- *
- * If your project does not have ID Merge enabled, identify will
- * change the user's local distinct_id to the unique ID you pass.
- * Events tracked prior to authentication will not be connected
- * to the same user identity. If ID Merge is disabled, alias can
- * be used to connect pre- and post-registration events.
- *
- * @param {String} [unique_id] A string that uniquely identifies a user. If not provided, the distinct_id currently in the persistent store (cookie or localStorage) will be used.
- */
-MixpanelLib.prototype.identify = function (new_distinct_id, _set_callback, _add_callback, _append_callback, _set_once_callback, _union_callback, _unset_callback, _remove_callback) {
-  // Optional Parameters
-  //  _set_callback:function  A callback to be run if and when the People set queue is flushed
-  //  _add_callback:function  A callback to be run if and when the People add queue is flushed
-  //  _append_callback:function  A callback to be run if and when the People append queue is flushed
-  //  _set_once_callback:function  A callback to be run if and when the People set_once queue is flushed
-  //  _union_callback:function  A callback to be run if and when the People union queue is flushed
-  //  _unset_callback:function  A callback to be run if and when the People unset queue is flushed
-
-  var previous_distinct_id = this.get_distinct_id();
-  this.register({
-    '$user_id': new_distinct_id
-  });
-  if (!this.get_property('$device_id')) {
-    // The persisted distinct id might not actually be a device id at all
-    // it might be a distinct id of the user from before
-    var device_id = previous_distinct_id;
-    this.register_once({
-      '$had_persisted_distinct_id': true,
-      '$device_id': device_id
-    }, '');
-  }
-
-  // identify only changes the distinct id if it doesn't match either the existing or the alias;
-  // if it's new, blow away the alias as well.
-  if (new_distinct_id !== previous_distinct_id && new_distinct_id !== this.get_property(ALIAS_ID_KEY)) {
-    this.unregister(ALIAS_ID_KEY);
-    this.register({
-      'distinct_id': new_distinct_id
-    });
-  }
-  this._flags.identify_called = true;
-  // Flush any queued up people requests
-  this['people']._flush(_set_callback, _add_callback, _append_callback, _set_once_callback, _union_callback, _unset_callback, _remove_callback);
-
-  // send an $identify event any time the distinct_id is changing - logic on the server
-  // will determine whether or not to do anything with it.
-  if (new_distinct_id !== previous_distinct_id) {
-    this.track('$identify', {
-      'distinct_id': new_distinct_id,
-      '$anon_distinct_id': previous_distinct_id
-    }, {
-      skip_hooks: true
-    });
-  }
-};
-
-/**
- * Clears super properties and generates a new random distinct_id for this instance.
- * Useful for clearing data when a user logs out.
- */
-MixpanelLib.prototype.reset = function () {
-  this['persistence'].clear();
-  this._flags.identify_called = false;
-  var uuid = _.UUID();
-  this.register_once({
-    'distinct_id': uuid,
-    '$device_id': uuid
-  }, '');
-};
-
-/**
- * Returns the current distinct id of the user. This is either the id automatically
- * generated by the library or the id that has been passed by a call to identify().
- *
- * ### Notes:
- *
- * get_distinct_id() can only be called after the Mixpanel library has finished loading.
- * init() has a loaded function available to handle this automatically. For example:
- *
- *     // set distinct_id after the mixpanel library has loaded
- *     mixpanel.init('YOUR PROJECT TOKEN', {
- *         loaded: function(mixpanel) {
- *             distinct_id = mixpanel.get_distinct_id();
- *         }
- *     });
- */
-MixpanelLib.prototype.get_distinct_id = function () {
-  return this.get_property('distinct_id');
-};
-
-/**
- * The alias method creates an alias which Mixpanel will use to
- * remap one id to another. Multiple aliases can point to the
- * same identifier.
- *
- * The following is a valid use of alias:
- *
- *     mixpanel.alias('new_id', 'existing_id');
- *     // You can add multiple id aliases to the existing ID
- *     mixpanel.alias('newer_id', 'existing_id');
- *
- * Aliases can also be chained - the following is a valid example:
- *
- *     mixpanel.alias('new_id', 'existing_id');
- *     // chain newer_id - new_id - existing_id
- *     mixpanel.alias('newer_id', 'new_id');
- *
- * Aliases cannot point to multiple identifiers - the following
- * example will not work:
- *
- *     mixpanel.alias('new_id', 'existing_id');
- *     // this is invalid as 'new_id' already points to 'existing_id'
- *     mixpanel.alias('new_id', 'newer_id');
- *
- * ### Notes:
- *
- * If your project does not have
- * <a href="https://help.mixpanel.com/hc/en-us/articles/360039133851">ID Merge</a>
- * enabled, the best practice is to call alias once when a unique
- * ID is first created for a user (e.g., when a user first registers
- * for an account). Do not use alias multiple times for a single
- * user without ID Merge enabled.
- *
- * @param {String} alias A unique identifier that you want to use for this user in the future.
- * @param {String} [original] The current identifier being used for this user.
- */
-MixpanelLib.prototype.alias = function (alias, original) {
-  // If the $people_distinct_id key exists in persistence, there has been a previous
-  // mixpanel.people.identify() call made for this user. It is VERY BAD to make an alias with
-  // this ID, as it will duplicate users.
-  if (alias === this.get_property(PEOPLE_DISTINCT_ID_KEY)) {
-    this.report_error('Attempting to create alias for existing People user - aborting.');
-    return -2;
-  }
-  var _this = this;
-  if (_.isUndefined(original)) {
-    original = this.get_distinct_id();
-  }
-  if (alias !== original) {
-    this._register_single(ALIAS_ID_KEY, alias);
-    return this.track('$create_alias', {
-      'alias': alias,
-      'distinct_id': original
-    }, {
-      skip_hooks: true
-    }, function () {
-      // Flush the people queue
-      _this.identify(alias);
-    });
-  } else {
-    this.report_error('alias matches current distinct_id - skipping api call.');
-    this.identify(alias);
-    return -1;
-  }
-};
-
-/**
- * Provide a string to recognize the user by. The string passed to
- * this method will appear in the Mixpanel Streams product rather
- * than an automatically generated name. Name tags do not have to
- * be unique.
- *
- * This value will only be included in Streams data.
- *
- * @param {String} name_tag A human readable name for the user
- * @deprecated
- */
-MixpanelLib.prototype.name_tag = function (name_tag) {
-  this._register_single('mp_name_tag', name_tag);
-};
-
-/**
- * Update the configuration of a mixpanel library instance.
- *
- * The default config is:
- *
- *     {
- *       // HTTP method for tracking requests
- *       api_method: 'POST'
- *
- *       // transport for sending requests ('XHR' or 'sendBeacon')
- *       // NB: sendBeacon should only be used for scenarios such as
- *       // page unload where a "best-effort" attempt to send is
- *       // acceptable; the sendBeacon API does not support callbacks
- *       // or any way to know the result of the request. Mixpanel
- *       // tracking via sendBeacon will not support any event-
- *       // batching or retry mechanisms.
- *       api_transport: 'XHR'
- *
- *       // turn on request-batching/queueing/retry
- *       batch_requests: false,
- *
- *       // maximum number of events/updates to send in a single
- *       // network request
- *       batch_size: 50,
- *
- *       // milliseconds to wait between sending batch requests
- *       batch_flush_interval_ms: 5000,
- *
- *       // milliseconds to wait for network responses to batch requests
- *       // before they are considered timed-out and retried
- *       batch_request_timeout_ms: 90000,
- *
- *       // override value for cookie domain, only useful for ensuring
- *       // correct cross-subdomain cookies on unusual domains like
- *       // subdomain.mainsite.avocat.fr; NB this cannot be used to
- *       // set cookies on a different domain than the current origin
- *       cookie_domain: ''
- *
- *       // super properties cookie expiration (in days)
- *       cookie_expiration: 365
- *
- *       // if true, cookie will be set with SameSite=None; Secure
- *       // this is only useful in special situations, like embedded
- *       // 3rd-party iframes that set up a Mixpanel instance
- *       cross_site_cookie: false
- *
- *       // super properties span subdomains
- *       cross_subdomain_cookie: true
- *
- *       // debug mode
- *       debug: false
- *
- *       // if this is true, the mixpanel cookie or localStorage entry
- *       // will be deleted, and no user persistence will take place
- *       disable_persistence: false
- *
- *       // if this is true, Mixpanel will automatically determine
- *       // City, Region and Country data using the IP address of
- *       //the client
- *       ip: true
- *
- *       // opt users out of tracking by this Mixpanel instance by default
- *       opt_out_tracking_by_default: false
- *
- *       // opt users out of browser data storage by this Mixpanel instance by default
- *       opt_out_persistence_by_default: false
- *
- *       // persistence mechanism used by opt-in/opt-out methods - cookie
- *       // or localStorage - falls back to cookie if localStorage is unavailable
- *       opt_out_tracking_persistence_type: 'localStorage'
- *
- *       // customize the name of cookie/localStorage set by opt-in/opt-out methods
- *       opt_out_tracking_cookie_prefix: null
- *
- *       // type of persistent store for super properties (cookie/
- *       // localStorage) if set to 'localStorage', any existing
- *       // mixpanel cookie value with the same persistence_name
- *       // will be transferred to localStorage and deleted
- *       persistence: 'cookie'
- *
- *       // name for super properties persistent store
- *       persistence_name: ''
- *
- *       // names of properties/superproperties which should never
- *       // be sent with track() calls
- *       property_blacklist: []
- *
- *       // if this is true, mixpanel cookies will be marked as
- *       // secure, meaning they will only be transmitted over https
- *       secure_cookie: false
- *
- *       // the amount of time track_links will
- *       // wait for Mixpanel's servers to respond
- *       track_links_timeout: 300
- *
- *       // if you set upgrade to be true, the library will check for
- *       // a cookie from our old js library and import super
- *       // properties from it, then the old cookie is deleted
- *       // The upgrade config option only works in the initialization,
- *       // so make sure you set it when you create the library.
- *       upgrade: false
- *
- *       // extra HTTP request headers to set for each API request, in
- *       // the format {'Header-Name': value}
- *       xhr_headers: {}
- *
- *       // whether to ignore or respect the web browser's Do Not Track setting
- *       ignore_dnt: false
- *     }
- *
- *
- * @param {Object} config A dictionary of new configuration values to update
- */
-MixpanelLib.prototype.set_config = function (config) {
-  if (_.isObject(config)) {
-    _.extend(this['config'], config);
-    var new_batch_size = config['batch_size'];
-    if (new_batch_size) {
-      _.each(this.request_batchers, function (batcher) {
-        batcher.resetBatchSize();
-      });
-    }
-    if (!this.get_config('persistence_name')) {
-      this['config']['persistence_name'] = this['config']['cookie_name'];
-    }
-    if (!this.get_config('disable_persistence')) {
-      this['config']['disable_persistence'] = this['config']['disable_cookie'];
-    }
-    if (this['persistence']) {
-      this['persistence'].update_config(this['config']);
-    }
-    Config.DEBUG = Config.DEBUG || this.get_config('debug');
-  }
-};
-
-/**
- * returns the current config object for the library.
- */
-MixpanelLib.prototype.get_config = function (prop_name) {
-  return this['config'][prop_name];
-};
-
-/**
- * Fetch a hook function from config, with safe default, and run it
- * against the given arguments
- * @param {string} hook_name which hook to retrieve
- * @returns {any|null} return value of user-provided hook, or null if nothing was returned
- */
-MixpanelLib.prototype._run_hook = function (hook_name) {
-  var ret = (this['config']['hooks'][hook_name] || IDENTITY_FUNC).apply(this, slice.call(arguments, 1));
-  if (typeof ret === 'undefined') {
-    this.report_error(hook_name + ' hook did not return a value');
-    ret = null;
-  }
-  return ret;
-};
-
-/**
- * Returns the value of the super property named property_name. If no such
- * property is set, get_property() will return the undefined value.
- *
- * ### Notes:
- *
- * get_property() can only be called after the Mixpanel library has finished loading.
- * init() has a loaded function available to handle this automatically. For example:
- *
- *     // grab value for 'user_id' after the mixpanel library has loaded
- *     mixpanel.init('YOUR PROJECT TOKEN', {
- *         loaded: function(mixpanel) {
- *             user_id = mixpanel.get_property('user_id');
- *         }
- *     });
- *
- * @param {String} property_name The name of the super property you want to retrieve
- */
-MixpanelLib.prototype.get_property = function (property_name) {
-  return this['persistence']['props'][property_name];
-};
-MixpanelLib.prototype.toString = function () {
-  var name = this.get_config('name');
-  if (name !== PRIMARY_INSTANCE_NAME) {
-    name = PRIMARY_INSTANCE_NAME + '.' + name;
-  }
-  return name;
-};
-MixpanelLib.prototype._event_is_disabled = function (event_name) {
-  return _.isBlockedUA(userAgent) || this._flags.disable_all_events || _.include(this.__disabled_events, event_name);
-};
-
-// perform some housekeeping around GDPR opt-in/out state
-MixpanelLib.prototype._gdpr_init = function () {
-  var is_localStorage_requested = this.get_config('opt_out_tracking_persistence_type') === 'localStorage';
-
-  // try to convert opt-in/out cookies to localStorage if possible
-  if (is_localStorage_requested && _.localStorage.is_supported()) {
-    if (!this.has_opted_in_tracking() && this.has_opted_in_tracking({
-      'persistence_type': 'cookie'
-    })) {
-      this.opt_in_tracking({
-        'enable_persistence': false
-      });
-    }
-    if (!this.has_opted_out_tracking() && this.has_opted_out_tracking({
-      'persistence_type': 'cookie'
-    })) {
-      this.opt_out_tracking({
-        'clear_persistence': false
-      });
-    }
-    this.clear_opt_in_out_tracking({
-      'persistence_type': 'cookie',
-      'enable_persistence': false
-    });
-  }
-
-  // check whether the user has already opted out - if so, clear & disable persistence
-  if (this.has_opted_out_tracking()) {
-    this._gdpr_update_persistence({
-      'clear_persistence': true
-    });
-
-    // check whether we should opt out by default
-    // note: we don't clear persistence here by default since opt-out default state is often
-    //       used as an initial state while GDPR information is being collected
-  } else if (!this.has_opted_in_tracking() && (this.get_config('opt_out_tracking_by_default') || _.cookie.get('mp_optout'))) {
-    _.cookie.remove('mp_optout');
-    this.opt_out_tracking({
-      'clear_persistence': this.get_config('opt_out_persistence_by_default')
-    });
-  }
-};
-
-/**
- * Enable or disable persistence based on options
- * only enable/disable if persistence is not already in this state
- * @param {boolean} [options.clear_persistence] If true, will delete all data stored by the sdk in persistence and disable it
- * @param {boolean} [options.enable_persistence] If true, will re-enable sdk persistence
- */
-MixpanelLib.prototype._gdpr_update_persistence = function (options) {
-  var disabled;
-  if (options && options['clear_persistence']) {
-    disabled = true;
-  } else if (options && options['enable_persistence']) {
-    disabled = false;
-  } else {
-    return;
-  }
-  if (!this.get_config('disable_persistence') && this['persistence'].disabled !== disabled) {
-    this['persistence'].set_disabled(disabled);
-  }
-  if (disabled) {
-    _.each(this.request_batchers, function (batcher) {
-      batcher.clear();
-    });
-  }
-};
-
-// call a base gdpr function after constructing the appropriate token and options args
-MixpanelLib.prototype._gdpr_call_func = function (func, options) {
-  options = _.extend({
-    'track': _.bind(this.track, this),
-    'persistence_type': this.get_config('opt_out_tracking_persistence_type'),
-    'cookie_prefix': this.get_config('opt_out_tracking_cookie_prefix'),
-    'cookie_expiration': this.get_config('cookie_expiration'),
-    'cross_site_cookie': this.get_config('cross_site_cookie'),
-    'cross_subdomain_cookie': this.get_config('cross_subdomain_cookie'),
-    'cookie_domain': this.get_config('cookie_domain'),
-    'secure_cookie': this.get_config('secure_cookie'),
-    'ignore_dnt': this.get_config('ignore_dnt')
-  }, options);
-
-  // check if localStorage can be used for recording opt out status, fall back to cookie if not
-  if (!_.localStorage.is_supported()) {
-    options['persistence_type'] = 'cookie';
-  }
-  return func(this.get_config('token'), {
-    track: options['track'],
-    trackEventName: options['track_event_name'],
-    trackProperties: options['track_properties'],
-    persistenceType: options['persistence_type'],
-    persistencePrefix: options['cookie_prefix'],
-    cookieDomain: options['cookie_domain'],
-    cookieExpiration: options['cookie_expiration'],
-    crossSiteCookie: options['cross_site_cookie'],
-    crossSubdomainCookie: options['cross_subdomain_cookie'],
-    secureCookie: options['secure_cookie'],
-    ignoreDnt: options['ignore_dnt']
-  });
-};
-
-/**
- * Opt the user in to data tracking and cookies/localstorage for this Mixpanel instance
- *
- * ### Usage
- *
- *     // opt user in
- *     mixpanel.opt_in_tracking();
- *
- *     // opt user in with specific event name, properties, cookie configuration
- *     mixpanel.opt_in_tracking({
- *         track_event_name: 'User opted in',
- *         track_event_properties: {
- *             'Email': 'jdoe@example.com'
- *         },
- *         cookie_expiration: 30,
- *         secure_cookie: true
- *     });
- *
- * @param {Object} [options] A dictionary of config options to override
- * @param {function} [options.track] Function used for tracking a Mixpanel event to record the opt-in action (default is this Mixpanel instance's track method)
- * @param {string} [options.track_event_name=$opt_in] Event name to be used for tracking the opt-in action
- * @param {Object} [options.track_properties] Set of properties to be tracked along with the opt-in action
- * @param {boolean} [options.enable_persistence=true] If true, will re-enable sdk persistence
- * @param {string} [options.persistence_type=localStorage] Persistence mechanism used - cookie or localStorage - falls back to cookie if localStorage is unavailable
- * @param {string} [options.cookie_prefix=__mp_opt_in_out] Custom prefix to be used in the cookie/localstorage name
- * @param {Number} [options.cookie_expiration] Number of days until the opt-in cookie expires (overrides value specified in this Mixpanel instance's config)
- * @param {string} [options.cookie_domain] Custom cookie domain (overrides value specified in this Mixpanel instance's config)
- * @param {boolean} [options.cross_site_cookie] Whether the opt-in cookie is set as cross-site-enabled (overrides value specified in this Mixpanel instance's config)
- * @param {boolean} [options.cross_subdomain_cookie] Whether the opt-in cookie is set as cross-subdomain or not (overrides value specified in this Mixpanel instance's config)
- * @param {boolean} [options.secure_cookie] Whether the opt-in cookie is set as secure or not (overrides value specified in this Mixpanel instance's config)
- */
-MixpanelLib.prototype.opt_in_tracking = function (options) {
-  options = _.extend({
-    'enable_persistence': true
-  }, options);
-  this._gdpr_call_func(optIn, options);
-  this._gdpr_update_persistence(options);
-};
-
-/**
- * Opt the user out of data tracking and cookies/localstorage for this Mixpanel instance
- *
- * ### Usage
- *
- *     // opt user out
- *     mixpanel.opt_out_tracking();
- *
- *     // opt user out with different cookie configuration from Mixpanel instance
- *     mixpanel.opt_out_tracking({
- *         cookie_expiration: 30,
- *         secure_cookie: true
- *     });
- *
- * @param {Object} [options] A dictionary of config options to override
- * @param {boolean} [options.delete_user=true] If true, will delete the currently identified user's profile and clear all charges after opting the user out
- * @param {boolean} [options.clear_persistence=true] If true, will delete all data stored by the sdk in persistence
- * @param {string} [options.persistence_type=localStorage] Persistence mechanism used - cookie or localStorage - falls back to cookie if localStorage is unavailable
- * @param {string} [options.cookie_prefix=__mp_opt_in_out] Custom prefix to be used in the cookie/localstorage name
- * @param {Number} [options.cookie_expiration] Number of days until the opt-in cookie expires (overrides value specified in this Mixpanel instance's config)
- * @param {string} [options.cookie_domain] Custom cookie domain (overrides value specified in this Mixpanel instance's config)
- * @param {boolean} [options.cross_site_cookie] Whether the opt-in cookie is set as cross-site-enabled (overrides value specified in this Mixpanel instance's config)
- * @param {boolean} [options.cross_subdomain_cookie] Whether the opt-in cookie is set as cross-subdomain or not (overrides value specified in this Mixpanel instance's config)
- * @param {boolean} [options.secure_cookie] Whether the opt-in cookie is set as secure or not (overrides value specified in this Mixpanel instance's config)
- */
-MixpanelLib.prototype.opt_out_tracking = function (options) {
-  options = _.extend({
-    'clear_persistence': true,
-    'delete_user': true
-  }, options);
-
-  // delete user and clear charges since these methods may be disabled by opt-out
-  if (options['delete_user'] && this['people'] && this['people']._identify_called()) {
-    this['people'].delete_user();
-    this['people'].clear_charges();
-  }
-  this._gdpr_call_func(optOut, options);
-  this._gdpr_update_persistence(options);
-};
-
-/**
- * Check whether the user has opted in to data tracking and cookies/localstorage for this Mixpanel instance
- *
- * ### Usage
- *
- *     var has_opted_in = mixpanel.has_opted_in_tracking();
- *     // use has_opted_in value
- *
- * @param {Object} [options] A dictionary of config options to override
- * @param {string} [options.persistence_type=localStorage] Persistence mechanism used - cookie or localStorage - falls back to cookie if localStorage is unavailable
- * @param {string} [options.cookie_prefix=__mp_opt_in_out] Custom prefix to be used in the cookie/localstorage name
- * @returns {boolean} current opt-in status
- */
-MixpanelLib.prototype.has_opted_in_tracking = function (options) {
-  return this._gdpr_call_func(hasOptedIn, options);
-};
-
-/**
- * Check whether the user has opted out of data tracking and cookies/localstorage for this Mixpanel instance
- *
- * ### Usage
- *
- *     var has_opted_out = mixpanel.has_opted_out_tracking();
- *     // use has_opted_out value
- *
- * @param {Object} [options] A dictionary of config options to override
- * @param {string} [options.persistence_type=localStorage] Persistence mechanism used - cookie or localStorage - falls back to cookie if localStorage is unavailable
- * @param {string} [options.cookie_prefix=__mp_opt_in_out] Custom prefix to be used in the cookie/localstorage name
- * @returns {boolean} current opt-out status
- */
-MixpanelLib.prototype.has_opted_out_tracking = function (options) {
-  return this._gdpr_call_func(hasOptedOut, options);
-};
-
-/**
- * Clear the user's opt in/out status of data tracking and cookies/localstorage for this Mixpanel instance
- *
- * ### Usage
- *
- *     // clear user's opt-in/out status
- *     mixpanel.clear_opt_in_out_tracking();
- *
- *     // clear user's opt-in/out status with specific cookie configuration - should match
- *     // configuration used when opt_in_tracking/opt_out_tracking methods were called.
- *     mixpanel.clear_opt_in_out_tracking({
- *         cookie_expiration: 30,
- *         secure_cookie: true
- *     });
- *
- * @param {Object} [options] A dictionary of config options to override
- * @param {boolean} [options.enable_persistence=true] If true, will re-enable sdk persistence
- * @param {string} [options.persistence_type=localStorage] Persistence mechanism used - cookie or localStorage - falls back to cookie if localStorage is unavailable
- * @param {string} [options.cookie_prefix=__mp_opt_in_out] Custom prefix to be used in the cookie/localstorage name
- * @param {Number} [options.cookie_expiration] Number of days until the opt-in cookie expires (overrides value specified in this Mixpanel instance's config)
- * @param {string} [options.cookie_domain] Custom cookie domain (overrides value specified in this Mixpanel instance's config)
- * @param {boolean} [options.cross_site_cookie] Whether the opt-in cookie is set as cross-site-enabled (overrides value specified in this Mixpanel instance's config)
- * @param {boolean} [options.cross_subdomain_cookie] Whether the opt-in cookie is set as cross-subdomain or not (overrides value specified in this Mixpanel instance's config)
- * @param {boolean} [options.secure_cookie] Whether the opt-in cookie is set as secure or not (overrides value specified in this Mixpanel instance's config)
- */
-MixpanelLib.prototype.clear_opt_in_out_tracking = function (options) {
-  options = _.extend({
-    'enable_persistence': true
-  }, options);
-  this._gdpr_call_func(clearOptInOut, options);
-  this._gdpr_update_persistence(options);
-};
-MixpanelLib.prototype.report_error = function (msg, err) {
-  console.error.apply(console.error, arguments);
-  try {
-    if (!err && !(msg instanceof Error)) {
-      msg = new Error(msg);
-    }
-    this.get_config('error_reporter')(msg, err);
-  } catch (err) {
-    console.error(err);
-  }
-};
-
-// EXPORTS (for closure compiler)
-
-// MixpanelLib Exports
-MixpanelLib.prototype['init'] = MixpanelLib.prototype.init;
-MixpanelLib.prototype['reset'] = MixpanelLib.prototype.reset;
-MixpanelLib.prototype['disable'] = MixpanelLib.prototype.disable;
-MixpanelLib.prototype['time_event'] = MixpanelLib.prototype.time_event;
-MixpanelLib.prototype['track'] = MixpanelLib.prototype.track;
-MixpanelLib.prototype['track_links'] = MixpanelLib.prototype.track_links;
-MixpanelLib.prototype['track_forms'] = MixpanelLib.prototype.track_forms;
-MixpanelLib.prototype['track_pageview'] = MixpanelLib.prototype.track_pageview;
-MixpanelLib.prototype['register'] = MixpanelLib.prototype.register;
-MixpanelLib.prototype['register_once'] = MixpanelLib.prototype.register_once;
-MixpanelLib.prototype['unregister'] = MixpanelLib.prototype.unregister;
-MixpanelLib.prototype['identify'] = MixpanelLib.prototype.identify;
-MixpanelLib.prototype['alias'] = MixpanelLib.prototype.alias;
-MixpanelLib.prototype['name_tag'] = MixpanelLib.prototype.name_tag;
-MixpanelLib.prototype['set_config'] = MixpanelLib.prototype.set_config;
-MixpanelLib.prototype['get_config'] = MixpanelLib.prototype.get_config;
-MixpanelLib.prototype['get_property'] = MixpanelLib.prototype.get_property;
-MixpanelLib.prototype['get_distinct_id'] = MixpanelLib.prototype.get_distinct_id;
-MixpanelLib.prototype['toString'] = MixpanelLib.prototype.toString;
-MixpanelLib.prototype['opt_out_tracking'] = MixpanelLib.prototype.opt_out_tracking;
-MixpanelLib.prototype['opt_in_tracking'] = MixpanelLib.prototype.opt_in_tracking;
-MixpanelLib.prototype['has_opted_out_tracking'] = MixpanelLib.prototype.has_opted_out_tracking;
-MixpanelLib.prototype['has_opted_in_tracking'] = MixpanelLib.prototype.has_opted_in_tracking;
-MixpanelLib.prototype['clear_opt_in_out_tracking'] = MixpanelLib.prototype.clear_opt_in_out_tracking;
-MixpanelLib.prototype['get_group'] = MixpanelLib.prototype.get_group;
-MixpanelLib.prototype['set_group'] = MixpanelLib.prototype.set_group;
-MixpanelLib.prototype['add_group'] = MixpanelLib.prototype.add_group;
-MixpanelLib.prototype['remove_group'] = MixpanelLib.prototype.remove_group;
-MixpanelLib.prototype['track_with_groups'] = MixpanelLib.prototype.track_with_groups;
-MixpanelLib.prototype['start_batch_senders'] = MixpanelLib.prototype.start_batch_senders;
-MixpanelLib.prototype['stop_batch_senders'] = MixpanelLib.prototype.stop_batch_senders;
-
-// MixpanelPersistence Exports
-MixpanelPersistence.prototype['properties'] = MixpanelPersistence.prototype.properties;
-MixpanelPersistence.prototype['update_search_keyword'] = MixpanelPersistence.prototype.update_search_keyword;
-MixpanelPersistence.prototype['update_referrer_info'] = MixpanelPersistence.prototype.update_referrer_info;
-MixpanelPersistence.prototype['get_cross_subdomain'] = MixpanelPersistence.prototype.get_cross_subdomain;
-MixpanelPersistence.prototype['clear'] = MixpanelPersistence.prototype.clear;
-var instances = {};
-var extend_mp = function extend_mp() {
-  // add all the sub mixpanel instances
-  _.each(instances, function (instance, name) {
-    if (name !== PRIMARY_INSTANCE_NAME) {
-      mixpanel_master[name] = instance;
-    }
-  });
-
-  // add private functions as _
-  mixpanel_master['_'] = _;
-};
-var override_mp_init_func = function override_mp_init_func() {
-  // we override the snippets init function to handle the case where a
-  // user initializes the mixpanel library after the script loads & runs
-  mixpanel_master['init'] = function (token, config, name) {
-    if (name) {
-      // initialize a sub library
-      if (!mixpanel_master[name]) {
-        mixpanel_master[name] = instances[name] = create_mplib(token, config, name);
-        mixpanel_master[name]._loaded();
-      }
-      return mixpanel_master[name];
-    } else {
-      var instance = mixpanel_master;
-      if (instances[PRIMARY_INSTANCE_NAME]) {
-        // main mixpanel lib already initialized
-        instance = instances[PRIMARY_INSTANCE_NAME];
-      } else if (token) {
-        // intialize the main mixpanel lib
-        instance = create_mplib(token, config, PRIMARY_INSTANCE_NAME);
-        instance._loaded();
-        instances[PRIMARY_INSTANCE_NAME] = instance;
-      }
-      mixpanel_master = instance;
-      if (init_type === INIT_SNIPPET) {
-        window$1[PRIMARY_INSTANCE_NAME] = mixpanel_master;
-      }
-      extend_mp();
-    }
-  };
-};
-var add_dom_loaded_handler = function add_dom_loaded_handler() {
-  // Cross browser DOM Loaded support
-  function dom_loaded_handler() {
-    // function flag since we only want to execute this once
-    if (dom_loaded_handler.done) {
-      return;
-    }
-    dom_loaded_handler.done = true;
-    DOM_LOADED = true;
-    ENQUEUE_REQUESTS = false;
-    _.each(instances, function (inst) {
-      inst._dom_loaded();
-    });
-  }
-  function do_scroll_check() {
-    try {
-      document$1.documentElement.doScroll('left');
-    } catch (e) {
-      setTimeout(do_scroll_check, 1);
-      return;
-    }
-    dom_loaded_handler();
-  }
-  if (document$1.addEventListener) {
-    if (document$1.readyState === 'complete') {
-      // safari 4 can fire the DOMContentLoaded event before loading all
-      // external JS (including this file). you will see some copypasta
-      // on the internet that checks for 'complete' and 'loaded', but
-      // 'loaded' is an IE thing
-      dom_loaded_handler();
-    } else {
-      document$1.addEventListener('DOMContentLoaded', dom_loaded_handler, false);
-    }
-  } else if (document$1.attachEvent) {
-    // IE
-    document$1.attachEvent('onreadystatechange', dom_loaded_handler);
-
-    // check to make sure we arn't in a frame
-    var toplevel = false;
-    try {
-      toplevel = window$1.frameElement === null;
-    } catch (e) {
-      // noop
-    }
-    if (document$1.documentElement.doScroll && toplevel) {
-      do_scroll_check();
-    }
-  }
-
-  // fallback handler, always will work
-  _.register_event(window$1, 'load', dom_loaded_handler, true);
-};
-function init_as_module() {
-  init_type = INIT_MODULE;
-  mixpanel_master = new MixpanelLib();
-  override_mp_init_func();
-  mixpanel_master['init']();
-  add_dom_loaded_handler();
-  return mixpanel_master;
-}
-var mixpanel = init_as_module();
-module.exports = mixpanel;
-
 },{}],15:[function(require,module,exports){
+(function (global){(function (){
 "use strict";
 
-function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
+function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
 var hasMap = typeof Map === 'function' && Map.prototype;
 var mapSizeDescriptor = Object.getOwnPropertyDescriptor && hasMap ? Object.getOwnPropertyDescriptor(Map.prototype, 'size') : null;
 var mapSize = hasMap && mapSizeDescriptor && typeof mapSizeDescriptor.get === 'function' ? mapSizeDescriptor.get : null;
@@ -6458,6 +852,13 @@ module.exports = function inspect_(obj, options, depth, seen) {
   }
   if (isString(obj)) {
     return markBoxed(inspect(String(obj)));
+  }
+  if (obj === global) {
+    /* eslint-env browser */
+    if (typeof window !== 'undefined') {
+      return '{ [object Window] }';
+    }
+    return '{ [object global] }';
   }
   if (!isDate(obj) && !isRegExp(obj)) {
     var ys = arrObjKeys(obj, inspect);
@@ -6748,6 +1149,7 @@ function arrObjKeys(obj, inspect) {
   return xs;
 }
 
+}).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{"./util.inspect":1}],16:[function(require,module,exports){
 'use strict';
 
@@ -6830,7 +1232,9 @@ var isoSentinel = 'utf8=%26%2310003%3B'; // encodeURIComponent('&#10003;')
 var charsetSentinel = 'utf8=%E2%9C%93'; // encodeURIComponent('✓')
 
 var parseValues = function parseQueryStringValues(str, options) {
-  var obj = {};
+  var obj = {
+    __proto__: null
+  };
   var cleanStr = options.ignoreQueryPrefix ? str.replace(/^\?/, '') : str;
   var limit = options.parameterLimit === Infinity ? undefined : options.parameterLimit;
   var parts = cleanStr.split(options.delimiter, limit);
@@ -7015,7 +1419,7 @@ module.exports = function (str, opts) {
 },{"./utils":20}],19:[function(require,module,exports){
 'use strict';
 
-function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
+function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
 var getSideChannel = require('side-channel');
 var utils = require('./utils');
 var formats = require('./formats');
@@ -7243,7 +1647,7 @@ module.exports = function (object, opts) {
 },{"./formats":16,"./utils":20,"side-channel":21}],20:[function(require,module,exports){
 'use strict';
 
-function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
+function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
 var formats = require('./formats');
 var has = Object.prototype.hasOwnProperty;
 var isArray = Array.isArray;
@@ -7462,7 +1866,7 @@ module.exports = {
 },{"./formats":16}],21:[function(require,module,exports){
 'use strict';
 
-function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
+function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
 var GetIntrinsic = require('get-intrinsic');
 var callBound = require('call-bind/callBound');
 var inspect = require('object-inspect');
@@ -8085,7 +2489,7 @@ function unsafeStringify(arr) {
   var offset = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
   // Note: Be careful editing this code!  It's been tuned for performance
   // and works in ways you may not expect. See https://github.com/uuidjs/uuid/pull/434
-  return (byteToHex[arr[offset + 0]] + byteToHex[arr[offset + 1]] + byteToHex[arr[offset + 2]] + byteToHex[arr[offset + 3]] + '-' + byteToHex[arr[offset + 4]] + byteToHex[arr[offset + 5]] + '-' + byteToHex[arr[offset + 6]] + byteToHex[arr[offset + 7]] + '-' + byteToHex[arr[offset + 8]] + byteToHex[arr[offset + 9]] + '-' + byteToHex[arr[offset + 10]] + byteToHex[arr[offset + 11]] + byteToHex[arr[offset + 12]] + byteToHex[arr[offset + 13]] + byteToHex[arr[offset + 14]] + byteToHex[arr[offset + 15]]).toLowerCase();
+  return byteToHex[arr[offset + 0]] + byteToHex[arr[offset + 1]] + byteToHex[arr[offset + 2]] + byteToHex[arr[offset + 3]] + '-' + byteToHex[arr[offset + 4]] + byteToHex[arr[offset + 5]] + '-' + byteToHex[arr[offset + 6]] + byteToHex[arr[offset + 7]] + '-' + byteToHex[arr[offset + 8]] + byteToHex[arr[offset + 9]] + '-' + byteToHex[arr[offset + 10]] + byteToHex[arr[offset + 11]] + byteToHex[arr[offset + 12]] + byteToHex[arr[offset + 13]] + byteToHex[arr[offset + 14]] + byteToHex[arr[offset + 15]];
 }
 function stringify(arr) {
   var offset = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
@@ -8391,18 +2795,324 @@ exports["default"] = _default;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-var poynt_collect_1 = require("./poynt-collect");
-var poynt_collect_v2_1 = require("./poynt-collect-v2");
+var collect_1 = require("./collect.js");
 if (typeof window !== "undefined") {
   // @ts-ignore
-  window.PoyntCollect = poynt_collect_1.PoyntCollect;
-}
-if (typeof window !== "undefined") {
-  // @ts-ignore
-  window.TokenizeJs = poynt_collect_v2_1.TokenizeJs;
+  window.TokenizeJs = collect_1.TokenizeJs;
 }
 
-},{"./poynt-collect":63,"./poynt-collect-v2":62}],39:[function(require,module,exports){
+},{"./collect":39}],39:[function(require,module,exports){
+"use strict";
+
+function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
+function _regeneratorRuntime() { "use strict"; /*! regenerator-runtime -- Copyright (c) 2014-present, Facebook, Inc. -- license (MIT): https://github.com/facebook/regenerator/blob/main/LICENSE */ _regeneratorRuntime = function _regeneratorRuntime() { return e; }; var t, e = {}, r = Object.prototype, n = r.hasOwnProperty, o = Object.defineProperty || function (t, e, r) { t[e] = r.value; }, i = "function" == typeof Symbol ? Symbol : {}, a = i.iterator || "@@iterator", c = i.asyncIterator || "@@asyncIterator", u = i.toStringTag || "@@toStringTag"; function define(t, e, r) { return Object.defineProperty(t, e, { value: r, enumerable: !0, configurable: !0, writable: !0 }), t[e]; } try { define({}, ""); } catch (t) { define = function define(t, e, r) { return t[e] = r; }; } function wrap(t, e, r, n) { var i = e && e.prototype instanceof Generator ? e : Generator, a = Object.create(i.prototype), c = new Context(n || []); return o(a, "_invoke", { value: makeInvokeMethod(t, r, c) }), a; } function tryCatch(t, e, r) { try { return { type: "normal", arg: t.call(e, r) }; } catch (t) { return { type: "throw", arg: t }; } } e.wrap = wrap; var h = "suspendedStart", l = "suspendedYield", f = "executing", s = "completed", y = {}; function Generator() {} function GeneratorFunction() {} function GeneratorFunctionPrototype() {} var p = {}; define(p, a, function () { return this; }); var d = Object.getPrototypeOf, v = d && d(d(values([]))); v && v !== r && n.call(v, a) && (p = v); var g = GeneratorFunctionPrototype.prototype = Generator.prototype = Object.create(p); function defineIteratorMethods(t) { ["next", "throw", "return"].forEach(function (e) { define(t, e, function (t) { return this._invoke(e, t); }); }); } function AsyncIterator(t, e) { function invoke(r, o, i, a) { var c = tryCatch(t[r], t, o); if ("throw" !== c.type) { var u = c.arg, h = u.value; return h && "object" == _typeof(h) && n.call(h, "__await") ? e.resolve(h.__await).then(function (t) { invoke("next", t, i, a); }, function (t) { invoke("throw", t, i, a); }) : e.resolve(h).then(function (t) { u.value = t, i(u); }, function (t) { return invoke("throw", t, i, a); }); } a(c.arg); } var r; o(this, "_invoke", { value: function value(t, n) { function callInvokeWithMethodAndArg() { return new e(function (e, r) { invoke(t, n, e, r); }); } return r = r ? r.then(callInvokeWithMethodAndArg, callInvokeWithMethodAndArg) : callInvokeWithMethodAndArg(); } }); } function makeInvokeMethod(e, r, n) { var o = h; return function (i, a) { if (o === f) throw new Error("Generator is already running"); if (o === s) { if ("throw" === i) throw a; return { value: t, done: !0 }; } for (n.method = i, n.arg = a;;) { var c = n.delegate; if (c) { var u = maybeInvokeDelegate(c, n); if (u) { if (u === y) continue; return u; } } if ("next" === n.method) n.sent = n._sent = n.arg;else if ("throw" === n.method) { if (o === h) throw o = s, n.arg; n.dispatchException(n.arg); } else "return" === n.method && n.abrupt("return", n.arg); o = f; var p = tryCatch(e, r, n); if ("normal" === p.type) { if (o = n.done ? s : l, p.arg === y) continue; return { value: p.arg, done: n.done }; } "throw" === p.type && (o = s, n.method = "throw", n.arg = p.arg); } }; } function maybeInvokeDelegate(e, r) { var n = r.method, o = e.iterator[n]; if (o === t) return r.delegate = null, "throw" === n && e.iterator["return"] && (r.method = "return", r.arg = t, maybeInvokeDelegate(e, r), "throw" === r.method) || "return" !== n && (r.method = "throw", r.arg = new TypeError("The iterator does not provide a '" + n + "' method")), y; var i = tryCatch(o, e.iterator, r.arg); if ("throw" === i.type) return r.method = "throw", r.arg = i.arg, r.delegate = null, y; var a = i.arg; return a ? a.done ? (r[e.resultName] = a.value, r.next = e.nextLoc, "return" !== r.method && (r.method = "next", r.arg = t), r.delegate = null, y) : a : (r.method = "throw", r.arg = new TypeError("iterator result is not an object"), r.delegate = null, y); } function pushTryEntry(t) { var e = { tryLoc: t[0] }; 1 in t && (e.catchLoc = t[1]), 2 in t && (e.finallyLoc = t[2], e.afterLoc = t[3]), this.tryEntries.push(e); } function resetTryEntry(t) { var e = t.completion || {}; e.type = "normal", delete e.arg, t.completion = e; } function Context(t) { this.tryEntries = [{ tryLoc: "root" }], t.forEach(pushTryEntry, this), this.reset(!0); } function values(e) { if (e || "" === e) { var r = e[a]; if (r) return r.call(e); if ("function" == typeof e.next) return e; if (!isNaN(e.length)) { var o = -1, i = function next() { for (; ++o < e.length;) if (n.call(e, o)) return next.value = e[o], next.done = !1, next; return next.value = t, next.done = !0, next; }; return i.next = i; } } throw new TypeError(_typeof(e) + " is not iterable"); } return GeneratorFunction.prototype = GeneratorFunctionPrototype, o(g, "constructor", { value: GeneratorFunctionPrototype, configurable: !0 }), o(GeneratorFunctionPrototype, "constructor", { value: GeneratorFunction, configurable: !0 }), GeneratorFunction.displayName = define(GeneratorFunctionPrototype, u, "GeneratorFunction"), e.isGeneratorFunction = function (t) { var e = "function" == typeof t && t.constructor; return !!e && (e === GeneratorFunction || "GeneratorFunction" === (e.displayName || e.name)); }, e.mark = function (t) { return Object.setPrototypeOf ? Object.setPrototypeOf(t, GeneratorFunctionPrototype) : (t.__proto__ = GeneratorFunctionPrototype, define(t, u, "GeneratorFunction")), t.prototype = Object.create(g), t; }, e.awrap = function (t) { return { __await: t }; }, defineIteratorMethods(AsyncIterator.prototype), define(AsyncIterator.prototype, c, function () { return this; }), e.AsyncIterator = AsyncIterator, e.async = function (t, r, n, o, i) { void 0 === i && (i = Promise); var a = new AsyncIterator(wrap(t, r, n, o), i); return e.isGeneratorFunction(r) ? a : a.next().then(function (t) { return t.done ? t.value : a.next(); }); }, defineIteratorMethods(g), define(g, u, "Generator"), define(g, a, function () { return this; }), define(g, "toString", function () { return "[object Generator]"; }), e.keys = function (t) { var e = Object(t), r = []; for (var n in e) r.push(n); return r.reverse(), function next() { for (; r.length;) { var t = r.pop(); if (t in e) return next.value = t, next.done = !1, next; } return next.done = !0, next; }; }, e.values = values, Context.prototype = { constructor: Context, reset: function reset(e) { if (this.prev = 0, this.next = 0, this.sent = this._sent = t, this.done = !1, this.delegate = null, this.method = "next", this.arg = t, this.tryEntries.forEach(resetTryEntry), !e) for (var r in this) "t" === r.charAt(0) && n.call(this, r) && !isNaN(+r.slice(1)) && (this[r] = t); }, stop: function stop() { this.done = !0; var t = this.tryEntries[0].completion; if ("throw" === t.type) throw t.arg; return this.rval; }, dispatchException: function dispatchException(e) { if (this.done) throw e; var r = this; function handle(n, o) { return a.type = "throw", a.arg = e, r.next = n, o && (r.method = "next", r.arg = t), !!o; } for (var o = this.tryEntries.length - 1; o >= 0; --o) { var i = this.tryEntries[o], a = i.completion; if ("root" === i.tryLoc) return handle("end"); if (i.tryLoc <= this.prev) { var c = n.call(i, "catchLoc"), u = n.call(i, "finallyLoc"); if (c && u) { if (this.prev < i.catchLoc) return handle(i.catchLoc, !0); if (this.prev < i.finallyLoc) return handle(i.finallyLoc); } else if (c) { if (this.prev < i.catchLoc) return handle(i.catchLoc, !0); } else { if (!u) throw new Error("try statement without catch or finally"); if (this.prev < i.finallyLoc) return handle(i.finallyLoc); } } } }, abrupt: function abrupt(t, e) { for (var r = this.tryEntries.length - 1; r >= 0; --r) { var o = this.tryEntries[r]; if (o.tryLoc <= this.prev && n.call(o, "finallyLoc") && this.prev < o.finallyLoc) { var i = o; break; } } i && ("break" === t || "continue" === t) && i.tryLoc <= e && e <= i.finallyLoc && (i = null); var a = i ? i.completion : {}; return a.type = t, a.arg = e, i ? (this.method = "next", this.next = i.finallyLoc, y) : this.complete(a); }, complete: function complete(t, e) { if ("throw" === t.type) throw t.arg; return "break" === t.type || "continue" === t.type ? this.next = t.arg : "return" === t.type ? (this.rval = this.arg = t.arg, this.method = "return", this.next = "end") : "normal" === t.type && e && (this.next = e), y; }, finish: function finish(t) { for (var e = this.tryEntries.length - 1; e >= 0; --e) { var r = this.tryEntries[e]; if (r.finallyLoc === t) return this.complete(r.completion, r.afterLoc), resetTryEntry(r), y; } }, "catch": function _catch(t) { for (var e = this.tryEntries.length - 1; e >= 0; --e) { var r = this.tryEntries[e]; if (r.tryLoc === t) { var n = r.completion; if ("throw" === n.type) { var o = n.arg; resetTryEntry(r); } return o; } } throw new Error("illegal catch attempt"); }, delegateYield: function delegateYield(e, r, n) { return this.delegate = { iterator: values(e), resultName: r, nextLoc: n }, "next" === this.method && (this.arg = t), y; } }, e; }
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, _toPropertyKey(descriptor.key), descriptor); } }
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
+function _toPropertyKey(arg) { var key = _toPrimitive(arg, "string"); return _typeof(key) === "symbol" ? key : String(key); }
+function _toPrimitive(input, hint) { if (_typeof(input) !== "object" || input === null) return input; var prim = input[Symbol.toPrimitive]; if (prim !== undefined) { var res = prim.call(input, hint || "default"); if (_typeof(res) !== "object") return res; throw new TypeError("@@toPrimitive must return a primitive value."); } return (hint === "string" ? String : Number)(input); }
+var __createBinding = void 0 && (void 0).__createBinding || (Object.create ? function (o, m, k, k2) {
+  if (k2 === undefined) k2 = k;
+  var desc = Object.getOwnPropertyDescriptor(m, k);
+  if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+    desc = {
+      enumerable: true,
+      get: function get() {
+        return m[k];
+      }
+    };
+  }
+  Object.defineProperty(o, k2, desc);
+} : function (o, m, k, k2) {
+  if (k2 === undefined) k2 = k;
+  o[k2] = m[k];
+});
+var __setModuleDefault = void 0 && (void 0).__setModuleDefault || (Object.create ? function (o, v) {
+  Object.defineProperty(o, "default", {
+    enumerable: true,
+    value: v
+  });
+} : function (o, v) {
+  o["default"] = v;
+});
+var __importStar = void 0 && (void 0).__importStar || function (mod) {
+  if (mod && mod.__esModule) return mod;
+  var result = {};
+  if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+  __setModuleDefault(result, mod);
+  return result;
+};
+var __awaiter = void 0 && (void 0).__awaiter || function (thisArg, _arguments, P, generator) {
+  function adopt(value) {
+    return value instanceof P ? value : new P(function (resolve) {
+      resolve(value);
+    });
+  }
+  return new (P || (P = Promise))(function (resolve, reject) {
+    function fulfilled(value) {
+      try {
+        step(generator.next(value));
+      } catch (e) {
+        reject(e);
+      }
+    }
+    function rejected(value) {
+      try {
+        step(generator["throw"](value));
+      } catch (e) {
+        reject(e);
+      }
+    }
+    function step(result) {
+      result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
+    }
+    step((generator = generator.apply(thisArg, _arguments || [])).next());
+  });
+};
+var __importDefault = void 0 && (void 0).__importDefault || function (mod) {
+  return mod && mod.__esModule ? mod : {
+    "default": mod
+  };
+};
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.TokenizeJs = void 0;
+var uuid_1 = require("uuid");
+var constants = __importStar(require("./lib/constants"));
+var shared_1 = __importDefault(require("./lib/services/shared"));
+var applepay_1 = __importDefault(require("./lib/services/applepay"));
+var googlepay_1 = __importDefault(require("./lib/services/googlepay"));
+var paze_1 = __importDefault(require("./lib/services/paze"));
+var card_on_file_1 = __importDefault(require("./lib/services/card-on-file"));
+var helpers = __importStar(require("./lib/helpers/common"));
+/**
+ * TokenizeJs class for managing the Poynt Collect integration.
+ */
+var TokenizeJs = /*#__PURE__*/function () {
+  function TokenizeJs(businessId, applicationId, walletRequest) {
+    _classCallCheck(this, TokenizeJs);
+    this.sharedService = new shared_1["default"](businessId, applicationId, walletRequest);
+    this.applePayService = new applepay_1["default"](this.sharedService);
+    this.googlePayService = new googlepay_1["default"](this.sharedService);
+    this.pazeService = new paze_1["default"](this.sharedService);
+    this.cardOnFileService = new card_on_file_1["default"](this.sharedService);
+  }
+  /**
+   * Adds a callback listener for a specific event.
+   *
+   * @param {string} eventName - The name of the event.
+   * @param {Function} callback - The callback function.
+   * @returns {void}
+   */
+  _createClass(TokenizeJs, [{
+    key: "on",
+    value: function on(eventName, callback) {
+      this.sharedService.on(eventName, callback);
+    }
+    /**
+     * Mounts the Poynt Collet to the DOM.
+     *
+     * @param {string} domElement - The DOM element ID to mount the library.
+     * @param {Document} document - The document object.
+     * @param {MountOptions} mountOptions - The mount options.
+     * @returns {void}
+     */
+  }, {
+    key: "mount",
+    value: function mount(domElement, document, mountOptions) {
+      var _a, _b, _c;
+      var options = helpers.getAllOptions(this.sharedService.businessId, this.sharedService.applicationId, this.sharedService.sessionId, mountOptions);
+      if (options.enableCardOnFile) {
+        this.cardOnFileService.mount(options.locale, options.forceSaveCardOnFile, options.cardAgreementOptions);
+      }
+      var isPaymentFormEnabled = helpers.isPaymentFormEnabled(options);
+      var applePay = (_a = options.paymentMethods) === null || _a === void 0 ? void 0 : _a.includes("apple_pay" /* WalletType.ApplePay */);
+      var googlePay = (_b = options.paymentMethods) === null || _b === void 0 ? void 0 : _b.includes("google_pay" /* WalletType.GooglePay */);
+      var paze = (_c = options.paymentMethods) === null || _c === void 0 ? void 0 : _c.includes("paze" /* WalletType.Paze */);
+      if (isPaymentFormEnabled) {
+        this.sharedService.mountPaymentForm(domElement, document, options);
+      }
+      if (applePay || googlePay || paze) {
+        this.sharedService.mountButtonsContainer(domElement, document, options);
+        if (applePay) {
+          this.applePayService.mount(options.buttonOptions, options.applePayButtonOptions);
+        }
+        if (googlePay) {
+          this.googlePayService.mount(options.buttonOptions, options.googlePayButtonOptions);
+        }
+        if (paze) {
+          this.pazeService.mount(options.buttonOptions, options.pazeButtonOptions);
+        }
+      }
+      if (!isPaymentFormEnabled) {
+        //process ready events in case iframe with payment form is not loaded
+        this.sharedService.processCallbacks("ready" /* EventType.Ready */, {
+          type: "ready" /* EventType.Ready */,
+          data: {}
+        });
+        this.sharedService.processCallbacks("iframe_ready" /* EventType.IFrameContentReady */, {
+          type: "iframe_ready" /* EventType.IFrameContentReady */,
+          data: {}
+        });
+      }
+    }
+    /**
+     * Unmounts the Poynt Collect from the DOM.
+     *
+     * @param {string} domElement - The DOM element ID to unmount the library.
+     * @param {Document} document - The document object.
+     * @returns {void}
+     */
+  }, {
+    key: "unmount",
+    value: function unmount(domElement, document) {
+      this.sharedService.unmount(domElement, document);
+      this.cardOnFileService.unmount();
+    }
+    /**
+     * Gets the iframe element.
+     *
+     * @returns {HTMLIFrameElement | null} The iframe element or null if not found.
+     */
+  }, {
+    key: "getIFrame",
+    value: function getIFrame() {
+      return this.sharedService.iFrame;
+    }
+    /**
+     * Reloads the iframe.
+     *
+     * @returns {void}
+     */
+  }, {
+    key: "reload",
+    value: function reload() {
+      var _a, _b;
+      (_b = (_a = this.sharedService.iFrame) === null || _a === void 0 ? void 0 : _a.contentWindow) === null || _b === void 0 ? void 0 : _b.location.reload();
+    }
+    /**
+     * Calls the webview to get the nonce.
+     *
+     * @param {GetNonceOptions} getNonceOptions - The options for getting the nonce.
+     * @returns {void}
+     */
+  }, {
+    key: "getNonce",
+    value: function getNonce() {
+      var getNonceOptions = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+      if (!this.sharedService.iFrame) {
+        return this.sharedService.handleError("CARD_PAYMENT" /* ErrorType.CARD_PAYMENT */, new Error("iFrame not found"));
+      }
+      getNonceOptions.requestId = (0, uuid_1.v4)();
+      if (this.cardOnFileService.cardAgreementData) {
+        getNonceOptions.cardAgreementMetadata = this.cardOnFileService.cardAgreementData.metadata;
+      }
+      this.sharedService.postIFrameMessage({
+        type: "op_get_nonce" /* EventType.OpGetNonce */,
+        options: getNonceOptions
+      });
+    }
+    /**
+     * Starts a Google Pay session.
+     *
+     * @param {WalletRequestUpdate} walletRequest - The updated wallet request.
+     * @returns {void}
+     */
+  }, {
+    key: "startGooglePaySession",
+    value: function startGooglePaySession(walletRequest) {
+      this.googlePayService.startSession(walletRequest);
+    }
+    /**
+     * Starts a Apple Pay session.
+     *
+     * @param {WalletRequestUpdate} walletRequest - The updated wallet request.
+     * @returns {void}
+     */
+  }, {
+    key: "startApplePaySession",
+    value: function startApplePaySession(walletRequest) {
+      this.applePayService.startSession(walletRequest);
+    }
+    /**
+     * Starts a Paze Wallet session.
+     *
+     * @param {WalletRequestUpdate} walletRequest - The updated wallet request.
+     * @returns {void}
+     */
+  }, {
+    key: "startPazeSession",
+    value: function startPazeSession(walletRequest) {
+      this.pazeService.startSession(walletRequest);
+    }
+    /**
+     * Aborts the current Apple Pay session.
+     *
+     * @returns {void}
+     */
+  }, {
+    key: "abortApplePaySession",
+    value: function abortApplePaySession() {
+      this.applePayService.abortSession();
+    }
+    /**
+     * Checks if wallet payment is supported based on the browser and wallet request.
+     *
+     * @returns {Promise<SupportWalletPaymentsResponse>} A promise that resolves to an object indicating wallet payment support.
+     */
+  }, {
+    key: "supportWalletPayments",
+    value: function supportWalletPayments() {
+      var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+      var _a;
+      return __awaiter(this, void 0, void 0, /*#__PURE__*/_regeneratorRuntime().mark(function _callee() {
+        var result, domainName, promises;
+        return _regeneratorRuntime().wrap(function _callee$(_context) {
+          while (1) switch (_context.prev = _context.next) {
+            case 0:
+              result = {
+                googlePay: false,
+                applePay: false,
+                paze: false
+              };
+              domainName = ((_a = window.top) === null || _a === void 0 ? void 0 : _a.location.hostname) || document.location.hostname;
+              if (!constants.DOMAIN_BLACKLIST.includes(domainName)) {
+                _context.next = 5;
+                break;
+              }
+              this.sharedService.handleError("WALLET" /* ErrorType.WALLET */, new Error(domainName + " is blacklisted. Please reach out GDP support."));
+              return _context.abrupt("return", result);
+            case 5:
+              _context.prev = 5;
+              promises = [this.applePayService.initialize(), this.googlePayService.initialize(), this.pazeService.initialize(options.emailAddress)];
+              _context.next = 9;
+              return Promise.all(promises);
+            case 9:
+              result.applePay = this.applePayService.isReady();
+              result.googlePay = this.googlePayService.isReady();
+              result.paze = this.pazeService.isReady();
+              _context.next = 17;
+              break;
+            case 14:
+              _context.prev = 14;
+              _context.t0 = _context["catch"](5);
+              this.sharedService.handleError("WALLET" /* ErrorType.WALLET */, _context.t0);
+            case 17:
+              return _context.abrupt("return", result);
+            case 18:
+            case "end":
+              return _context.stop();
+          }
+        }, _callee, this, [[5, 14]]);
+      }));
+    }
+  }]);
+  return TokenizeJs;
+}();
+exports.TokenizeJs = TokenizeJs;
+
+},{"./lib/constants":41,"./lib/helpers/common":44,"./lib/services/applepay":49,"./lib/services/card-on-file":50,"./lib/services/googlepay":51,"./lib/services/paze":52,"./lib/services/shared":53,"uuid":22}],40:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -8480,21 +3190,18 @@ exports.declineButton = {
   "width": "100%"
 };
 
-},{}],40:[function(require,module,exports){
+},{}],41:[function(require,module,exports){
 "use strict";
 
 var _exports$GOOGLE_PAY_E, _exports$GOOGLE_PAY_I;
-function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
+function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
 function _defineProperty(obj, key, value) { key = _toPropertyKey(key); if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 function _toPropertyKey(arg) { var key = _toPrimitive(arg, "string"); return _typeof(key) === "symbol" ? key : String(key); }
 function _toPrimitive(input, hint) { if (_typeof(input) !== "object" || input === null) return input; var prim = input[Symbol.toPrimitive]; if (prim !== undefined) { var res = prim.call(input, hint || "default"); if (_typeof(res) !== "object") return res; throw new TypeError("@@toPrimitive must return a primitive value."); } return (hint === "string" ? String : Number)(input); }
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.MIXPANEL_INSTANCE_NAME = exports.MIXPANEL_TOKEN = exports.COF_DEFAULT_COUNTRY_CODE = exports.COF_DEFAULT_LANGUAGE = exports.ASSETS_CDN_URL = exports.DOMAIN_BLACKLIST = exports.WALLET_SHIPPING_COUNTRY_CODES = exports.DEFAULT_TIMEOUT = exports.PAZE_WALLET_ALLOWED_CARD_NETWORKS = exports.PAZE_WALLET_SANDBOX_SCRIPT_URL = exports.PAZE_WALLET_SANDBOX_CLIENT_PROFILE_ID = exports.PAZE_WALLET_SANDBOX_CLIENT_ID = exports.APPLEPAY_SUPPORTED_NETWORKS = exports.APPLEPAY_MERCHANT_CAPABILITIES = exports.APPLEPAY_VERSION = exports.GOOGLEPAY_ALLOWED_CARD_NETWORKS = exports.GOOGLEPAY_ALLOWED_AUTHN_METHODS = exports.GOOGLEPAY_VERSION_MINOR = exports.GOOGLEPAY_VERSION = exports.GOOGLEPAY_GATEWAY = exports.GOOGLEPAY_MERCHANT_ID = exports.GOOGLEPAY_SCRIPT_URL = exports.GOOGLE_PAY_INTENT_MAP = exports.GOOGLE_PAY_EVENT_MAP = exports.DEFAULT_LOCALE = exports.IFRAME_NAME = void 0;
-var event_type_1 = require("./enums/event-type");
-var googlepay_1 = require("./enums/googlepay");
-var paze_wallet_1 = require("./enums/paze-wallet");
+exports.COF_DEFAULT_COUNTRY_CODE = exports.COF_DEFAULT_LANGUAGE = exports.ASSETS_CDN_URL = exports.DOMAIN_BLACKLIST = exports.WALLET_SHIPPING_COUNTRY_CODES = exports.DEFAULT_TIMEOUT = exports.PAZE_ALLOWED_CARD_NETWORKS = exports.APPLEPAY_SUPPORTED_NETWORKS = exports.APPLEPAY_MERCHANT_CAPABILITIES = exports.APPLEPAY_VERSION = exports.GOOGLEPAY_ALLOWED_CARD_NETWORKS = exports.GOOGLEPAY_ALLOWED_AUTHN_METHODS = exports.GOOGLEPAY_VERSION_MINOR = exports.GOOGLEPAY_VERSION = exports.GOOGLEPAY_GATEWAY = exports.GOOGLEPAY_MERCHANT_ID = exports.GOOGLEPAY_SCRIPT_URL = exports.GOOGLE_PAY_INTENT_MAP = exports.GOOGLE_PAY_EVENT_MAP = exports.DEFAULT_LOCALE = exports.IFRAME_NAME = void 0;
 /**
  * Payment form constants
  */
@@ -8503,8 +3210,8 @@ exports.DEFAULT_LOCALE = "en-US";
 /**
  * Google Pay constants
  */
-exports.GOOGLE_PAY_EVENT_MAP = (_exports$GOOGLE_PAY_E = {}, _defineProperty(_exports$GOOGLE_PAY_E, googlepay_1.CallbackType.INITIALIZE, event_type_1.EventType.ShippingAddressChange), _defineProperty(_exports$GOOGLE_PAY_E, googlepay_1.CallbackType.SHIPPING_ADDRESS, event_type_1.EventType.ShippingAddressChange), _defineProperty(_exports$GOOGLE_PAY_E, googlepay_1.CallbackType.SHIPPING_OPTION, event_type_1.EventType.ShippingMethodChange), _defineProperty(_exports$GOOGLE_PAY_E, googlepay_1.CallbackType.OFFER, event_type_1.EventType.CouponCodeChange), _exports$GOOGLE_PAY_E);
-exports.GOOGLE_PAY_INTENT_MAP = (_exports$GOOGLE_PAY_I = {}, _defineProperty(_exports$GOOGLE_PAY_I, googlepay_1.CallbackType.INITIALIZE, googlepay_1.CallbackType.SHIPPING_ADDRESS), _defineProperty(_exports$GOOGLE_PAY_I, googlepay_1.CallbackType.SHIPPING_ADDRESS, googlepay_1.CallbackType.SHIPPING_ADDRESS), _defineProperty(_exports$GOOGLE_PAY_I, googlepay_1.CallbackType.SHIPPING_OPTION, googlepay_1.CallbackType.SHIPPING_OPTION), _defineProperty(_exports$GOOGLE_PAY_I, googlepay_1.CallbackType.OFFER, googlepay_1.CallbackType.OFFER), _exports$GOOGLE_PAY_I);
+exports.GOOGLE_PAY_EVENT_MAP = (_exports$GOOGLE_PAY_E = {}, _defineProperty(_exports$GOOGLE_PAY_E, "INITIALIZE" /* CallbackType.INITIALIZE */, "shipping_address_change"), _defineProperty(_exports$GOOGLE_PAY_E, "SHIPPING_ADDRESS" /* CallbackType.SHIPPING_ADDRESS */, "shipping_address_change"), _defineProperty(_exports$GOOGLE_PAY_E, "SHIPPING_OPTION" /* CallbackType.SHIPPING_OPTION */, "shipping_method_change"), _defineProperty(_exports$GOOGLE_PAY_E, "OFFER" /* CallbackType.OFFER */, "coupon_code_change"), _exports$GOOGLE_PAY_E);
+exports.GOOGLE_PAY_INTENT_MAP = (_exports$GOOGLE_PAY_I = {}, _defineProperty(_exports$GOOGLE_PAY_I, "INITIALIZE" /* CallbackType.INITIALIZE */, "SHIPPING_ADDRESS"), _defineProperty(_exports$GOOGLE_PAY_I, "SHIPPING_ADDRESS" /* CallbackType.SHIPPING_ADDRESS */, "SHIPPING_ADDRESS"), _defineProperty(_exports$GOOGLE_PAY_I, "SHIPPING_OPTION" /* CallbackType.SHIPPING_OPTION */, "SHIPPING_OPTION"), _defineProperty(_exports$GOOGLE_PAY_I, "OFFER" /* CallbackType.OFFER */, "OFFER"), _exports$GOOGLE_PAY_I);
 exports.GOOGLEPAY_SCRIPT_URL = "https://pay.google.com/gp/p/js/pay.js";
 exports.GOOGLEPAY_MERCHANT_ID = "BCR2DN4T3D32TPA6";
 exports.GOOGLEPAY_GATEWAY = "godaddypayments";
@@ -8521,10 +3228,7 @@ exports.APPLEPAY_SUPPORTED_NETWORKS = ["visa", "masterCard", "amex", "discover",
 /**
  * Paze constants
  */
-exports.PAZE_WALLET_SANDBOX_CLIENT_ID = "HJZIB2UOCEAHIDK83ZOE21J_g6ImMy9bnISMEdL2VsJA4sCMM";
-exports.PAZE_WALLET_SANDBOX_CLIENT_PROFILE_ID = "GoDaddyMerchantA";
-exports.PAZE_WALLET_SANDBOX_SCRIPT_URL = "https://sandbox.digitalwallet.earlywarning.com/web/resources/js/digitalwallet-sdk.js?id=".concat(exports.PAZE_WALLET_SANDBOX_CLIENT_ID);
-exports.PAZE_WALLET_ALLOWED_CARD_NETWORKS = [paze_wallet_1.PaymentCardNetwork.VISA, paze_wallet_1.PaymentCardNetwork.MASTERCARD];
+exports.PAZE_ALLOWED_CARD_NETWORKS = ["VISA" /* PaymentCardNetwork.VISA */, "MASTERCARD" /* PaymentCardNetwork.MASTERCARD */];
 /**
  * Generic wallet constants
  */
@@ -8539,29 +3243,6 @@ exports.ASSETS_CDN_URL = "https://d85ecz8votkqa.cloudfront.net/images/collect/";
  */
 exports.COF_DEFAULT_LANGUAGE = "EN";
 exports.COF_DEFAULT_COUNTRY_CODE = "US";
-/**
- * Mixpanel constants
- */
-exports.MIXPANEL_TOKEN = "b3053c0785212011971a15669b094404";
-exports.MIXPANEL_INSTANCE_NAME = "poynt_collect";
-
-},{"./enums/event-type":43,"./enums/googlepay":44,"./enums/paze-wallet":46}],41:[function(require,module,exports){
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.ErrorType = void 0;
-var ErrorType;
-(function (ErrorType) {
-  ErrorType["SHIPPING_CONTACT_INVALID"] = "shippingContactInvalid";
-  ErrorType["BILLING_CONTACT_INVALID"] = "billingContactInvalid";
-  ErrorType["ADDRESS_UNSERVICEABLE"] = "addressUnserviceable";
-  ErrorType["COUPON_CODE_INVALID"] = "couponCodeInvalid";
-  ErrorType["COUPON_CODE_EXPIRED"] = "couponCodeExpired";
-  ErrorType["UNKNOWN"] = "unknown";
-})(ErrorType = exports.ErrorType || (exports.ErrorType = {}));
-;
 
 },{}],42:[function(require,module,exports){
 "use strict";
@@ -8569,235 +3250,8 @@ var ErrorType;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.ErrorType = void 0;
-var ErrorType;
-(function (ErrorType) {
-  ErrorType["WALLET"] = "WALLET";
-  ErrorType["APPLE_PAY"] = "APPLE_PAY";
-  ErrorType["APPLE_PAY_NONCE"] = "APPLE_PAY_NONCE";
-  ErrorType["GOOGLE_PAY"] = "GOOGLE_PAY";
-  ErrorType["GOOGLE_PAY_NONCE"] = "GOOGLE_PAY_NONCE";
-  ErrorType["PAZE_WALLET"] = "PAZE_WALLET";
-  ErrorType["PAZE_WALLET_NONCE"] = "PAZE_WALLET_NONCE";
-  ErrorType["CARD_PAYMENT"] = "CARD_PAYMENT";
-  ErrorType["CARD_ON_FILE"] = "CARD_ON_FILE";
-})(ErrorType = exports.ErrorType || (exports.ErrorType = {}));
-;
-
-},{}],43:[function(require,module,exports){
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.EventType = void 0;
-// See https://github.com/poynt/virtual-terminal/blob/staging/assets/js/poynt-collect/src/lib/enums/event-type.ts
-var EventType;
-(function (EventType) {
-  // Inbound from Virtual Terminal
-  EventType["ValidateApplePay"] = "validate_applepay";
-  EventType["ValidateGooglePay"] = "validate_googlepay";
-  EventType["TransactionCreated"] = "transaction_created";
-  EventType["TransactionDeclined"] = "transaction_declined";
-  EventType["TransactionVoided"] = "transaction_voided";
-  EventType["Error"] = "error";
-  EventType["WalletNonceError"] = "wallet_nonce_error";
-  EventType["ValidateApplePayError"] = "validate_applepay_error";
-  EventType["ValidateGooglePayError"] = "validate_googlepay_error";
-  EventType["Ready"] = "ready";
-  EventType["Nonce"] = "nonce";
-  EventType["WalletNonce"] = "wallet_nonce";
-  EventType["Token"] = "token";
-  EventType["Validated"] = "validated";
-  EventType["GetNonce"] = "get_nonce";
-  EventType["IFrameContentReady"] = "iframe_ready";
-  EventType["IFrameHeightChange"] = "iframe_height_change";
-  EventType["CardOnFileShowAgreement"] = "card_on_file_show_agreement";
-  EventType["CardOnFileCardSelect"] = "card_on_file_card_select";
-  // Outbound to Virtual Terminal
-  EventType["Init"] = "init";
-  EventType["OpCreateTransaction"] = "op_create_transaction";
-  EventType["OpCreateToken"] = "op_create_token";
-  EventType["OpCreateTokenTransaction"] = "op_create_token_transaction";
-  EventType["OpGetNonce"] = "op_get_nonce";
-  EventType["OpGetWalletNonce"] = "op_get_wallet_nonce";
-  EventType["OpValidateApplePay"] = "op_validate_applepay";
-  EventType["OpValidateGooglePay"] = "op_validate_googlepay";
-  EventType["CardOnFileSetFlag"] = "card_on_file_set_flag";
-  // Outbound to browser
-  EventType["ShippingMethodChange"] = "shipping_method_change";
-  EventType["ShippingAddressChange"] = "shipping_address_change";
-  EventType["PaymentMethodChange"] = "payment_method_change";
-  EventType["PaymentAuthorized"] = "payment_authorized";
-  EventType["CouponCodeChange"] = "coupon_code_change";
-  EventType["CloseWallet"] = "close_wallet";
-  EventType["InitWallet"] = "init_wallet";
-  // Outbound to browser (analytics events)
-  EventType["WalletButtonClick"] = "wallet_button_click";
-})(EventType = exports.EventType || (exports.EventType = {}));
-
-},{}],44:[function(require,module,exports){
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.ErrorType = exports.CallbackType = void 0;
-var CallbackType;
-(function (CallbackType) {
-  CallbackType["INITIALIZE"] = "INITIALIZE";
-  CallbackType["SHIPPING_ADDRESS"] = "SHIPPING_ADDRESS";
-  CallbackType["SHIPPING_OPTION"] = "SHIPPING_OPTION";
-  CallbackType["OFFER"] = "OFFER";
-  CallbackType["PAYMENT_AUTHORIZATION"] = "PAYMENT_AUTHORIZATION";
-})(CallbackType = exports.CallbackType || (exports.CallbackType = {}));
-;
-var ErrorType;
-(function (ErrorType) {
-  ErrorType["SHIPPING_ADDRESS_INVALID"] = "SHIPPING_ADDRESS_INVALID";
-  ErrorType["SHIPPING_ADDRESS_UNSERVICEABLE"] = "SHIPPING_ADDRESS_UNSERVICEABLE";
-  ErrorType["PAYMENT_DATA_INVALID"] = "PAYMENT_DATA_INVALID";
-  ErrorType["OFFER_INVALID"] = "OFFER_INVALID";
-  ErrorType["OTHER_ERROR"] = "OTHER_ERROR";
-})(ErrorType = exports.ErrorType || (exports.ErrorType = {}));
-;
-
-},{}],45:[function(require,module,exports){
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.MixpanelPaymentCompletedStatus = exports.MixpanelEvent = void 0;
-var MixpanelEvent;
-(function (MixpanelEvent) {
-  MixpanelEvent["ERROR"] = "gdp.collect.error";
-  MixpanelEvent["NONCE_REQUEST"] = "gdp.collect.nonce_request";
-  MixpanelEvent["NONCE_RESPONSE"] = "gdp.collect.nonce_response";
-  MixpanelEvent["APPLE_PAY_BUTTON_CLICK"] = "gdp.collect.ap.button_click";
-  MixpanelEvent["GOOGLE_PAY_BUTTON_CLICK"] = "gdp.collect.gp.button_click";
-  MixpanelEvent["PAZE_WALLET_BUTTON_CLICK"] = "gdp.collect.pw.button_click";
-  MixpanelEvent["APPLE_PAY_PAYMENT_REQUEST"] = "gdp.collect.ap.payment_request";
-  MixpanelEvent["GOOGLE_PAY_PAYMENT_REQUEST"] = "gdp.collect.gp.payment_request";
-  // PAZE_WALLET_PAYMENT_REQUEST = "gdp.collect.pw.payment_request",
-  MixpanelEvent["APPLE_PAY_PAYMENT_AUTHORIZED"] = "gdp.collect.ap.payment_authorized";
-  MixpanelEvent["GOOGLE_PAY_PAYMENT_AUTHORIZED"] = "gdp.collect.gp.payment_authorized";
-  // PAZE_WALLET_PAYMENT_AUTHORIZED = "gdp.collect.pw.payment_authorized",
-  MixpanelEvent["APPLE_PAY_PAYMENT_COMPLETED"] = "gdp.collect.ap.payment_completed";
-  MixpanelEvent["GOOGLE_PAY_PAYMENT_COMPLETED"] = "gdp.collect.gp.payment_completed";
-  MixpanelEvent["PAZE_WALLET_PAYMENT_COMPLETED"] = "gdp.collect.pw.payment_completed";
-})(MixpanelEvent = exports.MixpanelEvent || (exports.MixpanelEvent = {}));
-;
-var MixpanelPaymentCompletedStatus;
-(function (MixpanelPaymentCompletedStatus) {
-  MixpanelPaymentCompletedStatus["FAILURE"] = "FAILURE";
-  MixpanelPaymentCompletedStatus["SUCCESS"] = "SUCCESS";
-})(MixpanelPaymentCompletedStatus = exports.MixpanelPaymentCompletedStatus || (exports.MixpanelPaymentCompletedStatus = {}));
-;
-
-},{}],46:[function(require,module,exports){
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.PayloadTypeIndicator = exports.TransactionType = exports.DynamicDataType = exports.CheckoutResponseResult = exports.PaymentCardNetwork = exports.PaymentCardBrand = exports.PaymentCardType = exports.AddressPreference = exports.ActionCode = exports.ErrorReason = void 0;
-var ErrorReason;
-(function (ErrorReason) {
-  ErrorReason["UNABLE_TO_CONNECT"] = "UNABLE_TO_CONNECT";
-  ErrorReason["SERVER_ERROR"] = "SERVER_ERROR";
-  ErrorReason["SERVICE_ERROR"] = "SERVICE_ERROR";
-  ErrorReason["AUTH_ERROR"] = "AUTH_ERROR";
-  ErrorReason["NOT_FOUND"] = "NOT_FOUND";
-  ErrorReason["RATE_LIMIT_EXCEEDED"] = "RATE_LIMIT_EXCEEDED";
-  ErrorReason["INVALID_REQUEST"] = "INVALID_REQUEST";
-  ErrorReason["MISSING_PARAMETER"] = "MISSING_PARAMETER";
-  ErrorReason["INVALID_PARAMETER"] = "INVALID_PARAMETER";
-  ErrorReason["REQUEST_TIMEOUT"] = "REQUEST_TIMEOUT";
-  ErrorReason["UNKNOWN_ERROR"] = "UNKNOWN_ERROR";
-})(ErrorReason = exports.ErrorReason || (exports.ErrorReason = {}));
-;
-var ActionCode;
-(function (ActionCode) {
-  ActionCode["START_FLOW"] = "START_FLOW";
-  ActionCode["CHANGE_CARD"] = "CHANGE_CARD";
-  ActionCode["CHANGE_SHIPPING_ADDRESS"] = "CHANGE_SHIPPING_ADDRESS";
-})(ActionCode = exports.ActionCode || (exports.ActionCode = {}));
-;
-var AddressPreference;
-(function (AddressPreference) {
-  AddressPreference["ALL"] = "ALL";
-  AddressPreference["ZIP_COUNTRY"] = "ZIP_COUNTRY";
-  AddressPreference["NONE"] = "NONE";
-})(AddressPreference = exports.AddressPreference || (exports.AddressPreference = {}));
-;
-var PaymentCardType;
-(function (PaymentCardType) {
-  PaymentCardType["CREDIT"] = "CREDIT";
-  PaymentCardType["DEBIT"] = "DEBIT";
-})(PaymentCardType = exports.PaymentCardType || (exports.PaymentCardType = {}));
-;
-var PaymentCardBrand;
-(function (PaymentCardBrand) {
-  PaymentCardBrand["VISA"] = "VISA";
-  PaymentCardBrand["MASTERCARD"] = "MASTERCARD";
-})(PaymentCardBrand = exports.PaymentCardBrand || (exports.PaymentCardBrand = {}));
-;
-var PaymentCardNetwork;
-(function (PaymentCardNetwork) {
-  PaymentCardNetwork["VISA"] = "VISA";
-  PaymentCardNetwork["MASTERCARD"] = "MASTERCARD";
-})(PaymentCardNetwork = exports.PaymentCardNetwork || (exports.PaymentCardNetwork = {}));
-;
-var CheckoutResponseResult;
-(function (CheckoutResponseResult) {
-  CheckoutResponseResult["COMPLETE"] = "COMPLETE";
-  CheckoutResponseResult["INCOMPLETE"] = "INCOMPLETE";
-})(CheckoutResponseResult = exports.CheckoutResponseResult || (exports.CheckoutResponseResult = {}));
-;
-var DynamicDataType;
-(function (DynamicDataType) {
-  DynamicDataType["PURCHASE"] = "PURCHASE";
-  DynamicDataType["CARD_ON_FILE"] = "CARD_ON_FILE";
-})(DynamicDataType = exports.DynamicDataType || (exports.DynamicDataType = {}));
-;
-var TransactionType;
-(function (TransactionType) {
-  TransactionType["PURCHASE"] = "PURCHASE";
-  TransactionType["CARD_ON_FILE"] = "CARD_ON_FILE";
-  TransactionType["BOTH"] = "BOTH";
-})(TransactionType = exports.TransactionType || (exports.TransactionType = {}));
-;
-var PayloadTypeIndicator;
-(function (PayloadTypeIndicator) {
-  PayloadTypeIndicator["ID"] = "ID";
-  PayloadTypeIndicator["PAYMENT"] = "PAYMENT";
-})(PayloadTypeIndicator = exports.PayloadTypeIndicator || (exports.PayloadTypeIndicator = {}));
-;
-
-},{}],47:[function(require,module,exports){
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.WalletType = void 0;
-var WalletType;
-(function (WalletType) {
-  WalletType["ApplePay"] = "apple_pay";
-  WalletType["GooglePay"] = "google_pay";
-  WalletType["PazeWallet"] = "paze_wallet";
-})(WalletType = exports.WalletType || (exports.WalletType = {}));
-
-},{}],48:[function(require,module,exports){
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
 exports.buildMaskedPaymentRequest = exports.buildPaymentRequest = exports.buildWalletNonceError = exports.buildErrors = exports.buildShippingMethods = exports.buildTotal = exports.buildLineItems = void 0;
 var constants_1 = require("../constants");
-var applepay_1 = require("../enums/applepay");
 /**
  * Builds Apple Pay line items based on the provided wallet request.
  *
@@ -8844,11 +3298,12 @@ exports.buildTotal = buildTotal;
  * Builds Apple Pay shipping methods based on the provided wallet request.
  *
  * @param {WalletRequest} request - The wallet request object.
- * @returns {ApplePayJS.ApplePayShippingMethod[]} - The array of Apple Pay shipping methods.
+ * @returns {ApplePayJS.ApplePayShippingMethod[] | undefined} - The array of Apple Pay shipping methods or undefined.
  */
 var buildShippingMethods = function buildShippingMethods(request) {
-  if (!request.shippingMethods) {
-    return [];
+  var _a;
+  if (!((_a = request.shippingMethods) === null || _a === void 0 ? void 0 : _a.length)) {
+    return;
   }
   return request.shippingMethods.map(function (_ref2) {
     var id = _ref2.id,
@@ -8872,21 +3327,22 @@ exports.buildShippingMethods = buildShippingMethods;
  */
 var buildErrors = function buildErrors(request) {
   var errorCodes = {
-    invalid_shipping_address: applepay_1.ErrorType.SHIPPING_CONTACT_INVALID,
-    unserviceable_address: applepay_1.ErrorType.ADDRESS_UNSERVICEABLE,
-    invalid_billing_address: applepay_1.ErrorType.BILLING_CONTACT_INVALID,
-    invalid_coupon_code: applepay_1.ErrorType.COUPON_CODE_INVALID,
-    expired_coupon_code: applepay_1.ErrorType.COUPON_CODE_EXPIRED,
-    invalid_payment_data: applepay_1.ErrorType.UNKNOWN,
-    unknown: applepay_1.ErrorType.UNKNOWN
+    invalid_shipping_address: "shippingContactInvalid" /* ErrorType.SHIPPING_CONTACT_INVALID */,
+    unserviceable_address: "addressUnserviceable" /* ErrorType.ADDRESS_UNSERVICEABLE */,
+    invalid_billing_address: "billingContactInvalid" /* ErrorType.BILLING_CONTACT_INVALID */,
+    invalid_coupon_code: "couponCodeInvalid" /* ErrorType.COUPON_CODE_INVALID */,
+    expired_coupon_code: "couponCodeExpired" /* ErrorType.COUPON_CODE_EXPIRED */,
+    invalid_payment_data: "unknown" /* ErrorType.UNKNOWN */,
+    unknown: "unknown" /* ErrorType.UNKNOWN */
   };
+
   var error = request.error;
   if (!error) {
     return;
   }
   return [
   //@ts-ignore
-  new ApplePayError(error.code ? errorCodes[error.code] : applepay_1.ErrorType.UNKNOWN, error.contactField, error.message ? error.message : "")];
+  new ApplePayError(error.code ? errorCodes[error.code] : "unknown" /* ErrorType.UNKNOWN */, error.contactField, error.message ? error.message : "")];
 };
 exports.buildErrors = buildErrors;
 /**
@@ -8898,7 +3354,7 @@ exports.buildErrors = buildErrors;
 var buildWalletNonceError = function buildWalletNonceError(error) {
   return [
   //@ts-ignore
-  new ApplePayError(applepay_1.ErrorType.UNKNOWN, undefined, (error === null || error === void 0 ? void 0 : error.developerMessage) || (error === null || error === void 0 ? void 0 : error.message) || "")];
+  new ApplePayError("unknown" /* ErrorType.UNKNOWN */, undefined, (error === null || error === void 0 ? void 0 : error.developerMessage) || (error === null || error === void 0 ? void 0 : error.message) || "")];
 };
 exports.buildWalletNonceError = buildWalletNonceError;
 /**
@@ -8961,11 +3417,11 @@ var buildMaskedPaymentRequest = function buildMaskedPaymentRequest(request) {
 };
 exports.buildMaskedPaymentRequest = buildMaskedPaymentRequest;
 
-},{"../constants":40,"../enums/applepay":41}],49:[function(require,module,exports){
+},{"../constants":41}],43:[function(require,module,exports){
 "use strict";
 
-function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
-function _regeneratorRuntime() { "use strict"; /*! regenerator-runtime -- Copyright (c) 2014-present, Facebook, Inc. -- license (MIT): https://github.com/facebook/regenerator/blob/main/LICENSE */ _regeneratorRuntime = function _regeneratorRuntime() { return exports; }; var exports = {}, Op = Object.prototype, hasOwn = Op.hasOwnProperty, defineProperty = Object.defineProperty || function (obj, key, desc) { obj[key] = desc.value; }, $Symbol = "function" == typeof Symbol ? Symbol : {}, iteratorSymbol = $Symbol.iterator || "@@iterator", asyncIteratorSymbol = $Symbol.asyncIterator || "@@asyncIterator", toStringTagSymbol = $Symbol.toStringTag || "@@toStringTag"; function define(obj, key, value) { return Object.defineProperty(obj, key, { value: value, enumerable: !0, configurable: !0, writable: !0 }), obj[key]; } try { define({}, ""); } catch (err) { define = function define(obj, key, value) { return obj[key] = value; }; } function wrap(innerFn, outerFn, self, tryLocsList) { var protoGenerator = outerFn && outerFn.prototype instanceof Generator ? outerFn : Generator, generator = Object.create(protoGenerator.prototype), context = new Context(tryLocsList || []); return defineProperty(generator, "_invoke", { value: makeInvokeMethod(innerFn, self, context) }), generator; } function tryCatch(fn, obj, arg) { try { return { type: "normal", arg: fn.call(obj, arg) }; } catch (err) { return { type: "throw", arg: err }; } } exports.wrap = wrap; var ContinueSentinel = {}; function Generator() {} function GeneratorFunction() {} function GeneratorFunctionPrototype() {} var IteratorPrototype = {}; define(IteratorPrototype, iteratorSymbol, function () { return this; }); var getProto = Object.getPrototypeOf, NativeIteratorPrototype = getProto && getProto(getProto(values([]))); NativeIteratorPrototype && NativeIteratorPrototype !== Op && hasOwn.call(NativeIteratorPrototype, iteratorSymbol) && (IteratorPrototype = NativeIteratorPrototype); var Gp = GeneratorFunctionPrototype.prototype = Generator.prototype = Object.create(IteratorPrototype); function defineIteratorMethods(prototype) { ["next", "throw", "return"].forEach(function (method) { define(prototype, method, function (arg) { return this._invoke(method, arg); }); }); } function AsyncIterator(generator, PromiseImpl) { function invoke(method, arg, resolve, reject) { var record = tryCatch(generator[method], generator, arg); if ("throw" !== record.type) { var result = record.arg, value = result.value; return value && "object" == _typeof(value) && hasOwn.call(value, "__await") ? PromiseImpl.resolve(value.__await).then(function (value) { invoke("next", value, resolve, reject); }, function (err) { invoke("throw", err, resolve, reject); }) : PromiseImpl.resolve(value).then(function (unwrapped) { result.value = unwrapped, resolve(result); }, function (error) { return invoke("throw", error, resolve, reject); }); } reject(record.arg); } var previousPromise; defineProperty(this, "_invoke", { value: function value(method, arg) { function callInvokeWithMethodAndArg() { return new PromiseImpl(function (resolve, reject) { invoke(method, arg, resolve, reject); }); } return previousPromise = previousPromise ? previousPromise.then(callInvokeWithMethodAndArg, callInvokeWithMethodAndArg) : callInvokeWithMethodAndArg(); } }); } function makeInvokeMethod(innerFn, self, context) { var state = "suspendedStart"; return function (method, arg) { if ("executing" === state) throw new Error("Generator is already running"); if ("completed" === state) { if ("throw" === method) throw arg; return doneResult(); } for (context.method = method, context.arg = arg;;) { var delegate = context.delegate; if (delegate) { var delegateResult = maybeInvokeDelegate(delegate, context); if (delegateResult) { if (delegateResult === ContinueSentinel) continue; return delegateResult; } } if ("next" === context.method) context.sent = context._sent = context.arg;else if ("throw" === context.method) { if ("suspendedStart" === state) throw state = "completed", context.arg; context.dispatchException(context.arg); } else "return" === context.method && context.abrupt("return", context.arg); state = "executing"; var record = tryCatch(innerFn, self, context); if ("normal" === record.type) { if (state = context.done ? "completed" : "suspendedYield", record.arg === ContinueSentinel) continue; return { value: record.arg, done: context.done }; } "throw" === record.type && (state = "completed", context.method = "throw", context.arg = record.arg); } }; } function maybeInvokeDelegate(delegate, context) { var methodName = context.method, method = delegate.iterator[methodName]; if (undefined === method) return context.delegate = null, "throw" === methodName && delegate.iterator["return"] && (context.method = "return", context.arg = undefined, maybeInvokeDelegate(delegate, context), "throw" === context.method) || "return" !== methodName && (context.method = "throw", context.arg = new TypeError("The iterator does not provide a '" + methodName + "' method")), ContinueSentinel; var record = tryCatch(method, delegate.iterator, context.arg); if ("throw" === record.type) return context.method = "throw", context.arg = record.arg, context.delegate = null, ContinueSentinel; var info = record.arg; return info ? info.done ? (context[delegate.resultName] = info.value, context.next = delegate.nextLoc, "return" !== context.method && (context.method = "next", context.arg = undefined), context.delegate = null, ContinueSentinel) : info : (context.method = "throw", context.arg = new TypeError("iterator result is not an object"), context.delegate = null, ContinueSentinel); } function pushTryEntry(locs) { var entry = { tryLoc: locs[0] }; 1 in locs && (entry.catchLoc = locs[1]), 2 in locs && (entry.finallyLoc = locs[2], entry.afterLoc = locs[3]), this.tryEntries.push(entry); } function resetTryEntry(entry) { var record = entry.completion || {}; record.type = "normal", delete record.arg, entry.completion = record; } function Context(tryLocsList) { this.tryEntries = [{ tryLoc: "root" }], tryLocsList.forEach(pushTryEntry, this), this.reset(!0); } function values(iterable) { if (iterable) { var iteratorMethod = iterable[iteratorSymbol]; if (iteratorMethod) return iteratorMethod.call(iterable); if ("function" == typeof iterable.next) return iterable; if (!isNaN(iterable.length)) { var i = -1, next = function next() { for (; ++i < iterable.length;) if (hasOwn.call(iterable, i)) return next.value = iterable[i], next.done = !1, next; return next.value = undefined, next.done = !0, next; }; return next.next = next; } } return { next: doneResult }; } function doneResult() { return { value: undefined, done: !0 }; } return GeneratorFunction.prototype = GeneratorFunctionPrototype, defineProperty(Gp, "constructor", { value: GeneratorFunctionPrototype, configurable: !0 }), defineProperty(GeneratorFunctionPrototype, "constructor", { value: GeneratorFunction, configurable: !0 }), GeneratorFunction.displayName = define(GeneratorFunctionPrototype, toStringTagSymbol, "GeneratorFunction"), exports.isGeneratorFunction = function (genFun) { var ctor = "function" == typeof genFun && genFun.constructor; return !!ctor && (ctor === GeneratorFunction || "GeneratorFunction" === (ctor.displayName || ctor.name)); }, exports.mark = function (genFun) { return Object.setPrototypeOf ? Object.setPrototypeOf(genFun, GeneratorFunctionPrototype) : (genFun.__proto__ = GeneratorFunctionPrototype, define(genFun, toStringTagSymbol, "GeneratorFunction")), genFun.prototype = Object.create(Gp), genFun; }, exports.awrap = function (arg) { return { __await: arg }; }, defineIteratorMethods(AsyncIterator.prototype), define(AsyncIterator.prototype, asyncIteratorSymbol, function () { return this; }), exports.AsyncIterator = AsyncIterator, exports.async = function (innerFn, outerFn, self, tryLocsList, PromiseImpl) { void 0 === PromiseImpl && (PromiseImpl = Promise); var iter = new AsyncIterator(wrap(innerFn, outerFn, self, tryLocsList), PromiseImpl); return exports.isGeneratorFunction(outerFn) ? iter : iter.next().then(function (result) { return result.done ? result.value : iter.next(); }); }, defineIteratorMethods(Gp), define(Gp, toStringTagSymbol, "Generator"), define(Gp, iteratorSymbol, function () { return this; }), define(Gp, "toString", function () { return "[object Generator]"; }), exports.keys = function (val) { var object = Object(val), keys = []; for (var key in object) keys.push(key); return keys.reverse(), function next() { for (; keys.length;) { var key = keys.pop(); if (key in object) return next.value = key, next.done = !1, next; } return next.done = !0, next; }; }, exports.values = values, Context.prototype = { constructor: Context, reset: function reset(skipTempReset) { if (this.prev = 0, this.next = 0, this.sent = this._sent = undefined, this.done = !1, this.delegate = null, this.method = "next", this.arg = undefined, this.tryEntries.forEach(resetTryEntry), !skipTempReset) for (var name in this) "t" === name.charAt(0) && hasOwn.call(this, name) && !isNaN(+name.slice(1)) && (this[name] = undefined); }, stop: function stop() { this.done = !0; var rootRecord = this.tryEntries[0].completion; if ("throw" === rootRecord.type) throw rootRecord.arg; return this.rval; }, dispatchException: function dispatchException(exception) { if (this.done) throw exception; var context = this; function handle(loc, caught) { return record.type = "throw", record.arg = exception, context.next = loc, caught && (context.method = "next", context.arg = undefined), !!caught; } for (var i = this.tryEntries.length - 1; i >= 0; --i) { var entry = this.tryEntries[i], record = entry.completion; if ("root" === entry.tryLoc) return handle("end"); if (entry.tryLoc <= this.prev) { var hasCatch = hasOwn.call(entry, "catchLoc"), hasFinally = hasOwn.call(entry, "finallyLoc"); if (hasCatch && hasFinally) { if (this.prev < entry.catchLoc) return handle(entry.catchLoc, !0); if (this.prev < entry.finallyLoc) return handle(entry.finallyLoc); } else if (hasCatch) { if (this.prev < entry.catchLoc) return handle(entry.catchLoc, !0); } else { if (!hasFinally) throw new Error("try statement without catch or finally"); if (this.prev < entry.finallyLoc) return handle(entry.finallyLoc); } } } }, abrupt: function abrupt(type, arg) { for (var i = this.tryEntries.length - 1; i >= 0; --i) { var entry = this.tryEntries[i]; if (entry.tryLoc <= this.prev && hasOwn.call(entry, "finallyLoc") && this.prev < entry.finallyLoc) { var finallyEntry = entry; break; } } finallyEntry && ("break" === type || "continue" === type) && finallyEntry.tryLoc <= arg && arg <= finallyEntry.finallyLoc && (finallyEntry = null); var record = finallyEntry ? finallyEntry.completion : {}; return record.type = type, record.arg = arg, finallyEntry ? (this.method = "next", this.next = finallyEntry.finallyLoc, ContinueSentinel) : this.complete(record); }, complete: function complete(record, afterLoc) { if ("throw" === record.type) throw record.arg; return "break" === record.type || "continue" === record.type ? this.next = record.arg : "return" === record.type ? (this.rval = this.arg = record.arg, this.method = "return", this.next = "end") : "normal" === record.type && afterLoc && (this.next = afterLoc), ContinueSentinel; }, finish: function finish(finallyLoc) { for (var i = this.tryEntries.length - 1; i >= 0; --i) { var entry = this.tryEntries[i]; if (entry.finallyLoc === finallyLoc) return this.complete(entry.completion, entry.afterLoc), resetTryEntry(entry), ContinueSentinel; } }, "catch": function _catch(tryLoc) { for (var i = this.tryEntries.length - 1; i >= 0; --i) { var entry = this.tryEntries[i]; if (entry.tryLoc === tryLoc) { var record = entry.completion; if ("throw" === record.type) { var thrown = record.arg; resetTryEntry(entry); } return thrown; } } throw new Error("illegal catch attempt"); }, delegateYield: function delegateYield(iterable, resultName, nextLoc) { return this.delegate = { iterator: values(iterable), resultName: resultName, nextLoc: nextLoc }, "next" === this.method && (this.arg = undefined), ContinueSentinel; } }, exports; }
+function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
+function _regeneratorRuntime() { "use strict"; /*! regenerator-runtime -- Copyright (c) 2014-present, Facebook, Inc. -- license (MIT): https://github.com/facebook/regenerator/blob/main/LICENSE */ _regeneratorRuntime = function _regeneratorRuntime() { return e; }; var t, e = {}, r = Object.prototype, n = r.hasOwnProperty, o = Object.defineProperty || function (t, e, r) { t[e] = r.value; }, i = "function" == typeof Symbol ? Symbol : {}, a = i.iterator || "@@iterator", c = i.asyncIterator || "@@asyncIterator", u = i.toStringTag || "@@toStringTag"; function define(t, e, r) { return Object.defineProperty(t, e, { value: r, enumerable: !0, configurable: !0, writable: !0 }), t[e]; } try { define({}, ""); } catch (t) { define = function define(t, e, r) { return t[e] = r; }; } function wrap(t, e, r, n) { var i = e && e.prototype instanceof Generator ? e : Generator, a = Object.create(i.prototype), c = new Context(n || []); return o(a, "_invoke", { value: makeInvokeMethod(t, r, c) }), a; } function tryCatch(t, e, r) { try { return { type: "normal", arg: t.call(e, r) }; } catch (t) { return { type: "throw", arg: t }; } } e.wrap = wrap; var h = "suspendedStart", l = "suspendedYield", f = "executing", s = "completed", y = {}; function Generator() {} function GeneratorFunction() {} function GeneratorFunctionPrototype() {} var p = {}; define(p, a, function () { return this; }); var d = Object.getPrototypeOf, v = d && d(d(values([]))); v && v !== r && n.call(v, a) && (p = v); var g = GeneratorFunctionPrototype.prototype = Generator.prototype = Object.create(p); function defineIteratorMethods(t) { ["next", "throw", "return"].forEach(function (e) { define(t, e, function (t) { return this._invoke(e, t); }); }); } function AsyncIterator(t, e) { function invoke(r, o, i, a) { var c = tryCatch(t[r], t, o); if ("throw" !== c.type) { var u = c.arg, h = u.value; return h && "object" == _typeof(h) && n.call(h, "__await") ? e.resolve(h.__await).then(function (t) { invoke("next", t, i, a); }, function (t) { invoke("throw", t, i, a); }) : e.resolve(h).then(function (t) { u.value = t, i(u); }, function (t) { return invoke("throw", t, i, a); }); } a(c.arg); } var r; o(this, "_invoke", { value: function value(t, n) { function callInvokeWithMethodAndArg() { return new e(function (e, r) { invoke(t, n, e, r); }); } return r = r ? r.then(callInvokeWithMethodAndArg, callInvokeWithMethodAndArg) : callInvokeWithMethodAndArg(); } }); } function makeInvokeMethod(e, r, n) { var o = h; return function (i, a) { if (o === f) throw new Error("Generator is already running"); if (o === s) { if ("throw" === i) throw a; return { value: t, done: !0 }; } for (n.method = i, n.arg = a;;) { var c = n.delegate; if (c) { var u = maybeInvokeDelegate(c, n); if (u) { if (u === y) continue; return u; } } if ("next" === n.method) n.sent = n._sent = n.arg;else if ("throw" === n.method) { if (o === h) throw o = s, n.arg; n.dispatchException(n.arg); } else "return" === n.method && n.abrupt("return", n.arg); o = f; var p = tryCatch(e, r, n); if ("normal" === p.type) { if (o = n.done ? s : l, p.arg === y) continue; return { value: p.arg, done: n.done }; } "throw" === p.type && (o = s, n.method = "throw", n.arg = p.arg); } }; } function maybeInvokeDelegate(e, r) { var n = r.method, o = e.iterator[n]; if (o === t) return r.delegate = null, "throw" === n && e.iterator["return"] && (r.method = "return", r.arg = t, maybeInvokeDelegate(e, r), "throw" === r.method) || "return" !== n && (r.method = "throw", r.arg = new TypeError("The iterator does not provide a '" + n + "' method")), y; var i = tryCatch(o, e.iterator, r.arg); if ("throw" === i.type) return r.method = "throw", r.arg = i.arg, r.delegate = null, y; var a = i.arg; return a ? a.done ? (r[e.resultName] = a.value, r.next = e.nextLoc, "return" !== r.method && (r.method = "next", r.arg = t), r.delegate = null, y) : a : (r.method = "throw", r.arg = new TypeError("iterator result is not an object"), r.delegate = null, y); } function pushTryEntry(t) { var e = { tryLoc: t[0] }; 1 in t && (e.catchLoc = t[1]), 2 in t && (e.finallyLoc = t[2], e.afterLoc = t[3]), this.tryEntries.push(e); } function resetTryEntry(t) { var e = t.completion || {}; e.type = "normal", delete e.arg, t.completion = e; } function Context(t) { this.tryEntries = [{ tryLoc: "root" }], t.forEach(pushTryEntry, this), this.reset(!0); } function values(e) { if (e || "" === e) { var r = e[a]; if (r) return r.call(e); if ("function" == typeof e.next) return e; if (!isNaN(e.length)) { var o = -1, i = function next() { for (; ++o < e.length;) if (n.call(e, o)) return next.value = e[o], next.done = !1, next; return next.value = t, next.done = !0, next; }; return i.next = i; } } throw new TypeError(_typeof(e) + " is not iterable"); } return GeneratorFunction.prototype = GeneratorFunctionPrototype, o(g, "constructor", { value: GeneratorFunctionPrototype, configurable: !0 }), o(GeneratorFunctionPrototype, "constructor", { value: GeneratorFunction, configurable: !0 }), GeneratorFunction.displayName = define(GeneratorFunctionPrototype, u, "GeneratorFunction"), e.isGeneratorFunction = function (t) { var e = "function" == typeof t && t.constructor; return !!e && (e === GeneratorFunction || "GeneratorFunction" === (e.displayName || e.name)); }, e.mark = function (t) { return Object.setPrototypeOf ? Object.setPrototypeOf(t, GeneratorFunctionPrototype) : (t.__proto__ = GeneratorFunctionPrototype, define(t, u, "GeneratorFunction")), t.prototype = Object.create(g), t; }, e.awrap = function (t) { return { __await: t }; }, defineIteratorMethods(AsyncIterator.prototype), define(AsyncIterator.prototype, c, function () { return this; }), e.AsyncIterator = AsyncIterator, e.async = function (t, r, n, o, i) { void 0 === i && (i = Promise); var a = new AsyncIterator(wrap(t, r, n, o), i); return e.isGeneratorFunction(r) ? a : a.next().then(function (t) { return t.done ? t.value : a.next(); }); }, defineIteratorMethods(g), define(g, u, "Generator"), define(g, a, function () { return this; }), define(g, "toString", function () { return "[object Generator]"; }), e.keys = function (t) { var e = Object(t), r = []; for (var n in e) r.push(n); return r.reverse(), function next() { for (; r.length;) { var t = r.pop(); if (t in e) return next.value = t, next.done = !1, next; } return next.done = !0, next; }; }, e.values = values, Context.prototype = { constructor: Context, reset: function reset(e) { if (this.prev = 0, this.next = 0, this.sent = this._sent = t, this.done = !1, this.delegate = null, this.method = "next", this.arg = t, this.tryEntries.forEach(resetTryEntry), !e) for (var r in this) "t" === r.charAt(0) && n.call(this, r) && !isNaN(+r.slice(1)) && (this[r] = t); }, stop: function stop() { this.done = !0; var t = this.tryEntries[0].completion; if ("throw" === t.type) throw t.arg; return this.rval; }, dispatchException: function dispatchException(e) { if (this.done) throw e; var r = this; function handle(n, o) { return a.type = "throw", a.arg = e, r.next = n, o && (r.method = "next", r.arg = t), !!o; } for (var o = this.tryEntries.length - 1; o >= 0; --o) { var i = this.tryEntries[o], a = i.completion; if ("root" === i.tryLoc) return handle("end"); if (i.tryLoc <= this.prev) { var c = n.call(i, "catchLoc"), u = n.call(i, "finallyLoc"); if (c && u) { if (this.prev < i.catchLoc) return handle(i.catchLoc, !0); if (this.prev < i.finallyLoc) return handle(i.finallyLoc); } else if (c) { if (this.prev < i.catchLoc) return handle(i.catchLoc, !0); } else { if (!u) throw new Error("try statement without catch or finally"); if (this.prev < i.finallyLoc) return handle(i.finallyLoc); } } } }, abrupt: function abrupt(t, e) { for (var r = this.tryEntries.length - 1; r >= 0; --r) { var o = this.tryEntries[r]; if (o.tryLoc <= this.prev && n.call(o, "finallyLoc") && this.prev < o.finallyLoc) { var i = o; break; } } i && ("break" === t || "continue" === t) && i.tryLoc <= e && e <= i.finallyLoc && (i = null); var a = i ? i.completion : {}; return a.type = t, a.arg = e, i ? (this.method = "next", this.next = i.finallyLoc, y) : this.complete(a); }, complete: function complete(t, e) { if ("throw" === t.type) throw t.arg; return "break" === t.type || "continue" === t.type ? this.next = t.arg : "return" === t.type ? (this.rval = this.arg = t.arg, this.method = "return", this.next = "end") : "normal" === t.type && e && (this.next = e), y; }, finish: function finish(t) { for (var e = this.tryEntries.length - 1; e >= 0; --e) { var r = this.tryEntries[e]; if (r.finallyLoc === t) return this.complete(r.completion, r.afterLoc), resetTryEntry(r), y; } }, "catch": function _catch(t) { for (var e = this.tryEntries.length - 1; e >= 0; --e) { var r = this.tryEntries[e]; if (r.tryLoc === t) { var n = r.completion; if ("throw" === n.type) { var o = n.arg; resetTryEntry(r); } return o; } } throw new Error("illegal catch attempt"); }, delegateYield: function delegateYield(e, r, n) { return this.delegate = { iterator: values(e), resultName: r, nextLoc: n }, "next" === this.method && (this.arg = t), y; } }, e; }
 var __createBinding = void 0 && (void 0).__createBinding || (Object.create ? function (o, m, k, k2) {
   if (k2 === undefined) k2 = k;
   var desc = Object.getOwnPropertyDescriptor(m, k);
@@ -9036,7 +3492,7 @@ var isStaticTemplate = function isStaticTemplate(metadata) {
 };
 var getCardAgreementFilePath = function getCardAgreementFilePath(isStatic, lang, countryCode) {
   var filename = isStatic ? "DEFAULT.html" : "SAVE_COF.hbs";
-  return "https://d2uysbnk9syfxy.cloudfront.net".concat("/", lang, "/").concat(countryCode, "/").concat(filename);
+  return "https://d1oxd31ykxugjs.cloudfront.net".concat("/", lang, "/").concat(countryCode, "/").concat(filename);
 };
 var createElement = function createElement(elementName, defaultStyles, customStyles) {
   var element = document.createElement(elementName);
@@ -9234,7 +3690,7 @@ var getCardAgreement = function getCardAgreement(locale, hideActionButtons, opti
 };
 exports.getCardAgreement = getCardAgreement;
 
-},{"../assets/card-on-file/styles":39,"../constants":40,"./localization":52}],50:[function(require,module,exports){
+},{"../assets/card-on-file/styles":40,"../constants":41,"./localization":46}],44:[function(require,module,exports){
 "use strict";
 
 function _extends() { _extends = Object.assign ? Object.assign.bind() : function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
@@ -9324,7 +3780,7 @@ var parseMessage = function parseMessage(event) {
 exports.parseMessage = parseMessage;
 var isPaymentFormEnabled = function isPaymentFormEnabled(options) {
   var _a;
-  return !((_a = options.paymentMethods) === null || _a === void 0 ? void 0 : _a.length) || options.paymentMethods.includes("card");
+  return !((_a = options.paymentMethods) === null || _a === void 0 ? void 0 : _a.length) || options.paymentMethods.includes("card") || options.paymentMethods.includes("ach");
 };
 exports.isPaymentFormEnabled = isPaymentFormEnabled;
 var shouldEnableCardOnFile = function shouldEnableCardOnFile(options) {
@@ -9335,15 +3791,10 @@ var shouldEnableCardOnFile = function shouldEnableCardOnFile(options) {
 };
 exports.shouldEnableCardOnFile = shouldEnableCardOnFile;
 var getAllOptions = function getAllOptions(businessId, applicationId, sessionId, mountOptions) {
-  var _a;
   var options = mountOptions || {};
-  options.emailReceipt = (_a = options.emailReceipt) !== null && _a !== void 0 ? _a : true;
   options.businessId = businessId;
   options.applicationId = applicationId;
   options.sessionId = sessionId;
-  options.parentUrl = window.location.hostname;
-  options.isV2 = true;
-  options.useMessagePort = true;
   options.enableReCaptcha = !!options.enableReCaptcha;
   options.enableCardOnFile = (0, exports.shouldEnableCardOnFile)(options);
   return options;
@@ -9353,7 +3804,7 @@ var createIFrame = function createIFrame(options) {
   var iFrame = document.createElement("iframe");
   iFrame.setAttribute("name", constants.IFRAME_NAME);
   iFrame.setAttribute("id", constants.IFRAME_NAME);
-  var iFrameUrl = "https://cdn.poynt.net/ci/collect/index.html".concat("?", (0, qs_1.stringify)(options), "&breakcache=").concat(new Date().toISOString());
+  var iFrameUrl = "https://cdn.poynt.net/collect/index.html".concat("?", (0, qs_1.stringify)(options));
   if (options.iFrame) {
     iFrame.style.cssText = JSON.stringify(options.iFrame);
     if (options.iFrame.height) {
@@ -9388,6 +3839,7 @@ var setButtonProperties = function setButtonProperties(container, buttonOptions)
   button.style.setProperty("width", "100%");
   button.style.setProperty("height", "100%");
   button.style.setProperty("min-height", minHeight);
+  button.style.setProperty("min-width", minWidth);
   button.style.setProperty("border", (buttonOptions === null || buttonOptions === void 0 ? void 0 : buttonOptions.border) || "unset");
   button.style.setProperty("border-radius", (buttonOptions === null || buttonOptions === void 0 ? void 0 : buttonOptions.borderRadius) || "5px");
   container.style.setProperty("min-width", minWidth);
@@ -9425,7 +3877,7 @@ var createDefaultWalletRequest = function createDefaultWalletRequest() {
 };
 exports.createDefaultWalletRequest = createDefaultWalletRequest;
 
-},{"../constants":40,"qs":17}],51:[function(require,module,exports){
+},{"../constants":41,"qs":17}],45:[function(require,module,exports){
 "use strict";
 
 function _extends() { _extends = Object.assign ? Object.assign.bind() : function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
@@ -9434,7 +3886,6 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.buildMaskedPaymentRequest = exports.buildPaymentRequest = exports.buildPaymentDataChangedHandlerError = exports.buildWalletNonceError = exports.buildMissedHandlerError = exports.buildDuplicateCouponCodeError = exports.buildError = exports.buildOfferInfo = exports.buildShippingMethods = exports.buildTransactionInfo = exports.buildLineItems = exports.getCardPaymentMethod = exports.getBaseCardPaymentMethod = void 0;
 var constants_1 = require("../constants");
-var googlepay_1 = require("../enums/googlepay");
 /**
  * Fetches GooglePay payment method configs that are supported by GoDaddy Payments
  * which determine supported authentication methods, card networks, and billing
@@ -9544,14 +3995,12 @@ exports.buildTransactionInfo = buildTransactionInfo;
  * - CouponCodeChange
  *
  * @param {WalletRequest} request - The wallet request object
- * @returns {GooglePayJS.ShippingOptionParameters} - GooglePay shipping methods
+ * @returns {GooglePayJS.ShippingOptionParameters | undefined} - GooglePay shipping option parameters or undefined.
  */
 var buildShippingMethods = function buildShippingMethods(request) {
   var _a;
   if (!((_a = request.shippingMethods) === null || _a === void 0 ? void 0 : _a.length)) {
-    return {
-      shippingOptions: []
-    };
+    return;
   }
   var options = request.shippingMethods.map(function (shippingMethod) {
     return {
@@ -9603,14 +4052,15 @@ exports.buildOfferInfo = buildOfferInfo;
  */
 var buildError = function buildError(request, callbackIntent) {
   var errorCodes = {
-    invalid_shipping_address: googlepay_1.ErrorType.SHIPPING_ADDRESS_INVALID,
-    unserviceable_address: googlepay_1.ErrorType.SHIPPING_ADDRESS_UNSERVICEABLE,
-    invalid_billing_address: googlepay_1.ErrorType.PAYMENT_DATA_INVALID,
-    invalid_coupon_code: googlepay_1.ErrorType.OFFER_INVALID,
-    expired_coupon_code: googlepay_1.ErrorType.OFFER_INVALID,
-    invalid_payment_data: googlepay_1.ErrorType.PAYMENT_DATA_INVALID,
-    unknown: googlepay_1.ErrorType.OTHER_ERROR
+    invalid_shipping_address: "SHIPPING_ADDRESS_INVALID" /* ErrorType.SHIPPING_ADDRESS_INVALID */,
+    unserviceable_address: "SHIPPING_ADDRESS_UNSERVICEABLE" /* ErrorType.SHIPPING_ADDRESS_UNSERVICEABLE */,
+    invalid_billing_address: "PAYMENT_DATA_INVALID" /* ErrorType.PAYMENT_DATA_INVALID */,
+    invalid_coupon_code: "OFFER_INVALID" /* ErrorType.OFFER_INVALID */,
+    expired_coupon_code: "OFFER_INVALID" /* ErrorType.OFFER_INVALID */,
+    invalid_payment_data: "PAYMENT_DATA_INVALID" /* ErrorType.PAYMENT_DATA_INVALID */,
+    unknown: "OTHER_ERROR" /* ErrorType.OTHER_ERROR */
   };
+
   var error = request.error;
   if (!error) {
     return;
@@ -9630,7 +4080,7 @@ exports.buildError = buildError;
  */
 var buildDuplicateCouponCodeError = function buildDuplicateCouponCodeError(callbackIntent) {
   return {
-    reason: googlepay_1.ErrorType.OFFER_INVALID,
+    reason: "OFFER_INVALID" /* ErrorType.OFFER_INVALID */,
     intent: callbackIntent,
     message: "Coupon code already applied"
   };
@@ -9645,7 +4095,7 @@ exports.buildDuplicateCouponCodeError = buildDuplicateCouponCodeError;
  */
 var buildMissedHandlerError = function buildMissedHandlerError(eventType, callbackIntent) {
   return {
-    reason: googlepay_1.ErrorType.OTHER_ERROR,
+    reason: "OTHER_ERROR" /* ErrorType.OTHER_ERROR */,
     intent: callbackIntent,
     message: "".concat(eventType, " callback handler not found")
   };
@@ -9660,7 +4110,7 @@ exports.buildMissedHandlerError = buildMissedHandlerError;
  */
 var buildWalletNonceError = function buildWalletNonceError(callbackIntent, error) {
   return {
-    reason: googlepay_1.ErrorType.OTHER_ERROR,
+    reason: "OTHER_ERROR" /* ErrorType.OTHER_ERROR */,
     intent: callbackIntent,
     message: (error === null || error === void 0 ? void 0 : error.developerMessage) || (error === null || error === void 0 ? void 0 : error.message) || ""
   };
@@ -9674,7 +4124,7 @@ exports.buildWalletNonceError = buildWalletNonceError;
  */
 var buildPaymentDataChangedHandlerError = function buildPaymentDataChangedHandlerError(callbackTrigger) {
   return {
-    reason: googlepay_1.ErrorType.OTHER_ERROR,
+    reason: "OTHER_ERROR" /* ErrorType.OTHER_ERROR */,
     intent: constants_1.GOOGLE_PAY_INTENT_MAP[callbackTrigger],
     message: "Callback trigger \"".concat(callbackTrigger, "\" not found or intermediate payment data does not exist")
   };
@@ -9693,10 +4143,10 @@ exports.buildPaymentDataChangedHandlerError = buildPaymentDataChangedHandlerErro
  * @returns {GooglePayJS.PaymentDataRequest} - GooglePay payment request model
  */
 var buildPaymentRequest = function buildPaymentRequest(request, businessId, authJwt) {
-  var _a, _b;
+  var _a, _b, _c;
   var merchantInfo = {
     merchantId: constants_1.GOOGLEPAY_MERCHANT_ID,
-    merchantOrigin: document.location.hostname,
+    merchantOrigin: ((_a = window.top) === null || _a === void 0 ? void 0 : _a.location.hostname) || document.location.hostname,
     merchantName: request.merchantName,
     authJwt: authJwt
   };
@@ -9707,22 +4157,26 @@ var buildPaymentRequest = function buildPaymentRequest(request, businessId, auth
     allowedPaymentMethods: [(0, exports.getCardPaymentMethod)(request, businessId)],
     transactionInfo: (0, exports.buildTransactionInfo)(request)
   };
-  var callbackIntents = [googlepay_1.CallbackType.PAYMENT_AUTHORIZATION];
+  var callbackIntents = ["PAYMENT_AUTHORIZATION" /* CallbackType.PAYMENT_AUTHORIZATION */];
   if (request.requireShippingAddress) {
-    callbackIntents.push(googlepay_1.CallbackType.SHIPPING_ADDRESS, googlepay_1.CallbackType.SHIPPING_OPTION);
+    callbackIntents.push("SHIPPING_ADDRESS" /* CallbackType.SHIPPING_ADDRESS */);
     result.shippingAddressRequired = true;
-    result.shippingOptionRequired = true;
+    if (typeof request.requireShippingMethods === "undefined" || request.requireShippingMethods) {
+      result.shippingOptionRequired = true;
+      callbackIntents.push("SHIPPING_OPTION" /* CallbackType.SHIPPING_OPTION */);
+    }
+
     result.shippingAddressParameters = {
       allowedCountryCodes: constants_1.WALLET_SHIPPING_COUNTRY_CODES,
       phoneNumberRequired: request.requirePhone
     };
-    if ((_a = request.shippingMethods) === null || _a === void 0 ? void 0 : _a.length) {
+    if ((_b = request.shippingMethods) === null || _b === void 0 ? void 0 : _b.length) {
       result.shippingOptionParameters = (0, exports.buildShippingMethods)(request);
     }
   }
   if (request.supportCouponCode) {
-    callbackIntents.push(googlepay_1.CallbackType.OFFER);
-    if ((_b = request.couponCode) === null || _b === void 0 ? void 0 : _b.code) {
+    callbackIntents.push("OFFER" /* CallbackType.OFFER */);
+    if ((_c = request.couponCode) === null || _c === void 0 ? void 0 : _c.code) {
       result.offerInfo = {
         offers: [{
           redemptionCode: request.couponCode.code,
@@ -9768,7 +4222,7 @@ var buildMaskedPaymentRequest = function buildMaskedPaymentRequest(request) {
 };
 exports.buildMaskedPaymentRequest = buildMaskedPaymentRequest;
 
-},{"../constants":40,"../enums/googlepay":44}],52:[function(require,module,exports){
+},{"../constants":41}],46:[function(require,module,exports){
 "use strict";
 
 function _extends() { _extends = Object.assign ? Object.assign.bind() : function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
@@ -9795,41 +4249,90 @@ var getMessages = function getMessages(locale) {
 };
 exports.getMessages = getMessages;
 
-},{"../constants":40,"l10n/collect/en-ca/snippet.json":11,"l10n/collect/en-us/snippet.json":12,"l10n/collect/fr-ca/snippet.json":13}],53:[function(require,module,exports){
+},{"../constants":41,"l10n/collect/en-ca/snippet.json":12,"l10n/collect/en-us/snippet.json":13,"l10n/collect/fr-ca/snippet.json":14}],47:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.buildPaymentAuthorizedResponse = exports.buildAddress = exports.buildWalletNonceRequest = exports.buildCompleteRequest = exports.buildCheckoutRequest = void 0;
+exports.buildMaskedCompleteRequest = exports.buildMaskedCheckoutRequest = exports.buildPaymentAuthorizedResponse = exports.buildAddress = exports.buildWalletNonceRequest = exports.buildCompleteRequest = exports.buildCheckoutRequest = exports.formatAmountWithCents = exports.getOrderQuantity = exports.getPazeScriptUrl = void 0;
 var constants_1 = require("../constants");
-var wallet_1 = require("../enums/wallet");
-var paze_wallet_1 = require("../enums/paze-wallet");
+/**
+ * Constructs the Paze script URL with the provided client ID and returns it.
+ * The URL is built using the environment variables PAZE_URL and PAZE_CLIENT_ID.
+ * The PAZE_URL environment variable should contain the base URL for the Paze script,
+ * and the PAZE_CLIENT_ID environment variable should contain the client ID.
+ *
+ * @returns {string} - The Paze script URL with the client ID appended as a query parameter.
+ */
+var getPazeScriptUrl = function getPazeScriptUrl() {
+  if (!"https://checkout.paze.com/web/resources/js/digitalwallet-sdk.js" || !"46VM0VIBJ63520UZ7X6U14L-0rahMJIVUiE1MgKLDdBgyTXkE") {
+    return '';
+  }
+  ;
+  return "https://checkout.paze.com/web/resources/js/digitalwallet-sdk.js".concat("?id=", "46VM0VIBJ63520UZ7X6U14L-0rahMJIVUiE1MgKLDdBgyTXkE");
+};
+exports.getPazeScriptUrl = getPazeScriptUrl;
+/**
+ * Retrieves the order quantity from the line items.
+ *
+ * @param {LineItem[]} [lineItems] - The line items array.
+ * @returns {string|undefined} - The order quantity as a string, or undefined if there are no line items.
+ */
+var getOrderQuantity = function getOrderQuantity(lineItems) {
+  if (!(lineItems === null || lineItems === void 0 ? void 0 : lineItems.length)) {
+    return;
+  }
+  return lineItems.length.toString();
+};
+exports.getOrderQuantity = getOrderQuantity;
+/**
+ * Formats an amount value with cents if they don't exist.
+ *
+ * @param {string} amount - The amount value as a string.
+ * @returns {string} The formatted amount value with cents added if necessary.
+ */
+var formatAmountWithCents = function formatAmountWithCents(amount) {
+  if (!amount || !Number(amount)) {
+    // Not a valid amount, return "0.00"
+    return '0.00';
+  }
+  var parts = amount.split('.');
+  if (parts.length === 1) {
+    // No cents exist, add ".00"
+    return "".concat(parts[0], ".00");
+  }
+  if (parts.length === 2 && parts[1].length === 1) {
+    // Only one cent digit exists, add a trailing zero
+    return "".concat(parts[0], ".").concat(parts[1], "0");
+  }
+  return amount;
+};
+exports.formatAmountWithCents = formatAmountWithCents;
 /**
  * Maps the wallet request object to Paze Wallet checkout request.
  *
  * @param {WalletRequest} request - The wallet request object.
  * @param {string} [sessionId] - The session ID.
  * @param {string} [emailAddress] - The email address.
- * @returns {PazeWalletJS.CheckoutRequest} - The Paze Wallet checkout request.
+ * @returns {PazeJS.CheckoutRequest} - The Paze Wallet checkout request.
  */
 var buildCheckoutRequest = function buildCheckoutRequest(request, sessionId, emailAddress) {
-  var _a;
   return {
     emailAddress: emailAddress,
     sessionId: sessionId,
-    actionCode: paze_wallet_1.ActionCode.START_FLOW,
+    actionCode: "START_FLOW" /* ActionCode.START_FLOW */,
     transactionValue: {
       transactionCurrencyCode: request.currency,
-      transactionAmount: request.total.amount
+      transactionAmount: (0, exports.formatAmountWithCents)(request.total.amount)
     },
     enhancedTransactionData: {
-      orderQuantity: ((_a = request.lineItems) === null || _a === void 0 ? void 0 : _a.length) ? request.lineItems.length.toString() : undefined
+      orderQuantity: (0, exports.getOrderQuantity)(request.lineItems)
     },
-    shippingPreference: paze_wallet_1.AddressPreference.NONE,
-    billingPreference: paze_wallet_1.AddressPreference.ALL,
+    shippingPreference: "NONE" /* AddressPreference.NONE */,
+    billingPreference: "ALL" /* AddressPreference.ALL */,
     acceptedShippingCountries: constants_1.WALLET_SHIPPING_COUNTRY_CODES,
-    acceptedPaymentCardNetworks: constants_1.PAZE_WALLET_ALLOWED_CARD_NETWORKS
+    acceptedPaymentCardNetworks: constants_1.PAZE_ALLOWED_CARD_NETWORKS
   };
 };
 exports.buildCheckoutRequest = buildCheckoutRequest;
@@ -9838,23 +4341,23 @@ exports.buildCheckoutRequest = buildCheckoutRequest;
  *
  * @param {WalletRequest} request - The wallet request object.
  * @param {string} [sessionId] - The session ID.
- * @returns {PazeWalletJS.CompleteRequest} - The Paze Wallet complete request.
+ * @returns {PazeJS.CompleteRequest} - The Paze Wallet complete request.
  */
 var buildCompleteRequest = function buildCompleteRequest(request, sessionId) {
-  var _a;
   return {
     sessionId: sessionId,
-    transactionType: paze_wallet_1.TransactionType.BOTH,
+    transactionType: "PURCHASE" /* TransactionType.PURCHASE */,
     transactionValue: {
       transactionCurrencyCode: request.currency,
-      transactionAmount: request.total.amount
+      transactionAmount: (0, exports.formatAmountWithCents)(request.total.amount)
     },
     transactionOptions: {
-      billingPreference: paze_wallet_1.AddressPreference.ALL,
-      payloadTypeIndicator: paze_wallet_1.PayloadTypeIndicator.PAYMENT
+      billingPreference: "ALL" /* AddressPreference.ALL */,
+      payloadTypeIndicator: "PAYMENT" /* PayloadTypeIndicator.PAYMENT */
     },
+
     enhancedTransactionData: {
-      orderQuantity: ((_a = request.lineItems) === null || _a === void 0 ? void 0 : _a.length) ? request.lineItems.length.toString() : undefined
+      orderQuantity: (0, exports.getOrderQuantity)(request.lineItems)
     }
   };
 };
@@ -9862,13 +4365,15 @@ exports.buildCompleteRequest = buildCompleteRequest;
 /**
  * Builds the wallet nonce request.
  *
- * @param {PazeWalletJS.DecodedCheckoutResponse} checkout - The decoded checkout response.
- * @param {PazeWalletJS.CompleteResponse} complete - The complete response.
+ * @param {PazeJS.DecodedCheckoutResponse} checkout - The decoded checkout response.
+ * @param {PazeJS.CompleteResponse} complete - The complete response.
  * @returns {GetWalletNonceOptions} - The wallet nonce request options.
  */
-var buildWalletNonceRequest = function buildWalletNonceRequest(checkout, complete) {
+var buildWalletNonceRequest = function buildWalletNonceRequest(checkout, complete, requestId) {
   var result = {
-    pazeWalletPaymentToken: complete.completeResponse
+    pazePaymentToken: {
+      paymentTokenJwt: complete.completeResponse
+    }
   };
   var billingAddress = checkout.maskedCard.billingAddress;
   var customerInfo = checkout.consumer;
@@ -9884,18 +4389,20 @@ var buildWalletNonceRequest = function buildWalletNonceRequest(checkout, complet
     result.firstName = customerInfo.firstName;
     result.lastName = customerInfo.lastName;
   }
+  if (requestId) {
+    result.requestId = requestId;
+  }
   return result;
 };
 exports.buildWalletNonceRequest = buildWalletNonceRequest;
 /**
  * Builds an address object.
  *
- * @param {PazeWalletJS.Address | PazeWalletJS.ShippingAddress} address - The address object.
- * @param {PazeWalletJS.Consumer} [customerInfo] - The customer information.
+ * @param {PazeJS.Address | PazeJS.ShippingAddress} address - The address object.
+ * @param {PazeJS.Consumer} [customerInfo] - The customer information.
  * @returns {Address} - The built address object.
  */
 var buildAddress = function buildAddress(address, customerInfo) {
-  var _a, _b, _c, _d;
   var result = {
     administrativeArea: address.state,
     countryCode: address.countryCode,
@@ -9907,14 +4414,17 @@ var buildAddress = function buildAddress(address, customerInfo) {
   };
   if (customerInfo) {
     result.emailAddress = customerInfo.emailAddress;
-    var name = "".concat(customerInfo.firstName, " ").concat(customerInfo.lastName);
-    var number = "".concat((_a = customerInfo.mobileNumber) === null || _a === void 0 ? void 0 : _a.countryCode).concat((_b = customerInfo.mobileNumber) === null || _b === void 0 ? void 0 : _b.phoneNumber);
+    var phoneNumber;
+    var name = customerInfo.fullName || "".concat(customerInfo.firstName, " ").concat(customerInfo.lastName).trim();
+    if (customerInfo.mobileNumber) {
+      phoneNumber = "".concat(customerInfo.mobileNumber.countryCode).concat(customerInfo.mobileNumber.phoneNumber).trim();
+    }
     if ("deliveryContactDetails" in address) {
-      result.name = ((_c = address.deliveryContactDetails) === null || _c === void 0 ? void 0 : _c.contactFullName) || name;
-      result.phoneNumber = ((_d = address.deliveryContactDetails) === null || _d === void 0 ? void 0 : _d.contactPhoneNumber) || number;
+      result.name = address.deliveryContactDetails.contactFullName || name;
+      result.phoneNumber = address.deliveryContactDetails.contactPhoneNumber || phoneNumber;
     } else {
       result.name = name;
-      result.name = number;
+      result.phoneNumber = phoneNumber;
     }
   }
   return result;
@@ -9923,7 +4433,7 @@ exports.buildAddress = buildAddress;
 /**
  * Builds the payment authorized response.
  *
- * @param {PazeWalletJS.DecodedCheckoutResponse} checkout - The decoded checkout response.
+ * @param {PazeJS.DecodedCheckoutResponse} checkout - The decoded checkout response.
  * @param {GetWalletNonceResponse} nonceResponse - The wallet nonce response.
  * @param {boolean} [requireShippingAddress] - Indicates if a shipping address is required.
  * @returns {PaymentAuthorizedResponse} - The payment authorized response.
@@ -9931,8 +4441,9 @@ exports.buildAddress = buildAddress;
 var buildPaymentAuthorizedResponse = function buildPaymentAuthorizedResponse(checkout, nonceResponse, requireShippingAddress) {
   var result = {
     nonce: nonceResponse.nonce,
-    source: wallet_1.WalletType.PazeWallet
+    source: "paze" /* WalletType.Paze */
   };
+
   var billingAddress = checkout.maskedCard.billingAddress;
   var shippingAddress = checkout.shippingAddress;
   var customerInfo = checkout.consumer;
@@ -9947,8 +4458,51 @@ var buildPaymentAuthorizedResponse = function buildPaymentAuthorizedResponse(che
   return result;
 };
 exports.buildPaymentAuthorizedResponse = buildPaymentAuthorizedResponse;
+/**
+ * Builds a masked checkout request object by replacing sensitive data with masked values.
+ *
+ * @param {PazeJS.CheckoutRequest} request - The Apple Pay payment request.
+ * @returns {PazeJS.CheckoutRequest} - The masked payment request object.
+ */
+var buildMaskedCheckoutRequest = function buildMaskedCheckoutRequest(request) {
+  try {
+    var masked = "**masked**";
+    var requestCopy = structuredClone(request);
+    if (requestCopy.emailAddress) {
+      requestCopy.emailAddress = masked;
+    }
+    if (requestCopy.transactionValue) {
+      requestCopy.transactionValue = masked;
+    }
+    return requestCopy;
+  } catch (error) {
+    console.warn(error);
+    return {};
+  }
+};
+exports.buildMaskedCheckoutRequest = buildMaskedCheckoutRequest;
+/**
+ * Builds a masked complete request object by replacing sensitive data with masked values.
+ *
+ * @param {PazeJS.CompleteRequest} request - The Apple Pay payment request.
+ * @returns {PazeJS.CompleteRequest} - The masked payment request object.
+ */
+var buildMaskedCompleteRequest = function buildMaskedCompleteRequest(request) {
+  try {
+    var masked = "**masked**";
+    var requestCopy = structuredClone(request);
+    if (requestCopy.transactionValue) {
+      requestCopy.transactionValue = masked;
+    }
+    return requestCopy;
+  } catch (error) {
+    console.warn(error);
+    return {};
+  }
+};
+exports.buildMaskedCompleteRequest = buildMaskedCompleteRequest;
 
-},{"../constants":40,"../enums/paze-wallet":46,"../enums/wallet":47}],54:[function(require,module,exports){
+},{"../constants":41}],48:[function(require,module,exports){
 "use strict";
 
 function _extends() { _extends = Object.assign ? Object.assign.bind() : function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
@@ -9964,7 +4518,6 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.buildWalletNonceRequest = exports.buildPaymentAuthorizedResponse = exports.buildAddress = exports.buildCouponCodeResponse = exports.buildShippingMethodResponse = exports.buildShippingAddressResponse = void 0;
-var wallet_1 = require("../enums/wallet");
 var buildShippingAddressResponse = function buildShippingAddressResponse(event) {
   return {
     shippingAddress: {
@@ -10070,7 +4623,7 @@ var buildPaymentAuthorizedResponse = function buildPaymentAuthorizedResponse(eve
         }
       }
     }
-    result.source = wallet_1.WalletType.ApplePay;
+    result.source = "apple_pay" /* WalletType.ApplePay */;
   }
   // GooglePay
   if ("paymentMethodData" in event) {
@@ -10080,8 +4633,9 @@ var buildPaymentAuthorizedResponse = function buildPaymentAuthorizedResponse(eve
     if ((_a = event.paymentMethodData.info) === null || _a === void 0 ? void 0 : _a.billingAddress) {
       result.billingAddress = (0, exports.buildAddress)(event.paymentMethodData.info.billingAddress, event.email);
     }
-    result.source = wallet_1.WalletType.GooglePay;
+    result.source = "google_pay" /* WalletType.GooglePay */;
   }
+
   result.nonce = nonceResponse.nonce;
   return result;
 };
@@ -10120,12 +4674,12 @@ var buildWalletNonceRequest = function buildWalletNonceRequest(event) {
 };
 exports.buildWalletNonceRequest = buildWalletNonceRequest;
 
-},{"../enums/wallet":47}],55:[function(require,module,exports){
+},{}],49:[function(require,module,exports){
 "use strict";
 
-function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
+function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
 function _extends() { _extends = Object.assign ? Object.assign.bind() : function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
-function _regeneratorRuntime() { "use strict"; /*! regenerator-runtime -- Copyright (c) 2014-present, Facebook, Inc. -- license (MIT): https://github.com/facebook/regenerator/blob/main/LICENSE */ _regeneratorRuntime = function _regeneratorRuntime() { return exports; }; var exports = {}, Op = Object.prototype, hasOwn = Op.hasOwnProperty, defineProperty = Object.defineProperty || function (obj, key, desc) { obj[key] = desc.value; }, $Symbol = "function" == typeof Symbol ? Symbol : {}, iteratorSymbol = $Symbol.iterator || "@@iterator", asyncIteratorSymbol = $Symbol.asyncIterator || "@@asyncIterator", toStringTagSymbol = $Symbol.toStringTag || "@@toStringTag"; function define(obj, key, value) { return Object.defineProperty(obj, key, { value: value, enumerable: !0, configurable: !0, writable: !0 }), obj[key]; } try { define({}, ""); } catch (err) { define = function define(obj, key, value) { return obj[key] = value; }; } function wrap(innerFn, outerFn, self, tryLocsList) { var protoGenerator = outerFn && outerFn.prototype instanceof Generator ? outerFn : Generator, generator = Object.create(protoGenerator.prototype), context = new Context(tryLocsList || []); return defineProperty(generator, "_invoke", { value: makeInvokeMethod(innerFn, self, context) }), generator; } function tryCatch(fn, obj, arg) { try { return { type: "normal", arg: fn.call(obj, arg) }; } catch (err) { return { type: "throw", arg: err }; } } exports.wrap = wrap; var ContinueSentinel = {}; function Generator() {} function GeneratorFunction() {} function GeneratorFunctionPrototype() {} var IteratorPrototype = {}; define(IteratorPrototype, iteratorSymbol, function () { return this; }); var getProto = Object.getPrototypeOf, NativeIteratorPrototype = getProto && getProto(getProto(values([]))); NativeIteratorPrototype && NativeIteratorPrototype !== Op && hasOwn.call(NativeIteratorPrototype, iteratorSymbol) && (IteratorPrototype = NativeIteratorPrototype); var Gp = GeneratorFunctionPrototype.prototype = Generator.prototype = Object.create(IteratorPrototype); function defineIteratorMethods(prototype) { ["next", "throw", "return"].forEach(function (method) { define(prototype, method, function (arg) { return this._invoke(method, arg); }); }); } function AsyncIterator(generator, PromiseImpl) { function invoke(method, arg, resolve, reject) { var record = tryCatch(generator[method], generator, arg); if ("throw" !== record.type) { var result = record.arg, value = result.value; return value && "object" == _typeof(value) && hasOwn.call(value, "__await") ? PromiseImpl.resolve(value.__await).then(function (value) { invoke("next", value, resolve, reject); }, function (err) { invoke("throw", err, resolve, reject); }) : PromiseImpl.resolve(value).then(function (unwrapped) { result.value = unwrapped, resolve(result); }, function (error) { return invoke("throw", error, resolve, reject); }); } reject(record.arg); } var previousPromise; defineProperty(this, "_invoke", { value: function value(method, arg) { function callInvokeWithMethodAndArg() { return new PromiseImpl(function (resolve, reject) { invoke(method, arg, resolve, reject); }); } return previousPromise = previousPromise ? previousPromise.then(callInvokeWithMethodAndArg, callInvokeWithMethodAndArg) : callInvokeWithMethodAndArg(); } }); } function makeInvokeMethod(innerFn, self, context) { var state = "suspendedStart"; return function (method, arg) { if ("executing" === state) throw new Error("Generator is already running"); if ("completed" === state) { if ("throw" === method) throw arg; return doneResult(); } for (context.method = method, context.arg = arg;;) { var delegate = context.delegate; if (delegate) { var delegateResult = maybeInvokeDelegate(delegate, context); if (delegateResult) { if (delegateResult === ContinueSentinel) continue; return delegateResult; } } if ("next" === context.method) context.sent = context._sent = context.arg;else if ("throw" === context.method) { if ("suspendedStart" === state) throw state = "completed", context.arg; context.dispatchException(context.arg); } else "return" === context.method && context.abrupt("return", context.arg); state = "executing"; var record = tryCatch(innerFn, self, context); if ("normal" === record.type) { if (state = context.done ? "completed" : "suspendedYield", record.arg === ContinueSentinel) continue; return { value: record.arg, done: context.done }; } "throw" === record.type && (state = "completed", context.method = "throw", context.arg = record.arg); } }; } function maybeInvokeDelegate(delegate, context) { var methodName = context.method, method = delegate.iterator[methodName]; if (undefined === method) return context.delegate = null, "throw" === methodName && delegate.iterator["return"] && (context.method = "return", context.arg = undefined, maybeInvokeDelegate(delegate, context), "throw" === context.method) || "return" !== methodName && (context.method = "throw", context.arg = new TypeError("The iterator does not provide a '" + methodName + "' method")), ContinueSentinel; var record = tryCatch(method, delegate.iterator, context.arg); if ("throw" === record.type) return context.method = "throw", context.arg = record.arg, context.delegate = null, ContinueSentinel; var info = record.arg; return info ? info.done ? (context[delegate.resultName] = info.value, context.next = delegate.nextLoc, "return" !== context.method && (context.method = "next", context.arg = undefined), context.delegate = null, ContinueSentinel) : info : (context.method = "throw", context.arg = new TypeError("iterator result is not an object"), context.delegate = null, ContinueSentinel); } function pushTryEntry(locs) { var entry = { tryLoc: locs[0] }; 1 in locs && (entry.catchLoc = locs[1]), 2 in locs && (entry.finallyLoc = locs[2], entry.afterLoc = locs[3]), this.tryEntries.push(entry); } function resetTryEntry(entry) { var record = entry.completion || {}; record.type = "normal", delete record.arg, entry.completion = record; } function Context(tryLocsList) { this.tryEntries = [{ tryLoc: "root" }], tryLocsList.forEach(pushTryEntry, this), this.reset(!0); } function values(iterable) { if (iterable) { var iteratorMethod = iterable[iteratorSymbol]; if (iteratorMethod) return iteratorMethod.call(iterable); if ("function" == typeof iterable.next) return iterable; if (!isNaN(iterable.length)) { var i = -1, next = function next() { for (; ++i < iterable.length;) if (hasOwn.call(iterable, i)) return next.value = iterable[i], next.done = !1, next; return next.value = undefined, next.done = !0, next; }; return next.next = next; } } return { next: doneResult }; } function doneResult() { return { value: undefined, done: !0 }; } return GeneratorFunction.prototype = GeneratorFunctionPrototype, defineProperty(Gp, "constructor", { value: GeneratorFunctionPrototype, configurable: !0 }), defineProperty(GeneratorFunctionPrototype, "constructor", { value: GeneratorFunction, configurable: !0 }), GeneratorFunction.displayName = define(GeneratorFunctionPrototype, toStringTagSymbol, "GeneratorFunction"), exports.isGeneratorFunction = function (genFun) { var ctor = "function" == typeof genFun && genFun.constructor; return !!ctor && (ctor === GeneratorFunction || "GeneratorFunction" === (ctor.displayName || ctor.name)); }, exports.mark = function (genFun) { return Object.setPrototypeOf ? Object.setPrototypeOf(genFun, GeneratorFunctionPrototype) : (genFun.__proto__ = GeneratorFunctionPrototype, define(genFun, toStringTagSymbol, "GeneratorFunction")), genFun.prototype = Object.create(Gp), genFun; }, exports.awrap = function (arg) { return { __await: arg }; }, defineIteratorMethods(AsyncIterator.prototype), define(AsyncIterator.prototype, asyncIteratorSymbol, function () { return this; }), exports.AsyncIterator = AsyncIterator, exports.async = function (innerFn, outerFn, self, tryLocsList, PromiseImpl) { void 0 === PromiseImpl && (PromiseImpl = Promise); var iter = new AsyncIterator(wrap(innerFn, outerFn, self, tryLocsList), PromiseImpl); return exports.isGeneratorFunction(outerFn) ? iter : iter.next().then(function (result) { return result.done ? result.value : iter.next(); }); }, defineIteratorMethods(Gp), define(Gp, toStringTagSymbol, "Generator"), define(Gp, iteratorSymbol, function () { return this; }), define(Gp, "toString", function () { return "[object Generator]"; }), exports.keys = function (val) { var object = Object(val), keys = []; for (var key in object) keys.push(key); return keys.reverse(), function next() { for (; keys.length;) { var key = keys.pop(); if (key in object) return next.value = key, next.done = !1, next; } return next.done = !0, next; }; }, exports.values = values, Context.prototype = { constructor: Context, reset: function reset(skipTempReset) { if (this.prev = 0, this.next = 0, this.sent = this._sent = undefined, this.done = !1, this.delegate = null, this.method = "next", this.arg = undefined, this.tryEntries.forEach(resetTryEntry), !skipTempReset) for (var name in this) "t" === name.charAt(0) && hasOwn.call(this, name) && !isNaN(+name.slice(1)) && (this[name] = undefined); }, stop: function stop() { this.done = !0; var rootRecord = this.tryEntries[0].completion; if ("throw" === rootRecord.type) throw rootRecord.arg; return this.rval; }, dispatchException: function dispatchException(exception) { if (this.done) throw exception; var context = this; function handle(loc, caught) { return record.type = "throw", record.arg = exception, context.next = loc, caught && (context.method = "next", context.arg = undefined), !!caught; } for (var i = this.tryEntries.length - 1; i >= 0; --i) { var entry = this.tryEntries[i], record = entry.completion; if ("root" === entry.tryLoc) return handle("end"); if (entry.tryLoc <= this.prev) { var hasCatch = hasOwn.call(entry, "catchLoc"), hasFinally = hasOwn.call(entry, "finallyLoc"); if (hasCatch && hasFinally) { if (this.prev < entry.catchLoc) return handle(entry.catchLoc, !0); if (this.prev < entry.finallyLoc) return handle(entry.finallyLoc); } else if (hasCatch) { if (this.prev < entry.catchLoc) return handle(entry.catchLoc, !0); } else { if (!hasFinally) throw new Error("try statement without catch or finally"); if (this.prev < entry.finallyLoc) return handle(entry.finallyLoc); } } } }, abrupt: function abrupt(type, arg) { for (var i = this.tryEntries.length - 1; i >= 0; --i) { var entry = this.tryEntries[i]; if (entry.tryLoc <= this.prev && hasOwn.call(entry, "finallyLoc") && this.prev < entry.finallyLoc) { var finallyEntry = entry; break; } } finallyEntry && ("break" === type || "continue" === type) && finallyEntry.tryLoc <= arg && arg <= finallyEntry.finallyLoc && (finallyEntry = null); var record = finallyEntry ? finallyEntry.completion : {}; return record.type = type, record.arg = arg, finallyEntry ? (this.method = "next", this.next = finallyEntry.finallyLoc, ContinueSentinel) : this.complete(record); }, complete: function complete(record, afterLoc) { if ("throw" === record.type) throw record.arg; return "break" === record.type || "continue" === record.type ? this.next = record.arg : "return" === record.type ? (this.rval = this.arg = record.arg, this.method = "return", this.next = "end") : "normal" === record.type && afterLoc && (this.next = afterLoc), ContinueSentinel; }, finish: function finish(finallyLoc) { for (var i = this.tryEntries.length - 1; i >= 0; --i) { var entry = this.tryEntries[i]; if (entry.finallyLoc === finallyLoc) return this.complete(entry.completion, entry.afterLoc), resetTryEntry(entry), ContinueSentinel; } }, "catch": function _catch(tryLoc) { for (var i = this.tryEntries.length - 1; i >= 0; --i) { var entry = this.tryEntries[i]; if (entry.tryLoc === tryLoc) { var record = entry.completion; if ("throw" === record.type) { var thrown = record.arg; resetTryEntry(entry); } return thrown; } } throw new Error("illegal catch attempt"); }, delegateYield: function delegateYield(iterable, resultName, nextLoc) { return this.delegate = { iterator: values(iterable), resultName: resultName, nextLoc: nextLoc }, "next" === this.method && (this.arg = undefined), ContinueSentinel; } }, exports; }
+function _regeneratorRuntime() { "use strict"; /*! regenerator-runtime -- Copyright (c) 2014-present, Facebook, Inc. -- license (MIT): https://github.com/facebook/regenerator/blob/main/LICENSE */ _regeneratorRuntime = function _regeneratorRuntime() { return e; }; var t, e = {}, r = Object.prototype, n = r.hasOwnProperty, o = Object.defineProperty || function (t, e, r) { t[e] = r.value; }, i = "function" == typeof Symbol ? Symbol : {}, a = i.iterator || "@@iterator", c = i.asyncIterator || "@@asyncIterator", u = i.toStringTag || "@@toStringTag"; function define(t, e, r) { return Object.defineProperty(t, e, { value: r, enumerable: !0, configurable: !0, writable: !0 }), t[e]; } try { define({}, ""); } catch (t) { define = function define(t, e, r) { return t[e] = r; }; } function wrap(t, e, r, n) { var i = e && e.prototype instanceof Generator ? e : Generator, a = Object.create(i.prototype), c = new Context(n || []); return o(a, "_invoke", { value: makeInvokeMethod(t, r, c) }), a; } function tryCatch(t, e, r) { try { return { type: "normal", arg: t.call(e, r) }; } catch (t) { return { type: "throw", arg: t }; } } e.wrap = wrap; var h = "suspendedStart", l = "suspendedYield", f = "executing", s = "completed", y = {}; function Generator() {} function GeneratorFunction() {} function GeneratorFunctionPrototype() {} var p = {}; define(p, a, function () { return this; }); var d = Object.getPrototypeOf, v = d && d(d(values([]))); v && v !== r && n.call(v, a) && (p = v); var g = GeneratorFunctionPrototype.prototype = Generator.prototype = Object.create(p); function defineIteratorMethods(t) { ["next", "throw", "return"].forEach(function (e) { define(t, e, function (t) { return this._invoke(e, t); }); }); } function AsyncIterator(t, e) { function invoke(r, o, i, a) { var c = tryCatch(t[r], t, o); if ("throw" !== c.type) { var u = c.arg, h = u.value; return h && "object" == _typeof(h) && n.call(h, "__await") ? e.resolve(h.__await).then(function (t) { invoke("next", t, i, a); }, function (t) { invoke("throw", t, i, a); }) : e.resolve(h).then(function (t) { u.value = t, i(u); }, function (t) { return invoke("throw", t, i, a); }); } a(c.arg); } var r; o(this, "_invoke", { value: function value(t, n) { function callInvokeWithMethodAndArg() { return new e(function (e, r) { invoke(t, n, e, r); }); } return r = r ? r.then(callInvokeWithMethodAndArg, callInvokeWithMethodAndArg) : callInvokeWithMethodAndArg(); } }); } function makeInvokeMethod(e, r, n) { var o = h; return function (i, a) { if (o === f) throw new Error("Generator is already running"); if (o === s) { if ("throw" === i) throw a; return { value: t, done: !0 }; } for (n.method = i, n.arg = a;;) { var c = n.delegate; if (c) { var u = maybeInvokeDelegate(c, n); if (u) { if (u === y) continue; return u; } } if ("next" === n.method) n.sent = n._sent = n.arg;else if ("throw" === n.method) { if (o === h) throw o = s, n.arg; n.dispatchException(n.arg); } else "return" === n.method && n.abrupt("return", n.arg); o = f; var p = tryCatch(e, r, n); if ("normal" === p.type) { if (o = n.done ? s : l, p.arg === y) continue; return { value: p.arg, done: n.done }; } "throw" === p.type && (o = s, n.method = "throw", n.arg = p.arg); } }; } function maybeInvokeDelegate(e, r) { var n = r.method, o = e.iterator[n]; if (o === t) return r.delegate = null, "throw" === n && e.iterator["return"] && (r.method = "return", r.arg = t, maybeInvokeDelegate(e, r), "throw" === r.method) || "return" !== n && (r.method = "throw", r.arg = new TypeError("The iterator does not provide a '" + n + "' method")), y; var i = tryCatch(o, e.iterator, r.arg); if ("throw" === i.type) return r.method = "throw", r.arg = i.arg, r.delegate = null, y; var a = i.arg; return a ? a.done ? (r[e.resultName] = a.value, r.next = e.nextLoc, "return" !== r.method && (r.method = "next", r.arg = t), r.delegate = null, y) : a : (r.method = "throw", r.arg = new TypeError("iterator result is not an object"), r.delegate = null, y); } function pushTryEntry(t) { var e = { tryLoc: t[0] }; 1 in t && (e.catchLoc = t[1]), 2 in t && (e.finallyLoc = t[2], e.afterLoc = t[3]), this.tryEntries.push(e); } function resetTryEntry(t) { var e = t.completion || {}; e.type = "normal", delete e.arg, t.completion = e; } function Context(t) { this.tryEntries = [{ tryLoc: "root" }], t.forEach(pushTryEntry, this), this.reset(!0); } function values(e) { if (e || "" === e) { var r = e[a]; if (r) return r.call(e); if ("function" == typeof e.next) return e; if (!isNaN(e.length)) { var o = -1, i = function next() { for (; ++o < e.length;) if (n.call(e, o)) return next.value = e[o], next.done = !1, next; return next.value = t, next.done = !0, next; }; return i.next = i; } } throw new TypeError(_typeof(e) + " is not iterable"); } return GeneratorFunction.prototype = GeneratorFunctionPrototype, o(g, "constructor", { value: GeneratorFunctionPrototype, configurable: !0 }), o(GeneratorFunctionPrototype, "constructor", { value: GeneratorFunction, configurable: !0 }), GeneratorFunction.displayName = define(GeneratorFunctionPrototype, u, "GeneratorFunction"), e.isGeneratorFunction = function (t) { var e = "function" == typeof t && t.constructor; return !!e && (e === GeneratorFunction || "GeneratorFunction" === (e.displayName || e.name)); }, e.mark = function (t) { return Object.setPrototypeOf ? Object.setPrototypeOf(t, GeneratorFunctionPrototype) : (t.__proto__ = GeneratorFunctionPrototype, define(t, u, "GeneratorFunction")), t.prototype = Object.create(g), t; }, e.awrap = function (t) { return { __await: t }; }, defineIteratorMethods(AsyncIterator.prototype), define(AsyncIterator.prototype, c, function () { return this; }), e.AsyncIterator = AsyncIterator, e.async = function (t, r, n, o, i) { void 0 === i && (i = Promise); var a = new AsyncIterator(wrap(t, r, n, o), i); return e.isGeneratorFunction(r) ? a : a.next().then(function (t) { return t.done ? t.value : a.next(); }); }, defineIteratorMethods(g), define(g, u, "Generator"), define(g, a, function () { return this; }), define(g, "toString", function () { return "[object Generator]"; }), e.keys = function (t) { var e = Object(t), r = []; for (var n in e) r.push(n); return r.reverse(), function next() { for (; r.length;) { var t = r.pop(); if (t in e) return next.value = t, next.done = !1, next; } return next.done = !0, next; }; }, e.values = values, Context.prototype = { constructor: Context, reset: function reset(e) { if (this.prev = 0, this.next = 0, this.sent = this._sent = t, this.done = !1, this.delegate = null, this.method = "next", this.arg = t, this.tryEntries.forEach(resetTryEntry), !e) for (var r in this) "t" === r.charAt(0) && n.call(this, r) && !isNaN(+r.slice(1)) && (this[r] = t); }, stop: function stop() { this.done = !0; var t = this.tryEntries[0].completion; if ("throw" === t.type) throw t.arg; return this.rval; }, dispatchException: function dispatchException(e) { if (this.done) throw e; var r = this; function handle(n, o) { return a.type = "throw", a.arg = e, r.next = n, o && (r.method = "next", r.arg = t), !!o; } for (var o = this.tryEntries.length - 1; o >= 0; --o) { var i = this.tryEntries[o], a = i.completion; if ("root" === i.tryLoc) return handle("end"); if (i.tryLoc <= this.prev) { var c = n.call(i, "catchLoc"), u = n.call(i, "finallyLoc"); if (c && u) { if (this.prev < i.catchLoc) return handle(i.catchLoc, !0); if (this.prev < i.finallyLoc) return handle(i.finallyLoc); } else if (c) { if (this.prev < i.catchLoc) return handle(i.catchLoc, !0); } else { if (!u) throw new Error("try statement without catch or finally"); if (this.prev < i.finallyLoc) return handle(i.finallyLoc); } } } }, abrupt: function abrupt(t, e) { for (var r = this.tryEntries.length - 1; r >= 0; --r) { var o = this.tryEntries[r]; if (o.tryLoc <= this.prev && n.call(o, "finallyLoc") && this.prev < o.finallyLoc) { var i = o; break; } } i && ("break" === t || "continue" === t) && i.tryLoc <= e && e <= i.finallyLoc && (i = null); var a = i ? i.completion : {}; return a.type = t, a.arg = e, i ? (this.method = "next", this.next = i.finallyLoc, y) : this.complete(a); }, complete: function complete(t, e) { if ("throw" === t.type) throw t.arg; return "break" === t.type || "continue" === t.type ? this.next = t.arg : "return" === t.type ? (this.rval = this.arg = t.arg, this.method = "return", this.next = "end") : "normal" === t.type && e && (this.next = e), y; }, finish: function finish(t) { for (var e = this.tryEntries.length - 1; e >= 0; --e) { var r = this.tryEntries[e]; if (r.finallyLoc === t) return this.complete(r.completion, r.afterLoc), resetTryEntry(r), y; } }, "catch": function _catch(t) { for (var e = this.tryEntries.length - 1; e >= 0; --e) { var r = this.tryEntries[e]; if (r.tryLoc === t) { var n = r.completion; if ("throw" === n.type) { var o = n.arg; resetTryEntry(r); } return o; } } throw new Error("illegal catch attempt"); }, delegateYield: function delegateYield(e, r, n) { return this.delegate = { iterator: values(e), resultName: r, nextLoc: n }, "next" === this.method && (this.arg = t), y; } }, e; }
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, _toPropertyKey(descriptor.key), descriptor); } }
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
@@ -10196,10 +4750,6 @@ var constants = __importStar(require("../constants"));
 var walletHelpers = __importStar(require("../helpers/wallet"));
 var applePayHelpers = __importStar(require("../helpers/applepay"));
 var common_1 = require("../helpers/common");
-var wallet_1 = require("../enums/wallet");
-var event_type_1 = require("../enums/event-type");
-var error_type_1 = require("../enums/error-type");
-var mixpanel_1 = require("../enums/mixpanel");
 /**
  * ApplePay class for handling Apple Pay integration.
  */
@@ -10217,7 +4767,7 @@ var ApplePay = /*#__PURE__*/function () {
   _createClass(ApplePay, [{
     key: "initialize",
     value: function initialize() {
-      var _a;
+      var _a, _b;
       return __awaiter(this, void 0, void 0, /*#__PURE__*/_regeneratorRuntime().mark(function _callee() {
         var walletRequest, applePaySession;
         return _regeneratorRuntime().wrap(function _callee$(_context) {
@@ -10243,8 +4793,8 @@ var ApplePay = /*#__PURE__*/function () {
               }
               _context.next = 9;
               return this.sharedService.walletApi.validateApplePay({
-                domainName: document.location.hostname,
-                displayName: walletRequest.merchantName
+                domainName: ((_b = window.top) === null || _b === void 0 ? void 0 : _b.location.hostname) || document.location.hostname,
+                displayName: walletRequest.merchantName && walletRequest.merchantName.substring(0, 64)
               });
             case 9:
               applePaySession = _context.sent;
@@ -10260,7 +4810,7 @@ var ApplePay = /*#__PURE__*/function () {
             case 15:
               _context.prev = 15;
               _context.t0 = _context["catch"](2);
-              this.sharedService.handleError(error_type_1.ErrorType.APPLE_PAY, _context.t0);
+              this.sharedService.handleError("APPLE_PAY" /* ErrorType.APPLE_PAY */, _context.t0);
             case 18:
             case "end":
               return _context.stop();
@@ -10285,9 +4835,6 @@ var ApplePay = /*#__PURE__*/function () {
     key: "buildSession",
     value: function buildSession() {
       var paymentRequest = applePayHelpers.buildPaymentRequest(this.sharedService.getWalletRequest());
-      this.sharedService.mixpanel.track(mixpanel_1.MixpanelEvent.APPLE_PAY_PAYMENT_REQUEST, {
-        payment_request: applePayHelpers.buildMaskedPaymentRequest(paymentRequest)
-      });
       this.applePaySession = new ApplePaySession(constants.APPLEPAY_VERSION, paymentRequest);
       return this.applePaySession;
     }
@@ -10299,7 +4846,7 @@ var ApplePay = /*#__PURE__*/function () {
   }, {
     key: "startSession",
     value: function startSession(walletRequest) {
-      this.sharedService.updateWalletRequest(walletRequest || {}, event_type_1.EventType.InitWallet);
+      this.sharedService.updateWalletRequest(walletRequest || {}, "init_wallet" /* EventType.InitWallet */);
       this.handler();
     }
     /**
@@ -10310,13 +4857,13 @@ var ApplePay = /*#__PURE__*/function () {
     key: "abortSession",
     value: function abortSession() {
       if (!this.applePaySession) {
-        return this.sharedService.handleError(error_type_1.ErrorType.APPLE_PAY, new Error("ApplePay session not found"));
+        return this.sharedService.handleError("APPLE_PAY" /* ErrorType.APPLE_PAY */, new Error("ApplePay session not found"));
       }
       try {
         this.applePaySession.abort();
         this.applePaySession = null;
       } catch (error) {
-        this.sharedService.handleError(error_type_1.ErrorType.APPLE_PAY, error);
+        this.sharedService.handleError("APPLE_PAY" /* ErrorType.APPLE_PAY */, error);
       }
     }
     /**
@@ -10350,9 +4897,10 @@ var ApplePay = /*#__PURE__*/function () {
           return _this.startSession();
         }
         options.onClick({
-          source: wallet_1.WalletType.ApplePay
+          source: "apple_pay" /* WalletType.ApplePay */
         });
       };
+
       container.appendChild(button);
       (0, common_1.setButtonProperties)(container, options);
       // attach Apple Pay button to wallet container
@@ -10367,16 +4915,15 @@ var ApplePay = /*#__PURE__*/function () {
     key: "handler",
     value: function handler() {
       var _this2 = this;
-      var domainName = document.location.hostname;
+      var domainName = "online-order.godaddy.com";
       if (constants.DOMAIN_BLACKLIST.includes(domainName)) {
-        return this.sharedService.handleError(error_type_1.ErrorType.WALLET, new Error(domainName + " is blacklisted. Please reach out GDP support."));
+        return this.sharedService.handleError("WALLET" /* ErrorType.WALLET */, new Error(domainName + " is blacklisted. Please reach out GDP support."));
       }
       if (!window.ApplePaySession) {
-        return this.sharedService.handleError(error_type_1.ErrorType.APPLE_PAY, new Error("ApplePay session not found"));
+        return this.sharedService.handleError("APPLE_PAY" /* ErrorType.APPLE_PAY */, new Error("ApplePay session not found"));
       }
-      this.sharedService.mixpanel.track(mixpanel_1.MixpanelEvent.APPLE_PAY_BUTTON_CLICK);
-      this.sharedService.processCallbacks(event_type_1.EventType.WalletButtonClick, {
-        source: wallet_1.WalletType.ApplePay
+      this.sharedService.processCallbacks("wallet_button_click" /* EventType.WalletButtonClick */, {
+        source: "apple_pay" /* WalletType.ApplePay */
       });
       var session = this.buildSession();
       var walletRequest = this.sharedService.getWalletRequest();
@@ -10385,19 +4932,19 @@ var ApplePay = /*#__PURE__*/function () {
         _this2.sharedService.walletApi.validateApplePay({
           domainName: domainName,
           validationUrl: event.validationURL,
-          displayName: walletRequest.merchantName
+          displayName: walletRequest.merchantName && walletRequest.merchantName.substring(0, 64)
         }).then(function (applePaySession) {
           session.completeMerchantValidation(applePaySession);
         })["catch"](function (error) {
-          _this2.sharedService.handleError(error_type_1.ErrorType.APPLE_PAY, error);
+          _this2.sharedService.handleError("APPLE_PAY" /* ErrorType.APPLE_PAY */, error);
         });
       };
       // end Merchant Validation
       if (walletRequest.requireShippingAddress) {
-        if (this.sharedService.listenerCallbacks[event_type_1.EventType.ShippingAddressChange]) {
+        if (this.sharedService.listenerCallbacks["shipping_address_change" /* EventType.ShippingAddressChange */]) {
           session.onshippingcontactselected = function (event) {
             var updateWith = function updateWith(walletRequestUpdate) {
-              _this2.sharedService.updateWalletRequest(walletRequestUpdate, event_type_1.EventType.ShippingAddressChange);
+              _this2.sharedService.updateWalletRequest(walletRequestUpdate, "shipping_address_change" /* EventType.ShippingAddressChange */);
               session.completeShippingContactSelection({
                 newTotal: applePayHelpers.buildTotal(walletRequest),
                 newLineItems: applePayHelpers.buildLineItems(walletRequest),
@@ -10405,63 +4952,57 @@ var ApplePay = /*#__PURE__*/function () {
                 errors: applePayHelpers.buildErrors(walletRequest)
               });
             };
-            _this2.sharedService.processCallbacks(event_type_1.EventType.ShippingAddressChange, _extends(_extends({}, walletHelpers.buildShippingAddressResponse(event.shippingContact)), {
+            _this2.sharedService.processCallbacks("shipping_address_change" /* EventType.ShippingAddressChange */, _extends(_extends({}, walletHelpers.buildShippingAddressResponse(event.shippingContact)), {
               updateWith: updateWith
             }));
           };
         }
-        if (this.sharedService.listenerCallbacks[event_type_1.EventType.ShippingMethodChange]) {
+        if (this.sharedService.listenerCallbacks["shipping_method_change" /* EventType.ShippingMethodChange */]) {
           session.onshippingmethodselected = function (event) {
             var updateWith = function updateWith(walletRequestUpdate) {
-              _this2.sharedService.updateWalletRequest(walletRequestUpdate, event_type_1.EventType.ShippingMethodChange);
+              _this2.sharedService.updateWalletRequest(walletRequestUpdate, "shipping_method_change" /* EventType.ShippingMethodChange */);
               session.completeShippingMethodSelection({
                 newTotal: applePayHelpers.buildTotal(walletRequest),
                 newLineItems: applePayHelpers.buildLineItems(walletRequest)
               });
             };
-            _this2.sharedService.processCallbacks(event_type_1.EventType.ShippingMethodChange, _extends(_extends({}, walletHelpers.buildShippingMethodResponse(event.shippingMethod, walletRequest.shippingMethods)), {
+            _this2.sharedService.processCallbacks("shipping_method_change" /* EventType.ShippingMethodChange */, _extends(_extends({}, walletHelpers.buildShippingMethodResponse(event.shippingMethod, walletRequest.shippingMethods)), {
               updateWith: updateWith
             }));
           };
         }
       }
-      if (this.sharedService.listenerCallbacks[event_type_1.EventType.PaymentMethodChange]) {
+      if (this.sharedService.listenerCallbacks["payment_method_change" /* EventType.PaymentMethodChange */]) {
         session.onpaymentmethodselected = function (event) {
           var updateWith = function updateWith(walletRequestUpdate) {
-            _this2.sharedService.updateWalletRequest(walletRequestUpdate, event_type_1.EventType.PaymentMethodChange);
+            _this2.sharedService.updateWalletRequest(walletRequestUpdate, "payment_method_change" /* EventType.PaymentMethodChange */);
             session.completePaymentMethodSelection({
               newTotal: applePayHelpers.buildTotal(walletRequest),
               newLineItems: applePayHelpers.buildLineItems(walletRequest)
             });
           };
-          _this2.sharedService.processCallbacks(event_type_1.EventType.PaymentMethodChange, _extends(_extends({}, event), {
+          _this2.sharedService.processCallbacks("payment_method_change" /* EventType.PaymentMethodChange */, _extends(_extends({}, event), {
             updateWith: updateWith
           }));
         };
       }
-      if (this.sharedService.listenerCallbacks[event_type_1.EventType.PaymentAuthorized]) {
+      if (this.sharedService.listenerCallbacks["payment_authorized" /* EventType.PaymentAuthorized */]) {
         session.onpaymentauthorized = function (event) {
-          _this2.sharedService.mixpanel.track(mixpanel_1.MixpanelEvent.APPLE_PAY_PAYMENT_AUTHORIZED);
           var complete = function complete(walletRequestUpdate) {
-            _this2.sharedService.updateWalletRequest(walletRequestUpdate || {}, event_type_1.EventType.PaymentAuthorized);
+            _this2.sharedService.updateWalletRequest(walletRequestUpdate || {}, "payment_authorized" /* EventType.PaymentAuthorized */);
             var errors = applePayHelpers.buildErrors(walletRequest);
             var status = errors ? ApplePaySession.STATUS_FAILURE : ApplePaySession.STATUS_SUCCESS;
-            _this2.sharedService.mixpanel.track(mixpanel_1.MixpanelEvent.APPLE_PAY_PAYMENT_COMPLETED, {
-              status: errors ? mixpanel_1.MixpanelPaymentCompletedStatus.FAILURE : mixpanel_1.MixpanelPaymentCompletedStatus.SUCCESS,
-              error: errors === null || errors === void 0 ? void 0 : errors[0],
-              raw_error: walletRequest.error
-            });
             session.completePayment({
               status: status,
               errors: errors
             });
           };
           _this2.sharedService.walletApi.getWalletNonce(walletHelpers.buildWalletNonceRequest(event.payment)).then(function (nonceResponse) {
-            _this2.sharedService.processCallbacks(event_type_1.EventType.PaymentAuthorized, _extends(_extends({}, walletHelpers.buildPaymentAuthorizedResponse(event.payment, nonceResponse, walletRequest.requireShippingAddress)), {
+            _this2.sharedService.processCallbacks("payment_authorized" /* EventType.PaymentAuthorized */, _extends(_extends({}, walletHelpers.buildPaymentAuthorizedResponse(event.payment, nonceResponse, walletRequest.requireShippingAddress)), {
               complete: complete
             }));
           })["catch"](function (error) {
-            _this2.sharedService.handleError(error_type_1.ErrorType.APPLE_PAY_NONCE, error);
+            _this2.sharedService.handleError("APPLE_PAY_NONCE" /* ErrorType.APPLE_PAY_NONCE */, error);
             session.completePayment({
               status: ApplePaySession.STATUS_FAILURE,
               errors: applePayHelpers.buildWalletNonceError(error)
@@ -10469,24 +5010,23 @@ var ApplePay = /*#__PURE__*/function () {
           });
         };
       }
-      if (this.sharedService.listenerCallbacks[event_type_1.EventType.CloseWallet]) {
+      if (this.sharedService.listenerCallbacks["close_wallet" /* EventType.CloseWallet */]) {
         session.oncancel = function (event) {
-          _this2.sharedService.processCallbacks(event_type_1.EventType.CloseWallet, event);
+          _this2.sharedService.processCallbacks("close_wallet" /* EventType.CloseWallet */, event);
         };
       }
-      if (walletRequest.supportCouponCode && this.sharedService.listenerCallbacks[event_type_1.EventType.CouponCodeChange]) {
+      if (walletRequest.supportCouponCode && this.sharedService.listenerCallbacks["coupon_code_change" /* EventType.CouponCodeChange */]) {
         session.oncouponcodechanged = function (event) {
           var updateWith = function updateWith(walletRequestUpdate) {
-            _this2.sharedService.updateWalletRequest(walletRequestUpdate, event_type_1.EventType.CouponCodeChange);
+            _this2.sharedService.updateWalletRequest(walletRequestUpdate, "coupon_code_change" /* EventType.CouponCodeChange */);
             session.completeCouponCodeChange({
-              // Update the payment request with any changed information.
               newTotal: applePayHelpers.buildTotal(walletRequest),
               newLineItems: applePayHelpers.buildLineItems(walletRequest),
               newShippingMethods: applePayHelpers.buildShippingMethods(walletRequest),
               errors: applePayHelpers.buildErrors(walletRequest)
             });
           };
-          _this2.sharedService.processCallbacks(event_type_1.EventType.CouponCodeChange, _extends(_extends({}, walletHelpers.buildCouponCodeResponse(event.couponCode)), {
+          _this2.sharedService.processCallbacks("coupon_code_change" /* EventType.CouponCodeChange */, _extends(_extends({}, walletHelpers.buildCouponCodeResponse(event.couponCode)), {
             updateWith: updateWith
           }));
         };
@@ -10498,11 +5038,11 @@ var ApplePay = /*#__PURE__*/function () {
 }();
 exports["default"] = ApplePay;
 
-},{"../constants":40,"../enums/error-type":42,"../enums/event-type":43,"../enums/mixpanel":45,"../enums/wallet":47,"../helpers/applepay":48,"../helpers/common":50,"../helpers/wallet":54}],56:[function(require,module,exports){
+},{"../constants":41,"../helpers/applepay":42,"../helpers/common":44,"../helpers/wallet":48}],50:[function(require,module,exports){
 "use strict";
 
-function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
-function _regeneratorRuntime() { "use strict"; /*! regenerator-runtime -- Copyright (c) 2014-present, Facebook, Inc. -- license (MIT): https://github.com/facebook/regenerator/blob/main/LICENSE */ _regeneratorRuntime = function _regeneratorRuntime() { return exports; }; var exports = {}, Op = Object.prototype, hasOwn = Op.hasOwnProperty, defineProperty = Object.defineProperty || function (obj, key, desc) { obj[key] = desc.value; }, $Symbol = "function" == typeof Symbol ? Symbol : {}, iteratorSymbol = $Symbol.iterator || "@@iterator", asyncIteratorSymbol = $Symbol.asyncIterator || "@@asyncIterator", toStringTagSymbol = $Symbol.toStringTag || "@@toStringTag"; function define(obj, key, value) { return Object.defineProperty(obj, key, { value: value, enumerable: !0, configurable: !0, writable: !0 }), obj[key]; } try { define({}, ""); } catch (err) { define = function define(obj, key, value) { return obj[key] = value; }; } function wrap(innerFn, outerFn, self, tryLocsList) { var protoGenerator = outerFn && outerFn.prototype instanceof Generator ? outerFn : Generator, generator = Object.create(protoGenerator.prototype), context = new Context(tryLocsList || []); return defineProperty(generator, "_invoke", { value: makeInvokeMethod(innerFn, self, context) }), generator; } function tryCatch(fn, obj, arg) { try { return { type: "normal", arg: fn.call(obj, arg) }; } catch (err) { return { type: "throw", arg: err }; } } exports.wrap = wrap; var ContinueSentinel = {}; function Generator() {} function GeneratorFunction() {} function GeneratorFunctionPrototype() {} var IteratorPrototype = {}; define(IteratorPrototype, iteratorSymbol, function () { return this; }); var getProto = Object.getPrototypeOf, NativeIteratorPrototype = getProto && getProto(getProto(values([]))); NativeIteratorPrototype && NativeIteratorPrototype !== Op && hasOwn.call(NativeIteratorPrototype, iteratorSymbol) && (IteratorPrototype = NativeIteratorPrototype); var Gp = GeneratorFunctionPrototype.prototype = Generator.prototype = Object.create(IteratorPrototype); function defineIteratorMethods(prototype) { ["next", "throw", "return"].forEach(function (method) { define(prototype, method, function (arg) { return this._invoke(method, arg); }); }); } function AsyncIterator(generator, PromiseImpl) { function invoke(method, arg, resolve, reject) { var record = tryCatch(generator[method], generator, arg); if ("throw" !== record.type) { var result = record.arg, value = result.value; return value && "object" == _typeof(value) && hasOwn.call(value, "__await") ? PromiseImpl.resolve(value.__await).then(function (value) { invoke("next", value, resolve, reject); }, function (err) { invoke("throw", err, resolve, reject); }) : PromiseImpl.resolve(value).then(function (unwrapped) { result.value = unwrapped, resolve(result); }, function (error) { return invoke("throw", error, resolve, reject); }); } reject(record.arg); } var previousPromise; defineProperty(this, "_invoke", { value: function value(method, arg) { function callInvokeWithMethodAndArg() { return new PromiseImpl(function (resolve, reject) { invoke(method, arg, resolve, reject); }); } return previousPromise = previousPromise ? previousPromise.then(callInvokeWithMethodAndArg, callInvokeWithMethodAndArg) : callInvokeWithMethodAndArg(); } }); } function makeInvokeMethod(innerFn, self, context) { var state = "suspendedStart"; return function (method, arg) { if ("executing" === state) throw new Error("Generator is already running"); if ("completed" === state) { if ("throw" === method) throw arg; return doneResult(); } for (context.method = method, context.arg = arg;;) { var delegate = context.delegate; if (delegate) { var delegateResult = maybeInvokeDelegate(delegate, context); if (delegateResult) { if (delegateResult === ContinueSentinel) continue; return delegateResult; } } if ("next" === context.method) context.sent = context._sent = context.arg;else if ("throw" === context.method) { if ("suspendedStart" === state) throw state = "completed", context.arg; context.dispatchException(context.arg); } else "return" === context.method && context.abrupt("return", context.arg); state = "executing"; var record = tryCatch(innerFn, self, context); if ("normal" === record.type) { if (state = context.done ? "completed" : "suspendedYield", record.arg === ContinueSentinel) continue; return { value: record.arg, done: context.done }; } "throw" === record.type && (state = "completed", context.method = "throw", context.arg = record.arg); } }; } function maybeInvokeDelegate(delegate, context) { var methodName = context.method, method = delegate.iterator[methodName]; if (undefined === method) return context.delegate = null, "throw" === methodName && delegate.iterator["return"] && (context.method = "return", context.arg = undefined, maybeInvokeDelegate(delegate, context), "throw" === context.method) || "return" !== methodName && (context.method = "throw", context.arg = new TypeError("The iterator does not provide a '" + methodName + "' method")), ContinueSentinel; var record = tryCatch(method, delegate.iterator, context.arg); if ("throw" === record.type) return context.method = "throw", context.arg = record.arg, context.delegate = null, ContinueSentinel; var info = record.arg; return info ? info.done ? (context[delegate.resultName] = info.value, context.next = delegate.nextLoc, "return" !== context.method && (context.method = "next", context.arg = undefined), context.delegate = null, ContinueSentinel) : info : (context.method = "throw", context.arg = new TypeError("iterator result is not an object"), context.delegate = null, ContinueSentinel); } function pushTryEntry(locs) { var entry = { tryLoc: locs[0] }; 1 in locs && (entry.catchLoc = locs[1]), 2 in locs && (entry.finallyLoc = locs[2], entry.afterLoc = locs[3]), this.tryEntries.push(entry); } function resetTryEntry(entry) { var record = entry.completion || {}; record.type = "normal", delete record.arg, entry.completion = record; } function Context(tryLocsList) { this.tryEntries = [{ tryLoc: "root" }], tryLocsList.forEach(pushTryEntry, this), this.reset(!0); } function values(iterable) { if (iterable) { var iteratorMethod = iterable[iteratorSymbol]; if (iteratorMethod) return iteratorMethod.call(iterable); if ("function" == typeof iterable.next) return iterable; if (!isNaN(iterable.length)) { var i = -1, next = function next() { for (; ++i < iterable.length;) if (hasOwn.call(iterable, i)) return next.value = iterable[i], next.done = !1, next; return next.value = undefined, next.done = !0, next; }; return next.next = next; } } return { next: doneResult }; } function doneResult() { return { value: undefined, done: !0 }; } return GeneratorFunction.prototype = GeneratorFunctionPrototype, defineProperty(Gp, "constructor", { value: GeneratorFunctionPrototype, configurable: !0 }), defineProperty(GeneratorFunctionPrototype, "constructor", { value: GeneratorFunction, configurable: !0 }), GeneratorFunction.displayName = define(GeneratorFunctionPrototype, toStringTagSymbol, "GeneratorFunction"), exports.isGeneratorFunction = function (genFun) { var ctor = "function" == typeof genFun && genFun.constructor; return !!ctor && (ctor === GeneratorFunction || "GeneratorFunction" === (ctor.displayName || ctor.name)); }, exports.mark = function (genFun) { return Object.setPrototypeOf ? Object.setPrototypeOf(genFun, GeneratorFunctionPrototype) : (genFun.__proto__ = GeneratorFunctionPrototype, define(genFun, toStringTagSymbol, "GeneratorFunction")), genFun.prototype = Object.create(Gp), genFun; }, exports.awrap = function (arg) { return { __await: arg }; }, defineIteratorMethods(AsyncIterator.prototype), define(AsyncIterator.prototype, asyncIteratorSymbol, function () { return this; }), exports.AsyncIterator = AsyncIterator, exports.async = function (innerFn, outerFn, self, tryLocsList, PromiseImpl) { void 0 === PromiseImpl && (PromiseImpl = Promise); var iter = new AsyncIterator(wrap(innerFn, outerFn, self, tryLocsList), PromiseImpl); return exports.isGeneratorFunction(outerFn) ? iter : iter.next().then(function (result) { return result.done ? result.value : iter.next(); }); }, defineIteratorMethods(Gp), define(Gp, toStringTagSymbol, "Generator"), define(Gp, iteratorSymbol, function () { return this; }), define(Gp, "toString", function () { return "[object Generator]"; }), exports.keys = function (val) { var object = Object(val), keys = []; for (var key in object) keys.push(key); return keys.reverse(), function next() { for (; keys.length;) { var key = keys.pop(); if (key in object) return next.value = key, next.done = !1, next; } return next.done = !0, next; }; }, exports.values = values, Context.prototype = { constructor: Context, reset: function reset(skipTempReset) { if (this.prev = 0, this.next = 0, this.sent = this._sent = undefined, this.done = !1, this.delegate = null, this.method = "next", this.arg = undefined, this.tryEntries.forEach(resetTryEntry), !skipTempReset) for (var name in this) "t" === name.charAt(0) && hasOwn.call(this, name) && !isNaN(+name.slice(1)) && (this[name] = undefined); }, stop: function stop() { this.done = !0; var rootRecord = this.tryEntries[0].completion; if ("throw" === rootRecord.type) throw rootRecord.arg; return this.rval; }, dispatchException: function dispatchException(exception) { if (this.done) throw exception; var context = this; function handle(loc, caught) { return record.type = "throw", record.arg = exception, context.next = loc, caught && (context.method = "next", context.arg = undefined), !!caught; } for (var i = this.tryEntries.length - 1; i >= 0; --i) { var entry = this.tryEntries[i], record = entry.completion; if ("root" === entry.tryLoc) return handle("end"); if (entry.tryLoc <= this.prev) { var hasCatch = hasOwn.call(entry, "catchLoc"), hasFinally = hasOwn.call(entry, "finallyLoc"); if (hasCatch && hasFinally) { if (this.prev < entry.catchLoc) return handle(entry.catchLoc, !0); if (this.prev < entry.finallyLoc) return handle(entry.finallyLoc); } else if (hasCatch) { if (this.prev < entry.catchLoc) return handle(entry.catchLoc, !0); } else { if (!hasFinally) throw new Error("try statement without catch or finally"); if (this.prev < entry.finallyLoc) return handle(entry.finallyLoc); } } } }, abrupt: function abrupt(type, arg) { for (var i = this.tryEntries.length - 1; i >= 0; --i) { var entry = this.tryEntries[i]; if (entry.tryLoc <= this.prev && hasOwn.call(entry, "finallyLoc") && this.prev < entry.finallyLoc) { var finallyEntry = entry; break; } } finallyEntry && ("break" === type || "continue" === type) && finallyEntry.tryLoc <= arg && arg <= finallyEntry.finallyLoc && (finallyEntry = null); var record = finallyEntry ? finallyEntry.completion : {}; return record.type = type, record.arg = arg, finallyEntry ? (this.method = "next", this.next = finallyEntry.finallyLoc, ContinueSentinel) : this.complete(record); }, complete: function complete(record, afterLoc) { if ("throw" === record.type) throw record.arg; return "break" === record.type || "continue" === record.type ? this.next = record.arg : "return" === record.type ? (this.rval = this.arg = record.arg, this.method = "return", this.next = "end") : "normal" === record.type && afterLoc && (this.next = afterLoc), ContinueSentinel; }, finish: function finish(finallyLoc) { for (var i = this.tryEntries.length - 1; i >= 0; --i) { var entry = this.tryEntries[i]; if (entry.finallyLoc === finallyLoc) return this.complete(entry.completion, entry.afterLoc), resetTryEntry(entry), ContinueSentinel; } }, "catch": function _catch(tryLoc) { for (var i = this.tryEntries.length - 1; i >= 0; --i) { var entry = this.tryEntries[i]; if (entry.tryLoc === tryLoc) { var record = entry.completion; if ("throw" === record.type) { var thrown = record.arg; resetTryEntry(entry); } return thrown; } } throw new Error("illegal catch attempt"); }, delegateYield: function delegateYield(iterable, resultName, nextLoc) { return this.delegate = { iterator: values(iterable), resultName: resultName, nextLoc: nextLoc }, "next" === this.method && (this.arg = undefined), ContinueSentinel; } }, exports; }
+function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
+function _regeneratorRuntime() { "use strict"; /*! regenerator-runtime -- Copyright (c) 2014-present, Facebook, Inc. -- license (MIT): https://github.com/facebook/regenerator/blob/main/LICENSE */ _regeneratorRuntime = function _regeneratorRuntime() { return e; }; var t, e = {}, r = Object.prototype, n = r.hasOwnProperty, o = Object.defineProperty || function (t, e, r) { t[e] = r.value; }, i = "function" == typeof Symbol ? Symbol : {}, a = i.iterator || "@@iterator", c = i.asyncIterator || "@@asyncIterator", u = i.toStringTag || "@@toStringTag"; function define(t, e, r) { return Object.defineProperty(t, e, { value: r, enumerable: !0, configurable: !0, writable: !0 }), t[e]; } try { define({}, ""); } catch (t) { define = function define(t, e, r) { return t[e] = r; }; } function wrap(t, e, r, n) { var i = e && e.prototype instanceof Generator ? e : Generator, a = Object.create(i.prototype), c = new Context(n || []); return o(a, "_invoke", { value: makeInvokeMethod(t, r, c) }), a; } function tryCatch(t, e, r) { try { return { type: "normal", arg: t.call(e, r) }; } catch (t) { return { type: "throw", arg: t }; } } e.wrap = wrap; var h = "suspendedStart", l = "suspendedYield", f = "executing", s = "completed", y = {}; function Generator() {} function GeneratorFunction() {} function GeneratorFunctionPrototype() {} var p = {}; define(p, a, function () { return this; }); var d = Object.getPrototypeOf, v = d && d(d(values([]))); v && v !== r && n.call(v, a) && (p = v); var g = GeneratorFunctionPrototype.prototype = Generator.prototype = Object.create(p); function defineIteratorMethods(t) { ["next", "throw", "return"].forEach(function (e) { define(t, e, function (t) { return this._invoke(e, t); }); }); } function AsyncIterator(t, e) { function invoke(r, o, i, a) { var c = tryCatch(t[r], t, o); if ("throw" !== c.type) { var u = c.arg, h = u.value; return h && "object" == _typeof(h) && n.call(h, "__await") ? e.resolve(h.__await).then(function (t) { invoke("next", t, i, a); }, function (t) { invoke("throw", t, i, a); }) : e.resolve(h).then(function (t) { u.value = t, i(u); }, function (t) { return invoke("throw", t, i, a); }); } a(c.arg); } var r; o(this, "_invoke", { value: function value(t, n) { function callInvokeWithMethodAndArg() { return new e(function (e, r) { invoke(t, n, e, r); }); } return r = r ? r.then(callInvokeWithMethodAndArg, callInvokeWithMethodAndArg) : callInvokeWithMethodAndArg(); } }); } function makeInvokeMethod(e, r, n) { var o = h; return function (i, a) { if (o === f) throw new Error("Generator is already running"); if (o === s) { if ("throw" === i) throw a; return { value: t, done: !0 }; } for (n.method = i, n.arg = a;;) { var c = n.delegate; if (c) { var u = maybeInvokeDelegate(c, n); if (u) { if (u === y) continue; return u; } } if ("next" === n.method) n.sent = n._sent = n.arg;else if ("throw" === n.method) { if (o === h) throw o = s, n.arg; n.dispatchException(n.arg); } else "return" === n.method && n.abrupt("return", n.arg); o = f; var p = tryCatch(e, r, n); if ("normal" === p.type) { if (o = n.done ? s : l, p.arg === y) continue; return { value: p.arg, done: n.done }; } "throw" === p.type && (o = s, n.method = "throw", n.arg = p.arg); } }; } function maybeInvokeDelegate(e, r) { var n = r.method, o = e.iterator[n]; if (o === t) return r.delegate = null, "throw" === n && e.iterator["return"] && (r.method = "return", r.arg = t, maybeInvokeDelegate(e, r), "throw" === r.method) || "return" !== n && (r.method = "throw", r.arg = new TypeError("The iterator does not provide a '" + n + "' method")), y; var i = tryCatch(o, e.iterator, r.arg); if ("throw" === i.type) return r.method = "throw", r.arg = i.arg, r.delegate = null, y; var a = i.arg; return a ? a.done ? (r[e.resultName] = a.value, r.next = e.nextLoc, "return" !== r.method && (r.method = "next", r.arg = t), r.delegate = null, y) : a : (r.method = "throw", r.arg = new TypeError("iterator result is not an object"), r.delegate = null, y); } function pushTryEntry(t) { var e = { tryLoc: t[0] }; 1 in t && (e.catchLoc = t[1]), 2 in t && (e.finallyLoc = t[2], e.afterLoc = t[3]), this.tryEntries.push(e); } function resetTryEntry(t) { var e = t.completion || {}; e.type = "normal", delete e.arg, t.completion = e; } function Context(t) { this.tryEntries = [{ tryLoc: "root" }], t.forEach(pushTryEntry, this), this.reset(!0); } function values(e) { if (e || "" === e) { var r = e[a]; if (r) return r.call(e); if ("function" == typeof e.next) return e; if (!isNaN(e.length)) { var o = -1, i = function next() { for (; ++o < e.length;) if (n.call(e, o)) return next.value = e[o], next.done = !1, next; return next.value = t, next.done = !0, next; }; return i.next = i; } } throw new TypeError(_typeof(e) + " is not iterable"); } return GeneratorFunction.prototype = GeneratorFunctionPrototype, o(g, "constructor", { value: GeneratorFunctionPrototype, configurable: !0 }), o(GeneratorFunctionPrototype, "constructor", { value: GeneratorFunction, configurable: !0 }), GeneratorFunction.displayName = define(GeneratorFunctionPrototype, u, "GeneratorFunction"), e.isGeneratorFunction = function (t) { var e = "function" == typeof t && t.constructor; return !!e && (e === GeneratorFunction || "GeneratorFunction" === (e.displayName || e.name)); }, e.mark = function (t) { return Object.setPrototypeOf ? Object.setPrototypeOf(t, GeneratorFunctionPrototype) : (t.__proto__ = GeneratorFunctionPrototype, define(t, u, "GeneratorFunction")), t.prototype = Object.create(g), t; }, e.awrap = function (t) { return { __await: t }; }, defineIteratorMethods(AsyncIterator.prototype), define(AsyncIterator.prototype, c, function () { return this; }), e.AsyncIterator = AsyncIterator, e.async = function (t, r, n, o, i) { void 0 === i && (i = Promise); var a = new AsyncIterator(wrap(t, r, n, o), i); return e.isGeneratorFunction(r) ? a : a.next().then(function (t) { return t.done ? t.value : a.next(); }); }, defineIteratorMethods(g), define(g, u, "Generator"), define(g, a, function () { return this; }), define(g, "toString", function () { return "[object Generator]"; }), e.keys = function (t) { var e = Object(t), r = []; for (var n in e) r.push(n); return r.reverse(), function next() { for (; r.length;) { var t = r.pop(); if (t in e) return next.value = t, next.done = !1, next; } return next.done = !0, next; }; }, e.values = values, Context.prototype = { constructor: Context, reset: function reset(e) { if (this.prev = 0, this.next = 0, this.sent = this._sent = t, this.done = !1, this.delegate = null, this.method = "next", this.arg = t, this.tryEntries.forEach(resetTryEntry), !e) for (var r in this) "t" === r.charAt(0) && n.call(this, r) && !isNaN(+r.slice(1)) && (this[r] = t); }, stop: function stop() { this.done = !0; var t = this.tryEntries[0].completion; if ("throw" === t.type) throw t.arg; return this.rval; }, dispatchException: function dispatchException(e) { if (this.done) throw e; var r = this; function handle(n, o) { return a.type = "throw", a.arg = e, r.next = n, o && (r.method = "next", r.arg = t), !!o; } for (var o = this.tryEntries.length - 1; o >= 0; --o) { var i = this.tryEntries[o], a = i.completion; if ("root" === i.tryLoc) return handle("end"); if (i.tryLoc <= this.prev) { var c = n.call(i, "catchLoc"), u = n.call(i, "finallyLoc"); if (c && u) { if (this.prev < i.catchLoc) return handle(i.catchLoc, !0); if (this.prev < i.finallyLoc) return handle(i.finallyLoc); } else if (c) { if (this.prev < i.catchLoc) return handle(i.catchLoc, !0); } else { if (!u) throw new Error("try statement without catch or finally"); if (this.prev < i.finallyLoc) return handle(i.finallyLoc); } } } }, abrupt: function abrupt(t, e) { for (var r = this.tryEntries.length - 1; r >= 0; --r) { var o = this.tryEntries[r]; if (o.tryLoc <= this.prev && n.call(o, "finallyLoc") && this.prev < o.finallyLoc) { var i = o; break; } } i && ("break" === t || "continue" === t) && i.tryLoc <= e && e <= i.finallyLoc && (i = null); var a = i ? i.completion : {}; return a.type = t, a.arg = e, i ? (this.method = "next", this.next = i.finallyLoc, y) : this.complete(a); }, complete: function complete(t, e) { if ("throw" === t.type) throw t.arg; return "break" === t.type || "continue" === t.type ? this.next = t.arg : "return" === t.type ? (this.rval = this.arg = t.arg, this.method = "return", this.next = "end") : "normal" === t.type && e && (this.next = e), y; }, finish: function finish(t) { for (var e = this.tryEntries.length - 1; e >= 0; --e) { var r = this.tryEntries[e]; if (r.finallyLoc === t) return this.complete(r.completion, r.afterLoc), resetTryEntry(r), y; } }, "catch": function _catch(t) { for (var e = this.tryEntries.length - 1; e >= 0; --e) { var r = this.tryEntries[e]; if (r.tryLoc === t) { var n = r.completion; if ("throw" === n.type) { var o = n.arg; resetTryEntry(r); } return o; } } throw new Error("illegal catch attempt"); }, delegateYield: function delegateYield(e, r, n) { return this.delegate = { iterator: values(e), resultName: r, nextLoc: n }, "next" === this.method && (this.arg = t), y; } }, e; }
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, _toPropertyKey(descriptor.key), descriptor); } }
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
@@ -10538,8 +5078,6 @@ var __awaiter = void 0 && (void 0).__awaiter || function (thisArg, _arguments, P
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-var event_type_1 = require("../enums/event-type");
-var error_type_1 = require("../enums/error-type");
 var card_on_file_1 = require("../helpers/card-on-file");
 /**
  * CardOnFile class for handling card on file integration.
@@ -10572,7 +5110,7 @@ var CardOnFile = /*#__PURE__*/function () {
                 return function () {
                   var _a;
                   _this.sharedService.postIFrameMessage({
-                    type: event_type_1.EventType.CardOnFileSetFlag,
+                    type: "card_on_file_set_flag" /* EventType.CardOnFileSetFlag */,
                     options: {
                       value: value
                     }
@@ -10588,7 +5126,7 @@ var CardOnFile = /*#__PURE__*/function () {
             case 4:
               agreement = _context.sent;
               this.cardAgreementData = agreement;
-              this.sharedService.on(event_type_1.EventType.CardOnFileShowAgreement, function () {
+              this.sharedService.on("card_on_file_show_agreement" /* EventType.CardOnFileShowAgreement */, function () {
                 var _a;
                 if ((_a = _this.cardAgreementData) === null || _a === void 0 ? void 0 : _a.container) {
                   document.body.appendChild(_this.cardAgreementData.container);
@@ -10599,7 +5137,7 @@ var CardOnFile = /*#__PURE__*/function () {
             case 9:
               _context.prev = 9;
               _context.t0 = _context["catch"](0);
-              this.sharedService.handleError(error_type_1.ErrorType.CARD_ON_FILE, _context.t0);
+              this.sharedService.handleError("CARD_ON_FILE" /* ErrorType.CARD_ON_FILE */, _context.t0);
             case 12:
               ;
             case 13:
@@ -10620,7 +5158,7 @@ var CardOnFile = /*#__PURE__*/function () {
         if (document.body.contains(this.cardAgreementData.container)) {
           document.body.removeChild(this.cardAgreementData.container);
         }
-        this.sharedService.off(event_type_1.EventType.CardOnFileShowAgreement);
+        this.sharedService.off("card_on_file_show_agreement" /* EventType.CardOnFileShowAgreement */);
         this.cardAgreementData = null;
       }
     }
@@ -10629,11 +5167,11 @@ var CardOnFile = /*#__PURE__*/function () {
 }();
 exports["default"] = CardOnFile;
 
-},{"../enums/error-type":42,"../enums/event-type":43,"../helpers/card-on-file":49}],57:[function(require,module,exports){
+},{"../helpers/card-on-file":43}],51:[function(require,module,exports){
 "use strict";
 
-function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
-function _regeneratorRuntime() { "use strict"; /*! regenerator-runtime -- Copyright (c) 2014-present, Facebook, Inc. -- license (MIT): https://github.com/facebook/regenerator/blob/main/LICENSE */ _regeneratorRuntime = function _regeneratorRuntime() { return exports; }; var exports = {}, Op = Object.prototype, hasOwn = Op.hasOwnProperty, defineProperty = Object.defineProperty || function (obj, key, desc) { obj[key] = desc.value; }, $Symbol = "function" == typeof Symbol ? Symbol : {}, iteratorSymbol = $Symbol.iterator || "@@iterator", asyncIteratorSymbol = $Symbol.asyncIterator || "@@asyncIterator", toStringTagSymbol = $Symbol.toStringTag || "@@toStringTag"; function define(obj, key, value) { return Object.defineProperty(obj, key, { value: value, enumerable: !0, configurable: !0, writable: !0 }), obj[key]; } try { define({}, ""); } catch (err) { define = function define(obj, key, value) { return obj[key] = value; }; } function wrap(innerFn, outerFn, self, tryLocsList) { var protoGenerator = outerFn && outerFn.prototype instanceof Generator ? outerFn : Generator, generator = Object.create(protoGenerator.prototype), context = new Context(tryLocsList || []); return defineProperty(generator, "_invoke", { value: makeInvokeMethod(innerFn, self, context) }), generator; } function tryCatch(fn, obj, arg) { try { return { type: "normal", arg: fn.call(obj, arg) }; } catch (err) { return { type: "throw", arg: err }; } } exports.wrap = wrap; var ContinueSentinel = {}; function Generator() {} function GeneratorFunction() {} function GeneratorFunctionPrototype() {} var IteratorPrototype = {}; define(IteratorPrototype, iteratorSymbol, function () { return this; }); var getProto = Object.getPrototypeOf, NativeIteratorPrototype = getProto && getProto(getProto(values([]))); NativeIteratorPrototype && NativeIteratorPrototype !== Op && hasOwn.call(NativeIteratorPrototype, iteratorSymbol) && (IteratorPrototype = NativeIteratorPrototype); var Gp = GeneratorFunctionPrototype.prototype = Generator.prototype = Object.create(IteratorPrototype); function defineIteratorMethods(prototype) { ["next", "throw", "return"].forEach(function (method) { define(prototype, method, function (arg) { return this._invoke(method, arg); }); }); } function AsyncIterator(generator, PromiseImpl) { function invoke(method, arg, resolve, reject) { var record = tryCatch(generator[method], generator, arg); if ("throw" !== record.type) { var result = record.arg, value = result.value; return value && "object" == _typeof(value) && hasOwn.call(value, "__await") ? PromiseImpl.resolve(value.__await).then(function (value) { invoke("next", value, resolve, reject); }, function (err) { invoke("throw", err, resolve, reject); }) : PromiseImpl.resolve(value).then(function (unwrapped) { result.value = unwrapped, resolve(result); }, function (error) { return invoke("throw", error, resolve, reject); }); } reject(record.arg); } var previousPromise; defineProperty(this, "_invoke", { value: function value(method, arg) { function callInvokeWithMethodAndArg() { return new PromiseImpl(function (resolve, reject) { invoke(method, arg, resolve, reject); }); } return previousPromise = previousPromise ? previousPromise.then(callInvokeWithMethodAndArg, callInvokeWithMethodAndArg) : callInvokeWithMethodAndArg(); } }); } function makeInvokeMethod(innerFn, self, context) { var state = "suspendedStart"; return function (method, arg) { if ("executing" === state) throw new Error("Generator is already running"); if ("completed" === state) { if ("throw" === method) throw arg; return doneResult(); } for (context.method = method, context.arg = arg;;) { var delegate = context.delegate; if (delegate) { var delegateResult = maybeInvokeDelegate(delegate, context); if (delegateResult) { if (delegateResult === ContinueSentinel) continue; return delegateResult; } } if ("next" === context.method) context.sent = context._sent = context.arg;else if ("throw" === context.method) { if ("suspendedStart" === state) throw state = "completed", context.arg; context.dispatchException(context.arg); } else "return" === context.method && context.abrupt("return", context.arg); state = "executing"; var record = tryCatch(innerFn, self, context); if ("normal" === record.type) { if (state = context.done ? "completed" : "suspendedYield", record.arg === ContinueSentinel) continue; return { value: record.arg, done: context.done }; } "throw" === record.type && (state = "completed", context.method = "throw", context.arg = record.arg); } }; } function maybeInvokeDelegate(delegate, context) { var methodName = context.method, method = delegate.iterator[methodName]; if (undefined === method) return context.delegate = null, "throw" === methodName && delegate.iterator["return"] && (context.method = "return", context.arg = undefined, maybeInvokeDelegate(delegate, context), "throw" === context.method) || "return" !== methodName && (context.method = "throw", context.arg = new TypeError("The iterator does not provide a '" + methodName + "' method")), ContinueSentinel; var record = tryCatch(method, delegate.iterator, context.arg); if ("throw" === record.type) return context.method = "throw", context.arg = record.arg, context.delegate = null, ContinueSentinel; var info = record.arg; return info ? info.done ? (context[delegate.resultName] = info.value, context.next = delegate.nextLoc, "return" !== context.method && (context.method = "next", context.arg = undefined), context.delegate = null, ContinueSentinel) : info : (context.method = "throw", context.arg = new TypeError("iterator result is not an object"), context.delegate = null, ContinueSentinel); } function pushTryEntry(locs) { var entry = { tryLoc: locs[0] }; 1 in locs && (entry.catchLoc = locs[1]), 2 in locs && (entry.finallyLoc = locs[2], entry.afterLoc = locs[3]), this.tryEntries.push(entry); } function resetTryEntry(entry) { var record = entry.completion || {}; record.type = "normal", delete record.arg, entry.completion = record; } function Context(tryLocsList) { this.tryEntries = [{ tryLoc: "root" }], tryLocsList.forEach(pushTryEntry, this), this.reset(!0); } function values(iterable) { if (iterable) { var iteratorMethod = iterable[iteratorSymbol]; if (iteratorMethod) return iteratorMethod.call(iterable); if ("function" == typeof iterable.next) return iterable; if (!isNaN(iterable.length)) { var i = -1, next = function next() { for (; ++i < iterable.length;) if (hasOwn.call(iterable, i)) return next.value = iterable[i], next.done = !1, next; return next.value = undefined, next.done = !0, next; }; return next.next = next; } } return { next: doneResult }; } function doneResult() { return { value: undefined, done: !0 }; } return GeneratorFunction.prototype = GeneratorFunctionPrototype, defineProperty(Gp, "constructor", { value: GeneratorFunctionPrototype, configurable: !0 }), defineProperty(GeneratorFunctionPrototype, "constructor", { value: GeneratorFunction, configurable: !0 }), GeneratorFunction.displayName = define(GeneratorFunctionPrototype, toStringTagSymbol, "GeneratorFunction"), exports.isGeneratorFunction = function (genFun) { var ctor = "function" == typeof genFun && genFun.constructor; return !!ctor && (ctor === GeneratorFunction || "GeneratorFunction" === (ctor.displayName || ctor.name)); }, exports.mark = function (genFun) { return Object.setPrototypeOf ? Object.setPrototypeOf(genFun, GeneratorFunctionPrototype) : (genFun.__proto__ = GeneratorFunctionPrototype, define(genFun, toStringTagSymbol, "GeneratorFunction")), genFun.prototype = Object.create(Gp), genFun; }, exports.awrap = function (arg) { return { __await: arg }; }, defineIteratorMethods(AsyncIterator.prototype), define(AsyncIterator.prototype, asyncIteratorSymbol, function () { return this; }), exports.AsyncIterator = AsyncIterator, exports.async = function (innerFn, outerFn, self, tryLocsList, PromiseImpl) { void 0 === PromiseImpl && (PromiseImpl = Promise); var iter = new AsyncIterator(wrap(innerFn, outerFn, self, tryLocsList), PromiseImpl); return exports.isGeneratorFunction(outerFn) ? iter : iter.next().then(function (result) { return result.done ? result.value : iter.next(); }); }, defineIteratorMethods(Gp), define(Gp, toStringTagSymbol, "Generator"), define(Gp, iteratorSymbol, function () { return this; }), define(Gp, "toString", function () { return "[object Generator]"; }), exports.keys = function (val) { var object = Object(val), keys = []; for (var key in object) keys.push(key); return keys.reverse(), function next() { for (; keys.length;) { var key = keys.pop(); if (key in object) return next.value = key, next.done = !1, next; } return next.done = !0, next; }; }, exports.values = values, Context.prototype = { constructor: Context, reset: function reset(skipTempReset) { if (this.prev = 0, this.next = 0, this.sent = this._sent = undefined, this.done = !1, this.delegate = null, this.method = "next", this.arg = undefined, this.tryEntries.forEach(resetTryEntry), !skipTempReset) for (var name in this) "t" === name.charAt(0) && hasOwn.call(this, name) && !isNaN(+name.slice(1)) && (this[name] = undefined); }, stop: function stop() { this.done = !0; var rootRecord = this.tryEntries[0].completion; if ("throw" === rootRecord.type) throw rootRecord.arg; return this.rval; }, dispatchException: function dispatchException(exception) { if (this.done) throw exception; var context = this; function handle(loc, caught) { return record.type = "throw", record.arg = exception, context.next = loc, caught && (context.method = "next", context.arg = undefined), !!caught; } for (var i = this.tryEntries.length - 1; i >= 0; --i) { var entry = this.tryEntries[i], record = entry.completion; if ("root" === entry.tryLoc) return handle("end"); if (entry.tryLoc <= this.prev) { var hasCatch = hasOwn.call(entry, "catchLoc"), hasFinally = hasOwn.call(entry, "finallyLoc"); if (hasCatch && hasFinally) { if (this.prev < entry.catchLoc) return handle(entry.catchLoc, !0); if (this.prev < entry.finallyLoc) return handle(entry.finallyLoc); } else if (hasCatch) { if (this.prev < entry.catchLoc) return handle(entry.catchLoc, !0); } else { if (!hasFinally) throw new Error("try statement without catch or finally"); if (this.prev < entry.finallyLoc) return handle(entry.finallyLoc); } } } }, abrupt: function abrupt(type, arg) { for (var i = this.tryEntries.length - 1; i >= 0; --i) { var entry = this.tryEntries[i]; if (entry.tryLoc <= this.prev && hasOwn.call(entry, "finallyLoc") && this.prev < entry.finallyLoc) { var finallyEntry = entry; break; } } finallyEntry && ("break" === type || "continue" === type) && finallyEntry.tryLoc <= arg && arg <= finallyEntry.finallyLoc && (finallyEntry = null); var record = finallyEntry ? finallyEntry.completion : {}; return record.type = type, record.arg = arg, finallyEntry ? (this.method = "next", this.next = finallyEntry.finallyLoc, ContinueSentinel) : this.complete(record); }, complete: function complete(record, afterLoc) { if ("throw" === record.type) throw record.arg; return "break" === record.type || "continue" === record.type ? this.next = record.arg : "return" === record.type ? (this.rval = this.arg = record.arg, this.method = "return", this.next = "end") : "normal" === record.type && afterLoc && (this.next = afterLoc), ContinueSentinel; }, finish: function finish(finallyLoc) { for (var i = this.tryEntries.length - 1; i >= 0; --i) { var entry = this.tryEntries[i]; if (entry.finallyLoc === finallyLoc) return this.complete(entry.completion, entry.afterLoc), resetTryEntry(entry), ContinueSentinel; } }, "catch": function _catch(tryLoc) { for (var i = this.tryEntries.length - 1; i >= 0; --i) { var entry = this.tryEntries[i]; if (entry.tryLoc === tryLoc) { var record = entry.completion; if ("throw" === record.type) { var thrown = record.arg; resetTryEntry(entry); } return thrown; } } throw new Error("illegal catch attempt"); }, delegateYield: function delegateYield(iterable, resultName, nextLoc) { return this.delegate = { iterator: values(iterable), resultName: resultName, nextLoc: nextLoc }, "next" === this.method && (this.arg = undefined), ContinueSentinel; } }, exports; }
+function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
+function _regeneratorRuntime() { "use strict"; /*! regenerator-runtime -- Copyright (c) 2014-present, Facebook, Inc. -- license (MIT): https://github.com/facebook/regenerator/blob/main/LICENSE */ _regeneratorRuntime = function _regeneratorRuntime() { return e; }; var t, e = {}, r = Object.prototype, n = r.hasOwnProperty, o = Object.defineProperty || function (t, e, r) { t[e] = r.value; }, i = "function" == typeof Symbol ? Symbol : {}, a = i.iterator || "@@iterator", c = i.asyncIterator || "@@asyncIterator", u = i.toStringTag || "@@toStringTag"; function define(t, e, r) { return Object.defineProperty(t, e, { value: r, enumerable: !0, configurable: !0, writable: !0 }), t[e]; } try { define({}, ""); } catch (t) { define = function define(t, e, r) { return t[e] = r; }; } function wrap(t, e, r, n) { var i = e && e.prototype instanceof Generator ? e : Generator, a = Object.create(i.prototype), c = new Context(n || []); return o(a, "_invoke", { value: makeInvokeMethod(t, r, c) }), a; } function tryCatch(t, e, r) { try { return { type: "normal", arg: t.call(e, r) }; } catch (t) { return { type: "throw", arg: t }; } } e.wrap = wrap; var h = "suspendedStart", l = "suspendedYield", f = "executing", s = "completed", y = {}; function Generator() {} function GeneratorFunction() {} function GeneratorFunctionPrototype() {} var p = {}; define(p, a, function () { return this; }); var d = Object.getPrototypeOf, v = d && d(d(values([]))); v && v !== r && n.call(v, a) && (p = v); var g = GeneratorFunctionPrototype.prototype = Generator.prototype = Object.create(p); function defineIteratorMethods(t) { ["next", "throw", "return"].forEach(function (e) { define(t, e, function (t) { return this._invoke(e, t); }); }); } function AsyncIterator(t, e) { function invoke(r, o, i, a) { var c = tryCatch(t[r], t, o); if ("throw" !== c.type) { var u = c.arg, h = u.value; return h && "object" == _typeof(h) && n.call(h, "__await") ? e.resolve(h.__await).then(function (t) { invoke("next", t, i, a); }, function (t) { invoke("throw", t, i, a); }) : e.resolve(h).then(function (t) { u.value = t, i(u); }, function (t) { return invoke("throw", t, i, a); }); } a(c.arg); } var r; o(this, "_invoke", { value: function value(t, n) { function callInvokeWithMethodAndArg() { return new e(function (e, r) { invoke(t, n, e, r); }); } return r = r ? r.then(callInvokeWithMethodAndArg, callInvokeWithMethodAndArg) : callInvokeWithMethodAndArg(); } }); } function makeInvokeMethod(e, r, n) { var o = h; return function (i, a) { if (o === f) throw new Error("Generator is already running"); if (o === s) { if ("throw" === i) throw a; return { value: t, done: !0 }; } for (n.method = i, n.arg = a;;) { var c = n.delegate; if (c) { var u = maybeInvokeDelegate(c, n); if (u) { if (u === y) continue; return u; } } if ("next" === n.method) n.sent = n._sent = n.arg;else if ("throw" === n.method) { if (o === h) throw o = s, n.arg; n.dispatchException(n.arg); } else "return" === n.method && n.abrupt("return", n.arg); o = f; var p = tryCatch(e, r, n); if ("normal" === p.type) { if (o = n.done ? s : l, p.arg === y) continue; return { value: p.arg, done: n.done }; } "throw" === p.type && (o = s, n.method = "throw", n.arg = p.arg); } }; } function maybeInvokeDelegate(e, r) { var n = r.method, o = e.iterator[n]; if (o === t) return r.delegate = null, "throw" === n && e.iterator["return"] && (r.method = "return", r.arg = t, maybeInvokeDelegate(e, r), "throw" === r.method) || "return" !== n && (r.method = "throw", r.arg = new TypeError("The iterator does not provide a '" + n + "' method")), y; var i = tryCatch(o, e.iterator, r.arg); if ("throw" === i.type) return r.method = "throw", r.arg = i.arg, r.delegate = null, y; var a = i.arg; return a ? a.done ? (r[e.resultName] = a.value, r.next = e.nextLoc, "return" !== r.method && (r.method = "next", r.arg = t), r.delegate = null, y) : a : (r.method = "throw", r.arg = new TypeError("iterator result is not an object"), r.delegate = null, y); } function pushTryEntry(t) { var e = { tryLoc: t[0] }; 1 in t && (e.catchLoc = t[1]), 2 in t && (e.finallyLoc = t[2], e.afterLoc = t[3]), this.tryEntries.push(e); } function resetTryEntry(t) { var e = t.completion || {}; e.type = "normal", delete e.arg, t.completion = e; } function Context(t) { this.tryEntries = [{ tryLoc: "root" }], t.forEach(pushTryEntry, this), this.reset(!0); } function values(e) { if (e || "" === e) { var r = e[a]; if (r) return r.call(e); if ("function" == typeof e.next) return e; if (!isNaN(e.length)) { var o = -1, i = function next() { for (; ++o < e.length;) if (n.call(e, o)) return next.value = e[o], next.done = !1, next; return next.value = t, next.done = !0, next; }; return i.next = i; } } throw new TypeError(_typeof(e) + " is not iterable"); } return GeneratorFunction.prototype = GeneratorFunctionPrototype, o(g, "constructor", { value: GeneratorFunctionPrototype, configurable: !0 }), o(GeneratorFunctionPrototype, "constructor", { value: GeneratorFunction, configurable: !0 }), GeneratorFunction.displayName = define(GeneratorFunctionPrototype, u, "GeneratorFunction"), e.isGeneratorFunction = function (t) { var e = "function" == typeof t && t.constructor; return !!e && (e === GeneratorFunction || "GeneratorFunction" === (e.displayName || e.name)); }, e.mark = function (t) { return Object.setPrototypeOf ? Object.setPrototypeOf(t, GeneratorFunctionPrototype) : (t.__proto__ = GeneratorFunctionPrototype, define(t, u, "GeneratorFunction")), t.prototype = Object.create(g), t; }, e.awrap = function (t) { return { __await: t }; }, defineIteratorMethods(AsyncIterator.prototype), define(AsyncIterator.prototype, c, function () { return this; }), e.AsyncIterator = AsyncIterator, e.async = function (t, r, n, o, i) { void 0 === i && (i = Promise); var a = new AsyncIterator(wrap(t, r, n, o), i); return e.isGeneratorFunction(r) ? a : a.next().then(function (t) { return t.done ? t.value : a.next(); }); }, defineIteratorMethods(g), define(g, u, "Generator"), define(g, a, function () { return this; }), define(g, "toString", function () { return "[object Generator]"; }), e.keys = function (t) { var e = Object(t), r = []; for (var n in e) r.push(n); return r.reverse(), function next() { for (; r.length;) { var t = r.pop(); if (t in e) return next.value = t, next.done = !1, next; } return next.done = !0, next; }; }, e.values = values, Context.prototype = { constructor: Context, reset: function reset(e) { if (this.prev = 0, this.next = 0, this.sent = this._sent = t, this.done = !1, this.delegate = null, this.method = "next", this.arg = t, this.tryEntries.forEach(resetTryEntry), !e) for (var r in this) "t" === r.charAt(0) && n.call(this, r) && !isNaN(+r.slice(1)) && (this[r] = t); }, stop: function stop() { this.done = !0; var t = this.tryEntries[0].completion; if ("throw" === t.type) throw t.arg; return this.rval; }, dispatchException: function dispatchException(e) { if (this.done) throw e; var r = this; function handle(n, o) { return a.type = "throw", a.arg = e, r.next = n, o && (r.method = "next", r.arg = t), !!o; } for (var o = this.tryEntries.length - 1; o >= 0; --o) { var i = this.tryEntries[o], a = i.completion; if ("root" === i.tryLoc) return handle("end"); if (i.tryLoc <= this.prev) { var c = n.call(i, "catchLoc"), u = n.call(i, "finallyLoc"); if (c && u) { if (this.prev < i.catchLoc) return handle(i.catchLoc, !0); if (this.prev < i.finallyLoc) return handle(i.finallyLoc); } else if (c) { if (this.prev < i.catchLoc) return handle(i.catchLoc, !0); } else { if (!u) throw new Error("try statement without catch or finally"); if (this.prev < i.finallyLoc) return handle(i.finallyLoc); } } } }, abrupt: function abrupt(t, e) { for (var r = this.tryEntries.length - 1; r >= 0; --r) { var o = this.tryEntries[r]; if (o.tryLoc <= this.prev && n.call(o, "finallyLoc") && this.prev < o.finallyLoc) { var i = o; break; } } i && ("break" === t || "continue" === t) && i.tryLoc <= e && e <= i.finallyLoc && (i = null); var a = i ? i.completion : {}; return a.type = t, a.arg = e, i ? (this.method = "next", this.next = i.finallyLoc, y) : this.complete(a); }, complete: function complete(t, e) { if ("throw" === t.type) throw t.arg; return "break" === t.type || "continue" === t.type ? this.next = t.arg : "return" === t.type ? (this.rval = this.arg = t.arg, this.method = "return", this.next = "end") : "normal" === t.type && e && (this.next = e), y; }, finish: function finish(t) { for (var e = this.tryEntries.length - 1; e >= 0; --e) { var r = this.tryEntries[e]; if (r.finallyLoc === t) return this.complete(r.completion, r.afterLoc), resetTryEntry(r), y; } }, "catch": function _catch(t) { for (var e = this.tryEntries.length - 1; e >= 0; --e) { var r = this.tryEntries[e]; if (r.tryLoc === t) { var n = r.completion; if ("throw" === n.type) { var o = n.arg; resetTryEntry(r); } return o; } } throw new Error("illegal catch attempt"); }, delegateYield: function delegateYield(e, r, n) { return this.delegate = { iterator: values(e), resultName: r, nextLoc: n }, "next" === this.method && (this.arg = t), y; } }, e; }
 function _extends() { _extends = Object.assign ? Object.assign.bind() : function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, _toPropertyKey(descriptor.key), descriptor); } }
@@ -10705,11 +5243,6 @@ var constants = __importStar(require("../constants"));
 var walletHelpers = __importStar(require("../helpers/wallet"));
 var googlePayHelpers = __importStar(require("../helpers/googlepay"));
 var common_1 = require("../helpers/common");
-var wallet_1 = require("../enums/wallet");
-var event_type_1 = require("../enums/event-type");
-var error_type_1 = require("../enums/error-type");
-var googlePayEnums = __importStar(require("../enums/googlepay"));
-var mixpanel_1 = require("../enums/mixpanel");
 /**
  * GooglePay class for handling Google Pay integration.
  */
@@ -10744,10 +5277,10 @@ var GooglePay = /*#__PURE__*/function () {
         }
         // updating shipping options is not allowed if the data change event was 
         // triggered by changing the shipping option on the payment sheet by the customer
-        if (walletRequest.requireShippingAddress && callbackTrigger !== googlePayEnums.CallbackType.SHIPPING_OPTION) {
+        if (walletRequest.requireShippingAddress && callbackTrigger !== "SHIPPING_OPTION" /* googlePayEnums.CallbackType.SHIPPING_OPTION */) {
           update.newShippingOptionParameters = googlePayHelpers.buildShippingMethods(walletRequest);
         }
-        if (callbackTrigger === googlePayEnums.CallbackType.OFFER) {
+        if (callbackTrigger === "OFFER" /* googlePayEnums.CallbackType.OFFER */) {
           update.newOfferInfo = googlePayHelpers.buildOfferInfo(walletRequest);
         }
         resolve(update);
@@ -10763,14 +5296,9 @@ var GooglePay = /*#__PURE__*/function () {
      */
     this.completeWrapper = function (resolve) {
       return function (walletRequestUpdate) {
-        _this.sharedService.updateWalletRequest(walletRequestUpdate || {}, event_type_1.EventType.PaymentAuthorized);
+        _this.sharedService.updateWalletRequest(walletRequestUpdate || {}, "payment_authorized" /* EventType.PaymentAuthorized */);
         var walletRequest = _this.sharedService.getWalletRequest();
-        var error = googlePayHelpers.buildError(walletRequest, googlePayEnums.CallbackType.PAYMENT_AUTHORIZATION);
-        _this.sharedService.mixpanel.track(mixpanel_1.MixpanelEvent.GOOGLE_PAY_PAYMENT_COMPLETED, {
-          status: error ? mixpanel_1.MixpanelPaymentCompletedStatus.FAILURE : mixpanel_1.MixpanelPaymentCompletedStatus.SUCCESS,
-          error: error,
-          raw_error: walletRequest.error
-        });
+        var error = googlePayHelpers.buildError(walletRequest, "PAYMENT_AUTHORIZATION" /* googlePayEnums.CallbackType.PAYMENT_AUTHORIZATION */);
         resolve({
           transactionState: error ? "ERROR" : "SUCCESS",
           error: error
@@ -10790,7 +5318,7 @@ var GooglePay = /*#__PURE__*/function () {
         var eventType = constants.GOOGLE_PAY_EVENT_MAP[callbackTrigger];
         var updateWith = _this.updateWithWrapper(callbackTrigger, resolve);
         var walletRequest = _this.sharedService.getWalletRequest();
-        if (callbackTrigger === googlePayEnums.CallbackType.INITIALIZE && !walletRequest.requireShippingAddress) {
+        if (callbackTrigger === "INITIALIZE" /* googlePayEnums.CallbackType.INITIALIZE */ && !walletRequest.requireShippingAddress) {
           return resolve({});
         }
         if (!_this.sharedService.listenerCallbacks[eventType]) {
@@ -10798,17 +5326,17 @@ var GooglePay = /*#__PURE__*/function () {
             error: googlePayHelpers.buildMissedHandlerError(eventType, callbackIntent)
           });
         }
-        if (callbackIntent === googlePayEnums.CallbackType.SHIPPING_OPTION && intermediatePaymentData.shippingOptionData) {
-          return _this.sharedService.processCallbacks(event_type_1.EventType.ShippingMethodChange, _extends(_extends({}, walletHelpers.buildShippingMethodResponse(intermediatePaymentData.shippingOptionData, walletRequest.shippingMethods)), {
+        if (callbackIntent === "SHIPPING_OPTION" /* googlePayEnums.CallbackType.SHIPPING_OPTION */ && intermediatePaymentData.shippingOptionData) {
+          return _this.sharedService.processCallbacks("shipping_method_change" /* EventType.ShippingMethodChange */, _extends(_extends({}, walletHelpers.buildShippingMethodResponse(intermediatePaymentData.shippingOptionData, walletRequest.shippingMethods)), {
             updateWith: updateWith
           }));
         }
-        if (callbackIntent === googlePayEnums.CallbackType.SHIPPING_ADDRESS && intermediatePaymentData.shippingAddress) {
-          return _this.sharedService.processCallbacks(event_type_1.EventType.ShippingAddressChange, _extends(_extends({}, walletHelpers.buildShippingAddressResponse(intermediatePaymentData.shippingAddress)), {
+        if (callbackIntent === "SHIPPING_ADDRESS" /* googlePayEnums.CallbackType.SHIPPING_ADDRESS */ && intermediatePaymentData.shippingAddress) {
+          return _this.sharedService.processCallbacks("shipping_address_change" /* EventType.ShippingAddressChange */, _extends(_extends({}, walletHelpers.buildShippingAddressResponse(intermediatePaymentData.shippingAddress)), {
             updateWith: updateWith
           }));
         }
-        if (callbackIntent === googlePayEnums.CallbackType.OFFER && ((_a = intermediatePaymentData.offerData) === null || _a === void 0 ? void 0 : _a.redemptionCodes)) {
+        if (callbackIntent === "OFFER" /* googlePayEnums.CallbackType.OFFER */ && ((_a = intermediatePaymentData.offerData) === null || _a === void 0 ? void 0 : _a.redemptionCodes)) {
           // for backwards compatibility with Apple Pay, we don't support more than 1 coupon code
           if (intermediatePaymentData.offerData.redemptionCodes.length > 1) {
             return resolve({
@@ -10816,13 +5344,13 @@ var GooglePay = /*#__PURE__*/function () {
               error: googlePayHelpers.buildDuplicateCouponCodeError(callbackIntent)
             });
           }
-          return _this.sharedService.processCallbacks(event_type_1.EventType.CouponCodeChange, _extends(_extends({}, walletHelpers.buildCouponCodeResponse(intermediatePaymentData.offerData.redemptionCodes)), {
+          return _this.sharedService.processCallbacks("coupon_code_change" /* EventType.CouponCodeChange */, _extends(_extends({}, walletHelpers.buildCouponCodeResponse(intermediatePaymentData.offerData.redemptionCodes)), {
             updateWith: updateWith
           }));
         }
         //Should never happen
         var error = googlePayHelpers.buildPaymentDataChangedHandlerError(callbackTrigger);
-        _this.sharedService.handleError(error_type_1.ErrorType.GOOGLE_PAY, error);
+        _this.sharedService.handleError("GOOGLE_PAY" /* ErrorType.GOOGLE_PAY */, error);
         resolve({
           error: error
         });
@@ -10834,24 +5362,24 @@ var GooglePay = /*#__PURE__*/function () {
      * @returns {Promise<GooglePayJS.PaymentAuthorizationResult>} A promise that resolves with the payment authorization result.
      */
     this.googlePayPaymentAuthorizedHandler = function (paymentData) {
-      _this.sharedService.mixpanel.track(mixpanel_1.MixpanelEvent.GOOGLE_PAY_PAYMENT_AUTHORIZED);
       return new Promise(function (resolve) {
         var complete = _this.completeWrapper(resolve);
-        if (!_this.sharedService.listenerCallbacks[event_type_1.EventType.PaymentAuthorized]) {
+        if (!_this.sharedService.listenerCallbacks["payment_authorized" /* EventType.PaymentAuthorized */]) {
           return resolve({
             transactionState: "ERROR",
-            error: googlePayHelpers.buildMissedHandlerError(event_type_1.EventType.PaymentAuthorized, googlePayEnums.CallbackType.PAYMENT_AUTHORIZATION)
+            error: googlePayHelpers.buildMissedHandlerError("payment_authorized" /* EventType.PaymentAuthorized */, "PAYMENT_AUTHORIZATION" /* googlePayEnums.CallbackType.PAYMENT_AUTHORIZATION */)
           });
         }
+
         _this.sharedService.walletApi.getWalletNonce(walletHelpers.buildWalletNonceRequest(paymentData)).then(function (nonceResponse) {
-          _this.sharedService.processCallbacks(event_type_1.EventType.PaymentAuthorized, _extends(_extends({}, walletHelpers.buildPaymentAuthorizedResponse(paymentData, nonceResponse)), {
+          _this.sharedService.processCallbacks("payment_authorized" /* EventType.PaymentAuthorized */, _extends(_extends({}, walletHelpers.buildPaymentAuthorizedResponse(paymentData, nonceResponse)), {
             complete: complete
           }));
         })["catch"](function (error) {
-          _this.sharedService.handleError(error_type_1.ErrorType.GOOGLE_PAY_NONCE, error);
+          _this.sharedService.handleError("GOOGLE_PAY_NONCE" /* ErrorType.GOOGLE_PAY_NONCE */, error);
           resolve({
             transactionState: "ERROR",
-            error: googlePayHelpers.buildWalletNonceError(googlePayEnums.CallbackType.PAYMENT_AUTHORIZATION, error)
+            error: googlePayHelpers.buildWalletNonceError("PAYMENT_AUTHORIZATION" /* googlePayEnums.CallbackType.PAYMENT_AUTHORIZATION */, error)
           });
         });
       });
@@ -10867,7 +5395,7 @@ var GooglePay = /*#__PURE__*/function () {
   _createClass(GooglePay, [{
     key: "initialize",
     value: function initialize() {
-      var _a, _b, _c;
+      var _a, _b, _c, _d;
       return __awaiter(this, void 0, void 0, /*#__PURE__*/_regeneratorRuntime().mark(function _callee() {
         var walletRequest, googlePayValidationPayload, paymentsClient, isReadyToPay;
         return _regeneratorRuntime().wrap(function _callee$(_context) {
@@ -10896,7 +5424,7 @@ var GooglePay = /*#__PURE__*/function () {
               }
               _context.next = 11;
               return this.sharedService.walletApi.validateGooglePay({
-                domain: document.location.hostname
+                domain: ((_d = window.top) === null || _d === void 0 ? void 0 : _d.location.hostname) || document.location.hostname
               });
             case 11:
               googlePayValidationPayload = _context.sent;
@@ -10928,7 +5456,7 @@ var GooglePay = /*#__PURE__*/function () {
             case 24:
               _context.prev = 24;
               _context.t0 = _context["catch"](2);
-              this.sharedService.handleError(error_type_1.ErrorType.GOOGLE_PAY, _context.t0);
+              this.sharedService.handleError("GOOGLE_PAY" /* ErrorType.GOOGLE_PAY */, _context.t0);
             case 27:
             case "end":
               return _context.stop();
@@ -10978,7 +5506,7 @@ var GooglePay = /*#__PURE__*/function () {
   }, {
     key: "startSession",
     value: function startSession(walletRequest) {
-      this.sharedService.updateWalletRequest(walletRequest || {}, event_type_1.EventType.InitWallet);
+      this.sharedService.updateWalletRequest(walletRequest || {}, "init_wallet" /* EventType.InitWallet */);
       this.handler();
     }
     /**
@@ -11006,17 +5534,18 @@ var GooglePay = /*#__PURE__*/function () {
                 return _this2.startSession();
               }
               options.onClick({
-                source: wallet_1.WalletType.GooglePay
+                source: "google_pay" /* WalletType.GooglePay */
               });
             }
           });
+
           container.id = "googlepay-button-container";
           (0, common_1.setButtonProperties)(container, options);
           // attach Google Pay button to wallet container
           (_a = this.sharedService.buttonsContainer) === null || _a === void 0 ? void 0 : _a.appendChild(container);
         }
       } catch (error) {
-        this.sharedService.handleError(error_type_1.ErrorType.GOOGLE_PAY, error);
+        this.sharedService.handleError("GOOGLE_PAY" /* ErrorType.GOOGLE_PAY */, error);
       }
     }
     /**
@@ -11029,54 +5558,52 @@ var GooglePay = /*#__PURE__*/function () {
     value: function handler() {
       var _a;
       return __awaiter(this, void 0, void 0, /*#__PURE__*/_regeneratorRuntime().mark(function _callee2() {
-        var domainName, paymentRequest;
+        var domainName, paymentRequest, parsedError;
         return _regeneratorRuntime().wrap(function _callee2$(_context2) {
           while (1) switch (_context2.prev = _context2.next) {
             case 0:
-              domainName = document.location.hostname;
+              domainName = "online-order.godaddy.com";
               if (!constants.DOMAIN_BLACKLIST.includes(domainName)) {
                 _context2.next = 3;
                 break;
               }
-              return _context2.abrupt("return", this.sharedService.handleError(error_type_1.ErrorType.WALLET, new Error(domainName + " is blacklisted. Please reach out GDP support.")));
+              return _context2.abrupt("return", this.sharedService.handleError("WALLET" /* ErrorType.WALLET */, new Error(domainName + " is blacklisted. Please reach out GDP support.")));
             case 3:
               if (this.paymentsClient) {
                 _context2.next = 5;
                 break;
               }
-              return _context2.abrupt("return", this.sharedService.handleError(error_type_1.ErrorType.GOOGLE_PAY, new Error("GooglePay payments client not found")));
+              return _context2.abrupt("return", this.sharedService.handleError("GOOGLE_PAY" /* ErrorType.GOOGLE_PAY */, new Error("GooglePay payments client not found")));
             case 5:
               if ((_a = this.googlePayValidationPayload) === null || _a === void 0 ? void 0 : _a.authJwt) {
                 _context2.next = 7;
                 break;
               }
-              return _context2.abrupt("return", this.sharedService.handleError(error_type_1.ErrorType.GOOGLE_PAY, new Error("GooglePay auth JWT token not found")));
+              return _context2.abrupt("return", this.sharedService.handleError("GOOGLE_PAY" /* ErrorType.GOOGLE_PAY */, new Error("GooglePay auth JWT token not found")));
             case 7:
-              this.sharedService.mixpanel.track(mixpanel_1.MixpanelEvent.GOOGLE_PAY_BUTTON_CLICK);
-              this.sharedService.processCallbacks(event_type_1.EventType.WalletButtonClick, {
-                source: wallet_1.WalletType.GooglePay
+              this.sharedService.processCallbacks("wallet_button_click" /* EventType.WalletButtonClick */, {
+                source: "google_pay" /* WalletType.GooglePay */
               });
               paymentRequest = googlePayHelpers.buildPaymentRequest(this.sharedService.getWalletRequest(), this.sharedService.businessId, this.googlePayValidationPayload.authJwt);
-              this.sharedService.mixpanel.track(mixpanel_1.MixpanelEvent.GOOGLE_PAY_PAYMENT_REQUEST, {
-                payment_request: googlePayHelpers.buildMaskedPaymentRequest(paymentRequest)
-              });
-              _context2.prev = 11;
-              _context2.next = 14;
+              _context2.prev = 9;
+              _context2.next = 12;
               return this.paymentsClient.loadPaymentData(paymentRequest);
-            case 14:
+            case 12:
               _context2.next = 19;
               break;
-            case 16:
-              _context2.prev = 16;
-              _context2.t0 = _context2["catch"](11);
-              this.sharedService.processCallbacks(event_type_1.EventType.CloseWallet, {
-                reason: _context2.t0
+            case 14:
+              _context2.prev = 14;
+              _context2.t0 = _context2["catch"](9);
+              parsedError = this.sharedService.parseError("GOOGLE_PAY" /* ErrorType.GOOGLE_PAY */, _context2.t0);
+              this.sharedService.trackError(parsedError);
+              this.sharedService.processCallbacks("close_wallet" /* EventType.CloseWallet */, {
+                reason: parsedError.message
               });
             case 19:
             case "end":
               return _context2.stop();
           }
-        }, _callee2, this, [[11, 16]]);
+        }, _callee2, this, [[9, 14]]);
       }));
     }
   }]);
@@ -11084,108 +5611,12 @@ var GooglePay = /*#__PURE__*/function () {
 }();
 exports["default"] = GooglePay;
 
-},{"../constants":40,"../enums/error-type":42,"../enums/event-type":43,"../enums/googlepay":44,"../enums/mixpanel":45,"../enums/wallet":47,"../helpers/common":50,"../helpers/googlepay":51,"../helpers/wallet":54}],58:[function(require,module,exports){
+},{"../constants":41,"../helpers/common":44,"../helpers/googlepay":45,"../helpers/wallet":48}],52:[function(require,module,exports){
 "use strict";
 
-function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
+function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
 function _extends() { _extends = Object.assign ? Object.assign.bind() : function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, _toPropertyKey(descriptor.key), descriptor); } }
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
-function _toPropertyKey(arg) { var key = _toPrimitive(arg, "string"); return _typeof(key) === "symbol" ? key : String(key); }
-function _toPrimitive(input, hint) { if (_typeof(input) !== "object" || input === null) return input; var prim = input[Symbol.toPrimitive]; if (prim !== undefined) { var res = prim.call(input, hint || "default"); if (_typeof(res) !== "object") return res; throw new TypeError("@@toPrimitive must return a primitive value."); } return (hint === "string" ? String : Number)(input); }
-var __createBinding = void 0 && (void 0).__createBinding || (Object.create ? function (o, m, k, k2) {
-  if (k2 === undefined) k2 = k;
-  var desc = Object.getOwnPropertyDescriptor(m, k);
-  if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-    desc = {
-      enumerable: true,
-      get: function get() {
-        return m[k];
-      }
-    };
-  }
-  Object.defineProperty(o, k2, desc);
-} : function (o, m, k, k2) {
-  if (k2 === undefined) k2 = k;
-  o[k2] = m[k];
-});
-var __setModuleDefault = void 0 && (void 0).__setModuleDefault || (Object.create ? function (o, v) {
-  Object.defineProperty(o, "default", {
-    enumerable: true,
-    value: v
-  });
-} : function (o, v) {
-  o["default"] = v;
-});
-var __importStar = void 0 && (void 0).__importStar || function (mod) {
-  if (mod && mod.__esModule) return mod;
-  var result = {};
-  if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-  __setModuleDefault(result, mod);
-  return result;
-};
-var __importDefault = void 0 && (void 0).__importDefault || function (mod) {
-  return mod && mod.__esModule ? mod : {
-    "default": mod
-  };
-};
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-var mixpanel_browser_1 = __importDefault(require("mixpanel-browser"));
-var constants = __importStar(require("../constants"));
-;
-var Mixpanel = /*#__PURE__*/function () {
-  function Mixpanel(businessId, applicationId, sessionId) {
-    _classCallCheck(this, Mixpanel);
-    this.businessId = businessId;
-    this.applicationId = applicationId;
-    this.sessionId = sessionId;
-  }
-  _createClass(Mixpanel, [{
-    key: "init",
-    value: function init() {
-      try {
-        mixpanel_browser_1["default"].init(constants.MIXPANEL_TOKEN, {
-          cross_subdomain_cookie: false,
-          debug: "development" !== "production"
-        }, constants.MIXPANEL_INSTANCE_NAME);
-      } catch (error) {
-        //do nothing
-      }
-    }
-  }, {
-    key: "track",
-    value: function track(eventType, data) {
-      var _a;
-      if ("development" === "development") {
-        return;
-      }
-      try {
-        (_a = mixpanel_browser_1["default"][constants.MIXPANEL_INSTANCE_NAME]) === null || _a === void 0 ? void 0 : _a.track(eventType, _extends({
-          distinct_id: this.businessId,
-          business_id: this.businessId,
-          application_id: this.applicationId,
-          session_id: this.sessionId,
-          environment: "development"
-        }, data));
-      } catch (error) {
-        //do nothing
-      }
-    }
-  }]);
-  return Mixpanel;
-}();
-exports["default"] = Mixpanel;
-;
-
-},{"../constants":40,"mixpanel-browser":14}],59:[function(require,module,exports){
-"use strict";
-
-function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
-function _extends() { _extends = Object.assign ? Object.assign.bind() : function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
-function _regeneratorRuntime() { "use strict"; /*! regenerator-runtime -- Copyright (c) 2014-present, Facebook, Inc. -- license (MIT): https://github.com/facebook/regenerator/blob/main/LICENSE */ _regeneratorRuntime = function _regeneratorRuntime() { return exports; }; var exports = {}, Op = Object.prototype, hasOwn = Op.hasOwnProperty, defineProperty = Object.defineProperty || function (obj, key, desc) { obj[key] = desc.value; }, $Symbol = "function" == typeof Symbol ? Symbol : {}, iteratorSymbol = $Symbol.iterator || "@@iterator", asyncIteratorSymbol = $Symbol.asyncIterator || "@@asyncIterator", toStringTagSymbol = $Symbol.toStringTag || "@@toStringTag"; function define(obj, key, value) { return Object.defineProperty(obj, key, { value: value, enumerable: !0, configurable: !0, writable: !0 }), obj[key]; } try { define({}, ""); } catch (err) { define = function define(obj, key, value) { return obj[key] = value; }; } function wrap(innerFn, outerFn, self, tryLocsList) { var protoGenerator = outerFn && outerFn.prototype instanceof Generator ? outerFn : Generator, generator = Object.create(protoGenerator.prototype), context = new Context(tryLocsList || []); return defineProperty(generator, "_invoke", { value: makeInvokeMethod(innerFn, self, context) }), generator; } function tryCatch(fn, obj, arg) { try { return { type: "normal", arg: fn.call(obj, arg) }; } catch (err) { return { type: "throw", arg: err }; } } exports.wrap = wrap; var ContinueSentinel = {}; function Generator() {} function GeneratorFunction() {} function GeneratorFunctionPrototype() {} var IteratorPrototype = {}; define(IteratorPrototype, iteratorSymbol, function () { return this; }); var getProto = Object.getPrototypeOf, NativeIteratorPrototype = getProto && getProto(getProto(values([]))); NativeIteratorPrototype && NativeIteratorPrototype !== Op && hasOwn.call(NativeIteratorPrototype, iteratorSymbol) && (IteratorPrototype = NativeIteratorPrototype); var Gp = GeneratorFunctionPrototype.prototype = Generator.prototype = Object.create(IteratorPrototype); function defineIteratorMethods(prototype) { ["next", "throw", "return"].forEach(function (method) { define(prototype, method, function (arg) { return this._invoke(method, arg); }); }); } function AsyncIterator(generator, PromiseImpl) { function invoke(method, arg, resolve, reject) { var record = tryCatch(generator[method], generator, arg); if ("throw" !== record.type) { var result = record.arg, value = result.value; return value && "object" == _typeof(value) && hasOwn.call(value, "__await") ? PromiseImpl.resolve(value.__await).then(function (value) { invoke("next", value, resolve, reject); }, function (err) { invoke("throw", err, resolve, reject); }) : PromiseImpl.resolve(value).then(function (unwrapped) { result.value = unwrapped, resolve(result); }, function (error) { return invoke("throw", error, resolve, reject); }); } reject(record.arg); } var previousPromise; defineProperty(this, "_invoke", { value: function value(method, arg) { function callInvokeWithMethodAndArg() { return new PromiseImpl(function (resolve, reject) { invoke(method, arg, resolve, reject); }); } return previousPromise = previousPromise ? previousPromise.then(callInvokeWithMethodAndArg, callInvokeWithMethodAndArg) : callInvokeWithMethodAndArg(); } }); } function makeInvokeMethod(innerFn, self, context) { var state = "suspendedStart"; return function (method, arg) { if ("executing" === state) throw new Error("Generator is already running"); if ("completed" === state) { if ("throw" === method) throw arg; return doneResult(); } for (context.method = method, context.arg = arg;;) { var delegate = context.delegate; if (delegate) { var delegateResult = maybeInvokeDelegate(delegate, context); if (delegateResult) { if (delegateResult === ContinueSentinel) continue; return delegateResult; } } if ("next" === context.method) context.sent = context._sent = context.arg;else if ("throw" === context.method) { if ("suspendedStart" === state) throw state = "completed", context.arg; context.dispatchException(context.arg); } else "return" === context.method && context.abrupt("return", context.arg); state = "executing"; var record = tryCatch(innerFn, self, context); if ("normal" === record.type) { if (state = context.done ? "completed" : "suspendedYield", record.arg === ContinueSentinel) continue; return { value: record.arg, done: context.done }; } "throw" === record.type && (state = "completed", context.method = "throw", context.arg = record.arg); } }; } function maybeInvokeDelegate(delegate, context) { var methodName = context.method, method = delegate.iterator[methodName]; if (undefined === method) return context.delegate = null, "throw" === methodName && delegate.iterator["return"] && (context.method = "return", context.arg = undefined, maybeInvokeDelegate(delegate, context), "throw" === context.method) || "return" !== methodName && (context.method = "throw", context.arg = new TypeError("The iterator does not provide a '" + methodName + "' method")), ContinueSentinel; var record = tryCatch(method, delegate.iterator, context.arg); if ("throw" === record.type) return context.method = "throw", context.arg = record.arg, context.delegate = null, ContinueSentinel; var info = record.arg; return info ? info.done ? (context[delegate.resultName] = info.value, context.next = delegate.nextLoc, "return" !== context.method && (context.method = "next", context.arg = undefined), context.delegate = null, ContinueSentinel) : info : (context.method = "throw", context.arg = new TypeError("iterator result is not an object"), context.delegate = null, ContinueSentinel); } function pushTryEntry(locs) { var entry = { tryLoc: locs[0] }; 1 in locs && (entry.catchLoc = locs[1]), 2 in locs && (entry.finallyLoc = locs[2], entry.afterLoc = locs[3]), this.tryEntries.push(entry); } function resetTryEntry(entry) { var record = entry.completion || {}; record.type = "normal", delete record.arg, entry.completion = record; } function Context(tryLocsList) { this.tryEntries = [{ tryLoc: "root" }], tryLocsList.forEach(pushTryEntry, this), this.reset(!0); } function values(iterable) { if (iterable) { var iteratorMethod = iterable[iteratorSymbol]; if (iteratorMethod) return iteratorMethod.call(iterable); if ("function" == typeof iterable.next) return iterable; if (!isNaN(iterable.length)) { var i = -1, next = function next() { for (; ++i < iterable.length;) if (hasOwn.call(iterable, i)) return next.value = iterable[i], next.done = !1, next; return next.value = undefined, next.done = !0, next; }; return next.next = next; } } return { next: doneResult }; } function doneResult() { return { value: undefined, done: !0 }; } return GeneratorFunction.prototype = GeneratorFunctionPrototype, defineProperty(Gp, "constructor", { value: GeneratorFunctionPrototype, configurable: !0 }), defineProperty(GeneratorFunctionPrototype, "constructor", { value: GeneratorFunction, configurable: !0 }), GeneratorFunction.displayName = define(GeneratorFunctionPrototype, toStringTagSymbol, "GeneratorFunction"), exports.isGeneratorFunction = function (genFun) { var ctor = "function" == typeof genFun && genFun.constructor; return !!ctor && (ctor === GeneratorFunction || "GeneratorFunction" === (ctor.displayName || ctor.name)); }, exports.mark = function (genFun) { return Object.setPrototypeOf ? Object.setPrototypeOf(genFun, GeneratorFunctionPrototype) : (genFun.__proto__ = GeneratorFunctionPrototype, define(genFun, toStringTagSymbol, "GeneratorFunction")), genFun.prototype = Object.create(Gp), genFun; }, exports.awrap = function (arg) { return { __await: arg }; }, defineIteratorMethods(AsyncIterator.prototype), define(AsyncIterator.prototype, asyncIteratorSymbol, function () { return this; }), exports.AsyncIterator = AsyncIterator, exports.async = function (innerFn, outerFn, self, tryLocsList, PromiseImpl) { void 0 === PromiseImpl && (PromiseImpl = Promise); var iter = new AsyncIterator(wrap(innerFn, outerFn, self, tryLocsList), PromiseImpl); return exports.isGeneratorFunction(outerFn) ? iter : iter.next().then(function (result) { return result.done ? result.value : iter.next(); }); }, defineIteratorMethods(Gp), define(Gp, toStringTagSymbol, "Generator"), define(Gp, iteratorSymbol, function () { return this; }), define(Gp, "toString", function () { return "[object Generator]"; }), exports.keys = function (val) { var object = Object(val), keys = []; for (var key in object) keys.push(key); return keys.reverse(), function next() { for (; keys.length;) { var key = keys.pop(); if (key in object) return next.value = key, next.done = !1, next; } return next.done = !0, next; }; }, exports.values = values, Context.prototype = { constructor: Context, reset: function reset(skipTempReset) { if (this.prev = 0, this.next = 0, this.sent = this._sent = undefined, this.done = !1, this.delegate = null, this.method = "next", this.arg = undefined, this.tryEntries.forEach(resetTryEntry), !skipTempReset) for (var name in this) "t" === name.charAt(0) && hasOwn.call(this, name) && !isNaN(+name.slice(1)) && (this[name] = undefined); }, stop: function stop() { this.done = !0; var rootRecord = this.tryEntries[0].completion; if ("throw" === rootRecord.type) throw rootRecord.arg; return this.rval; }, dispatchException: function dispatchException(exception) { if (this.done) throw exception; var context = this; function handle(loc, caught) { return record.type = "throw", record.arg = exception, context.next = loc, caught && (context.method = "next", context.arg = undefined), !!caught; } for (var i = this.tryEntries.length - 1; i >= 0; --i) { var entry = this.tryEntries[i], record = entry.completion; if ("root" === entry.tryLoc) return handle("end"); if (entry.tryLoc <= this.prev) { var hasCatch = hasOwn.call(entry, "catchLoc"), hasFinally = hasOwn.call(entry, "finallyLoc"); if (hasCatch && hasFinally) { if (this.prev < entry.catchLoc) return handle(entry.catchLoc, !0); if (this.prev < entry.finallyLoc) return handle(entry.finallyLoc); } else if (hasCatch) { if (this.prev < entry.catchLoc) return handle(entry.catchLoc, !0); } else { if (!hasFinally) throw new Error("try statement without catch or finally"); if (this.prev < entry.finallyLoc) return handle(entry.finallyLoc); } } } }, abrupt: function abrupt(type, arg) { for (var i = this.tryEntries.length - 1; i >= 0; --i) { var entry = this.tryEntries[i]; if (entry.tryLoc <= this.prev && hasOwn.call(entry, "finallyLoc") && this.prev < entry.finallyLoc) { var finallyEntry = entry; break; } } finallyEntry && ("break" === type || "continue" === type) && finallyEntry.tryLoc <= arg && arg <= finallyEntry.finallyLoc && (finallyEntry = null); var record = finallyEntry ? finallyEntry.completion : {}; return record.type = type, record.arg = arg, finallyEntry ? (this.method = "next", this.next = finallyEntry.finallyLoc, ContinueSentinel) : this.complete(record); }, complete: function complete(record, afterLoc) { if ("throw" === record.type) throw record.arg; return "break" === record.type || "continue" === record.type ? this.next = record.arg : "return" === record.type ? (this.rval = this.arg = record.arg, this.method = "return", this.next = "end") : "normal" === record.type && afterLoc && (this.next = afterLoc), ContinueSentinel; }, finish: function finish(finallyLoc) { for (var i = this.tryEntries.length - 1; i >= 0; --i) { var entry = this.tryEntries[i]; if (entry.finallyLoc === finallyLoc) return this.complete(entry.completion, entry.afterLoc), resetTryEntry(entry), ContinueSentinel; } }, "catch": function _catch(tryLoc) { for (var i = this.tryEntries.length - 1; i >= 0; --i) { var entry = this.tryEntries[i]; if (entry.tryLoc === tryLoc) { var record = entry.completion; if ("throw" === record.type) { var thrown = record.arg; resetTryEntry(entry); } return thrown; } } throw new Error("illegal catch attempt"); }, delegateYield: function delegateYield(iterable, resultName, nextLoc) { return this.delegate = { iterator: values(iterable), resultName: resultName, nextLoc: nextLoc }, "next" === this.method && (this.arg = undefined), ContinueSentinel; } }, exports; }
+function _regeneratorRuntime() { "use strict"; /*! regenerator-runtime -- Copyright (c) 2014-present, Facebook, Inc. -- license (MIT): https://github.com/facebook/regenerator/blob/main/LICENSE */ _regeneratorRuntime = function _regeneratorRuntime() { return e; }; var t, e = {}, r = Object.prototype, n = r.hasOwnProperty, o = Object.defineProperty || function (t, e, r) { t[e] = r.value; }, i = "function" == typeof Symbol ? Symbol : {}, a = i.iterator || "@@iterator", c = i.asyncIterator || "@@asyncIterator", u = i.toStringTag || "@@toStringTag"; function define(t, e, r) { return Object.defineProperty(t, e, { value: r, enumerable: !0, configurable: !0, writable: !0 }), t[e]; } try { define({}, ""); } catch (t) { define = function define(t, e, r) { return t[e] = r; }; } function wrap(t, e, r, n) { var i = e && e.prototype instanceof Generator ? e : Generator, a = Object.create(i.prototype), c = new Context(n || []); return o(a, "_invoke", { value: makeInvokeMethod(t, r, c) }), a; } function tryCatch(t, e, r) { try { return { type: "normal", arg: t.call(e, r) }; } catch (t) { return { type: "throw", arg: t }; } } e.wrap = wrap; var h = "suspendedStart", l = "suspendedYield", f = "executing", s = "completed", y = {}; function Generator() {} function GeneratorFunction() {} function GeneratorFunctionPrototype() {} var p = {}; define(p, a, function () { return this; }); var d = Object.getPrototypeOf, v = d && d(d(values([]))); v && v !== r && n.call(v, a) && (p = v); var g = GeneratorFunctionPrototype.prototype = Generator.prototype = Object.create(p); function defineIteratorMethods(t) { ["next", "throw", "return"].forEach(function (e) { define(t, e, function (t) { return this._invoke(e, t); }); }); } function AsyncIterator(t, e) { function invoke(r, o, i, a) { var c = tryCatch(t[r], t, o); if ("throw" !== c.type) { var u = c.arg, h = u.value; return h && "object" == _typeof(h) && n.call(h, "__await") ? e.resolve(h.__await).then(function (t) { invoke("next", t, i, a); }, function (t) { invoke("throw", t, i, a); }) : e.resolve(h).then(function (t) { u.value = t, i(u); }, function (t) { return invoke("throw", t, i, a); }); } a(c.arg); } var r; o(this, "_invoke", { value: function value(t, n) { function callInvokeWithMethodAndArg() { return new e(function (e, r) { invoke(t, n, e, r); }); } return r = r ? r.then(callInvokeWithMethodAndArg, callInvokeWithMethodAndArg) : callInvokeWithMethodAndArg(); } }); } function makeInvokeMethod(e, r, n) { var o = h; return function (i, a) { if (o === f) throw new Error("Generator is already running"); if (o === s) { if ("throw" === i) throw a; return { value: t, done: !0 }; } for (n.method = i, n.arg = a;;) { var c = n.delegate; if (c) { var u = maybeInvokeDelegate(c, n); if (u) { if (u === y) continue; return u; } } if ("next" === n.method) n.sent = n._sent = n.arg;else if ("throw" === n.method) { if (o === h) throw o = s, n.arg; n.dispatchException(n.arg); } else "return" === n.method && n.abrupt("return", n.arg); o = f; var p = tryCatch(e, r, n); if ("normal" === p.type) { if (o = n.done ? s : l, p.arg === y) continue; return { value: p.arg, done: n.done }; } "throw" === p.type && (o = s, n.method = "throw", n.arg = p.arg); } }; } function maybeInvokeDelegate(e, r) { var n = r.method, o = e.iterator[n]; if (o === t) return r.delegate = null, "throw" === n && e.iterator["return"] && (r.method = "return", r.arg = t, maybeInvokeDelegate(e, r), "throw" === r.method) || "return" !== n && (r.method = "throw", r.arg = new TypeError("The iterator does not provide a '" + n + "' method")), y; var i = tryCatch(o, e.iterator, r.arg); if ("throw" === i.type) return r.method = "throw", r.arg = i.arg, r.delegate = null, y; var a = i.arg; return a ? a.done ? (r[e.resultName] = a.value, r.next = e.nextLoc, "return" !== r.method && (r.method = "next", r.arg = t), r.delegate = null, y) : a : (r.method = "throw", r.arg = new TypeError("iterator result is not an object"), r.delegate = null, y); } function pushTryEntry(t) { var e = { tryLoc: t[0] }; 1 in t && (e.catchLoc = t[1]), 2 in t && (e.finallyLoc = t[2], e.afterLoc = t[3]), this.tryEntries.push(e); } function resetTryEntry(t) { var e = t.completion || {}; e.type = "normal", delete e.arg, t.completion = e; } function Context(t) { this.tryEntries = [{ tryLoc: "root" }], t.forEach(pushTryEntry, this), this.reset(!0); } function values(e) { if (e || "" === e) { var r = e[a]; if (r) return r.call(e); if ("function" == typeof e.next) return e; if (!isNaN(e.length)) { var o = -1, i = function next() { for (; ++o < e.length;) if (n.call(e, o)) return next.value = e[o], next.done = !1, next; return next.value = t, next.done = !0, next; }; return i.next = i; } } throw new TypeError(_typeof(e) + " is not iterable"); } return GeneratorFunction.prototype = GeneratorFunctionPrototype, o(g, "constructor", { value: GeneratorFunctionPrototype, configurable: !0 }), o(GeneratorFunctionPrototype, "constructor", { value: GeneratorFunction, configurable: !0 }), GeneratorFunction.displayName = define(GeneratorFunctionPrototype, u, "GeneratorFunction"), e.isGeneratorFunction = function (t) { var e = "function" == typeof t && t.constructor; return !!e && (e === GeneratorFunction || "GeneratorFunction" === (e.displayName || e.name)); }, e.mark = function (t) { return Object.setPrototypeOf ? Object.setPrototypeOf(t, GeneratorFunctionPrototype) : (t.__proto__ = GeneratorFunctionPrototype, define(t, u, "GeneratorFunction")), t.prototype = Object.create(g), t; }, e.awrap = function (t) { return { __await: t }; }, defineIteratorMethods(AsyncIterator.prototype), define(AsyncIterator.prototype, c, function () { return this; }), e.AsyncIterator = AsyncIterator, e.async = function (t, r, n, o, i) { void 0 === i && (i = Promise); var a = new AsyncIterator(wrap(t, r, n, o), i); return e.isGeneratorFunction(r) ? a : a.next().then(function (t) { return t.done ? t.value : a.next(); }); }, defineIteratorMethods(g), define(g, u, "Generator"), define(g, a, function () { return this; }), define(g, "toString", function () { return "[object Generator]"; }), e.keys = function (t) { var e = Object(t), r = []; for (var n in e) r.push(n); return r.reverse(), function next() { for (; r.length;) { var t = r.pop(); if (t in e) return next.value = t, next.done = !1, next; } return next.done = !0, next; }; }, e.values = values, Context.prototype = { constructor: Context, reset: function reset(e) { if (this.prev = 0, this.next = 0, this.sent = this._sent = t, this.done = !1, this.delegate = null, this.method = "next", this.arg = t, this.tryEntries.forEach(resetTryEntry), !e) for (var r in this) "t" === r.charAt(0) && n.call(this, r) && !isNaN(+r.slice(1)) && (this[r] = t); }, stop: function stop() { this.done = !0; var t = this.tryEntries[0].completion; if ("throw" === t.type) throw t.arg; return this.rval; }, dispatchException: function dispatchException(e) { if (this.done) throw e; var r = this; function handle(n, o) { return a.type = "throw", a.arg = e, r.next = n, o && (r.method = "next", r.arg = t), !!o; } for (var o = this.tryEntries.length - 1; o >= 0; --o) { var i = this.tryEntries[o], a = i.completion; if ("root" === i.tryLoc) return handle("end"); if (i.tryLoc <= this.prev) { var c = n.call(i, "catchLoc"), u = n.call(i, "finallyLoc"); if (c && u) { if (this.prev < i.catchLoc) return handle(i.catchLoc, !0); if (this.prev < i.finallyLoc) return handle(i.finallyLoc); } else if (c) { if (this.prev < i.catchLoc) return handle(i.catchLoc, !0); } else { if (!u) throw new Error("try statement without catch or finally"); if (this.prev < i.finallyLoc) return handle(i.finallyLoc); } } } }, abrupt: function abrupt(t, e) { for (var r = this.tryEntries.length - 1; r >= 0; --r) { var o = this.tryEntries[r]; if (o.tryLoc <= this.prev && n.call(o, "finallyLoc") && this.prev < o.finallyLoc) { var i = o; break; } } i && ("break" === t || "continue" === t) && i.tryLoc <= e && e <= i.finallyLoc && (i = null); var a = i ? i.completion : {}; return a.type = t, a.arg = e, i ? (this.method = "next", this.next = i.finallyLoc, y) : this.complete(a); }, complete: function complete(t, e) { if ("throw" === t.type) throw t.arg; return "break" === t.type || "continue" === t.type ? this.next = t.arg : "return" === t.type ? (this.rval = this.arg = t.arg, this.method = "return", this.next = "end") : "normal" === t.type && e && (this.next = e), y; }, finish: function finish(t) { for (var e = this.tryEntries.length - 1; e >= 0; --e) { var r = this.tryEntries[e]; if (r.finallyLoc === t) return this.complete(r.completion, r.afterLoc), resetTryEntry(r), y; } }, "catch": function _catch(t) { for (var e = this.tryEntries.length - 1; e >= 0; --e) { var r = this.tryEntries[e]; if (r.tryLoc === t) { var n = r.completion; if ("throw" === n.type) { var o = n.arg; resetTryEntry(r); } return o; } } throw new Error("illegal catch attempt"); }, delegateYield: function delegateYield(e, r, n) { return this.delegate = { iterator: values(e), resultName: r, nextLoc: n }, "next" === this.method && (this.arg = t), y; } }, e; }
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, _toPropertyKey(descriptor.key), descriptor); } }
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
@@ -11261,26 +5692,21 @@ var uuid_1 = require("uuid");
 var jwt_decode_1 = __importDefault(require("jwt-decode"));
 var constants = __importStar(require("../constants"));
 var common_1 = require("../helpers/common");
-var paze_wallet_1 = require("../helpers/paze-wallet");
-var wallet_1 = require("../enums/wallet");
-var event_type_1 = require("../enums/event-type");
-var error_type_1 = require("../enums/error-type");
-var paze_wallet_2 = require("../enums/paze-wallet");
-var mixpanel_1 = require("../enums/mixpanel");
-var PazeWallet = /*#__PURE__*/function () {
-  function PazeWallet(sharedService) {
-    _classCallCheck(this, PazeWallet);
+var paze_1 = require("../helpers/paze");
+var Paze = /*#__PURE__*/function () {
+  function Paze(sharedService) {
+    _classCallCheck(this, Paze);
     this.sharedService = sharedService;
     this.initialized = false;
   }
   /**
-   * Initializes the PazeWallet class.
+   * Initializes the Paze class.
    * @param {emailAddress} [emailAddress] - Customer's email address:
    * 1. If passed we will check if the email address is registered with Paze and will not initialize the Paze wallet if it is not.
    * 2. If not passed, no checks will be performed and Paze will be initialized after successful script loading.
    * @returns {Promise<void>} A promise that resolves when initialization is complete.
    */
-  _createClass(PazeWallet, [{
+  _createClass(Paze, [{
     key: "initialize",
     value: function initialize(emailAddress) {
       var _a;
@@ -11297,57 +5723,63 @@ var PazeWallet = /*#__PURE__*/function () {
             case 2:
               _context.prev = 2;
               walletRequest = this.sharedService.getWalletRequest();
-              if (!((_a = walletRequest.disableWallets) === null || _a === void 0 ? void 0 : _a.pazeWallet)) {
+              if (!((_a = walletRequest.disableWallets) === null || _a === void 0 ? void 0 : _a.paze)) {
                 _context.next = 6;
                 break;
               }
               return _context.abrupt("return");
             case 6:
               _context.next = 8;
-              return (0, common_1.loadScript)(constants.PAZE_WALLET_SANDBOX_SCRIPT_URL);
+              return (0, common_1.loadScript)((0, paze_1.getPazeScriptUrl)());
             case 8:
+              if (window.DIGITAL_WALLET_SDK) {
+                _context.next = 10;
+                break;
+              }
+              throw new Error("Paze Wallet API is not available");
+            case 10:
               options = {
                 client: {
-                  id: constants.PAZE_WALLET_SANDBOX_CLIENT_ID,
+                  id: "46VM0VIBJ63520UZ7X6U14L-0rahMJIVUiE1MgKLDdBgyTXkE" || "",
                   name: walletRequest.merchantName,
-                  profileId: constants.PAZE_WALLET_SANDBOX_CLIENT_PROFILE_ID
+                  profileId: "GoDaddy" || undefined
                 }
               };
-              _context.next = 11;
+              _context.next = 13;
               return window.DIGITAL_WALLET_SDK.initialize(options);
-            case 11:
+            case 13:
               if (emailAddress) {
-                _context.next = 14;
+                _context.next = 16;
                 break;
               }
               this.initialized = true;
               return _context.abrupt("return");
-            case 14:
-              _context.next = 16;
+            case 16:
+              _context.next = 18;
               return window.DIGITAL_WALLET_SDK.canCheckout({
                 emailAddress: emailAddress
               });
-            case 16:
+            case 18:
               canCheckout = _context.sent;
               if (!canCheckout.consumerPresent) {
-                _context.next = 21;
+                _context.next = 23;
                 break;
               }
               this.emailAddress = emailAddress;
               this.initialized = true;
               return _context.abrupt("return");
-            case 21:
-              _context.next = 26;
-              break;
             case 23:
-              _context.prev = 23;
+              _context.next = 28;
+              break;
+            case 25:
+              _context.prev = 25;
               _context.t0 = _context["catch"](2);
-              this.sharedService.handleError(error_type_1.ErrorType.PAZE_WALLET, _context.t0);
-            case 26:
+              this.sharedService.handleError("PAZE" /* ErrorType.PAZE */, _context.t0);
+            case 28:
             case "end":
               return _context.stop();
           }
-        }, _callee, this, [[2, 23]]);
+        }, _callee, this, [[2, 25]]);
       }));
     }
   }, {
@@ -11361,28 +5793,28 @@ var PazeWallet = /*#__PURE__*/function () {
       return this.initialized;
     }
     /**
-     * Starts a new PazeWallet session.
+     * Starts a new Paze session.
      * @param {WalletRequestUpdate} [walletRequest] - The wallet request update object.
      * @returns {void}
      */
   }, {
     key: "startSession",
     value: function startSession(walletRequest) {
-      this.sharedService.updateWalletRequest(walletRequest || {}, event_type_1.EventType.InitWallet);
+      this.sharedService.updateWalletRequest(walletRequest || {}, "init_wallet" /* EventType.InitWallet */);
       this.handler();
     }
     /**
-     * Adds PazeWallet button DOM element to parent DOM element.
+     * Adds Paze button DOM element to parent DOM element.
      * @param {ButtonOptions} [buttonOptions] - The button options object.
-     * @param {ButtonOptions} [pazeWalletButtonOptions] - The Apple Pay button options object.
+     * @param {ButtonOptions} [pazeButtonOptions] - The Apple Pay button options object.
      * @returns {void}
      */
   }, {
     key: "mount",
-    value: function mount(buttonOptions, pazeWalletButtonOptions) {
+    value: function mount(buttonOptions, pazeButtonOptions) {
       var _this = this;
       var _a;
-      var options = _extends(_extends({}, buttonOptions), pazeWalletButtonOptions);
+      var options = _extends(_extends({}, buttonOptions), pazeButtonOptions);
       var container = document.createElement("div");
       container.id = "pazewallet-button-container";
       var button = document.createElement("button");
@@ -11396,119 +5828,132 @@ var PazeWallet = /*#__PURE__*/function () {
       button.style.setProperty("background-position", "center");
       button.style.setProperty("background-repeat", "no-repeat");
       button.onclick = function () {
-        if (!(options === null || options === void 0 ? void 0 : options.onClick)) {
+        if (!options.onClick) {
           return _this.startSession();
         }
         options.onClick({
-          source: wallet_1.WalletType.PazeWallet
+          source: "paze" /* WalletType.Paze */
         });
       };
+
       container.appendChild(button);
       (0, common_1.setButtonProperties)(container, options);
       // attach Paze Wallet button to wallet container
       (_a = this.sharedService.buttonsContainer) === null || _a === void 0 ? void 0 : _a.appendChild(container);
     }
     /**
-     * PazeWallet button on-click handler.
+     * Paze error handler.
+     * @param {ErrorType} [type] - The error type.
+     * @param {any} [originalError] - The error object.
+     * This method will parse the error, track it, and process the close_wallet event.
+     * @returns {void}
+     */
+  }, {
+    key: "handleError",
+    value: function handleError(type, originalError) {
+      var parsedError = this.sharedService.parseError(type, originalError);
+      this.sharedService.trackError(parsedError);
+      this.sharedService.processCallbacks("close_wallet" /* EventType.CloseWallet */, {
+        source: "paze" /* WalletType.Paze */,
+        error: parsedError
+      });
+    }
+    /**
+     * Paze button on-click handler.
      * This method will open the Paze Wallet payment sheet.
      * @returns {Promise<void>} A promise that resolves when the handler is complete.
      */
   }, {
     key: "handler",
     value: function handler() {
+      var _a;
       return __awaiter(this, void 0, void 0, /*#__PURE__*/_regeneratorRuntime().mark(function _callee2() {
         var _this2 = this;
-        var domainName, pazeSessionId, walletRequest, checkoutResult, completeResult, decodedCheckout, nonceResponse, complete;
+        var domainName, pazeSessionId, walletRequest, checkoutRequest, checkoutResult, decodedCheckoutResult, completeRequest, completeResult, nonceResponse, complete;
         return _regeneratorRuntime().wrap(function _callee2$(_context2) {
           while (1) switch (_context2.prev = _context2.next) {
             case 0:
-              domainName = document.location.hostname;
-              if (!constants.DOMAIN_BLACKLIST.includes(domainName)) {
-                _context2.next = 3;
-                break;
-              }
-              return _context2.abrupt("return", this.sharedService.handleError(error_type_1.ErrorType.WALLET, new Error(domainName + " is blacklisted. Please reach out GDP support.")));
-            case 3:
-              if (this.initialized) {
-                _context2.next = 5;
-                break;
-              }
-              return _context2.abrupt("return", this.sharedService.handleError(error_type_1.ErrorType.PAZE_WALLET, new Error("Paze Wallet is not initialized")));
-            case 5:
-              this.sharedService.mixpanel.track(mixpanel_1.MixpanelEvent.PAZE_WALLET_BUTTON_CLICK);
-              this.sharedService.processCallbacks(event_type_1.EventType.WalletButtonClick, {
-                source: wallet_1.WalletType.PazeWallet
+              this.sharedService.processCallbacks("wallet_button_click" /* EventType.WalletButtonClick */, {
+                source: "paze" /* WalletType.Paze */
               });
-              _context2.prev = 7;
+              domainName = ((_a = window.top) === null || _a === void 0 ? void 0 : _a.location.hostname) || document.location.hostname;
+              if (!constants.DOMAIN_BLACKLIST.includes(domainName)) {
+                _context2.next = 4;
+                break;
+              }
+              return _context2.abrupt("return", this.handleError("WALLET" /* ErrorType.WALLET */, new Error(domainName + " is blacklisted. Please reach out GDP support.")));
+            case 4:
+              if (this.initialized) {
+                _context2.next = 6;
+                break;
+              }
+              return _context2.abrupt("return", this.handleError("PAZE" /* ErrorType.PAZE */, new Error("Paze Wallet is not initialized")));
+            case 6:
+              _context2.prev = 6;
               pazeSessionId = (0, uuid_1.v4)();
               walletRequest = this.sharedService.getWalletRequest();
+              checkoutRequest = (0, paze_1.buildCheckoutRequest)(walletRequest, pazeSessionId, this.emailAddress);
               _context2.next = 12;
-              return window.DIGITAL_WALLET_SDK.checkout((0, paze_wallet_1.buildCheckoutRequest)(walletRequest, pazeSessionId, this.emailAddress));
+              return window.DIGITAL_WALLET_SDK.checkout(checkoutRequest);
             case 12:
               checkoutResult = _context2.sent;
-              if (!(checkoutResult.result !== paze_wallet_2.CheckoutResponseResult.COMPLETE)) {
+              if (!(checkoutResult.result !== "COMPLETE" /* CheckoutResponseResult.COMPLETE */ || !checkoutResult.checkoutResponse)) {
                 _context2.next = 15;
                 break;
               }
-              return _context2.abrupt("return", this.sharedService.processCallbacks(event_type_1.EventType.CloseWallet, {}));
+              return _context2.abrupt("return", this.sharedService.processCallbacks("close_wallet" /* EventType.CloseWallet */, {
+                source: "paze" /* WalletType.Paze */
+              }));
             case 15:
-              _context2.next = 17;
-              return window.DIGITAL_WALLET_SDK.complete((0, paze_wallet_1.buildCompleteRequest)(walletRequest, pazeSessionId));
-            case 17:
+              decodedCheckoutResult = (0, jwt_decode_1["default"])(checkoutResult.checkoutResponse);
+              completeRequest = (0, paze_1.buildCompleteRequest)(walletRequest, pazeSessionId);
+              _context2.next = 19;
+              return window.DIGITAL_WALLET_SDK.complete(completeRequest);
+            case 19:
               completeResult = _context2.sent;
-              decodedCheckout = (0, jwt_decode_1["default"])(checkoutResult.checkoutResponse || "");
-              _context2.prev = 19;
-              // Don't call API service to get a nonce for now since Paze Wallet is not supported there yet
-              // const nonceResponse = await this.sharedService.walletApi.getWalletNonce(
-              //   buildWalletNonceRequest(decodedCheckout, completeResult)
-              // );
-              // Return a random UUID as nonce for now just for testing
-              nonceResponse = {
-                nonce: (0, uuid_1.v4)()
-              }; //add logic to track mixpanel payment authorized with masked payment request
+              _context2.prev = 20;
+              _context2.next = 23;
+              return this.sharedService.walletApi.getWalletNonce((0, paze_1.buildWalletNonceRequest)(decodedCheckoutResult, completeResult, pazeSessionId));
+            case 23:
+              nonceResponse = _context2.sent;
               complete = function complete(walletRequestUpdate) {
-                _this2.sharedService.updateWalletRequest(walletRequestUpdate || {}, event_type_1.EventType.PaymentAuthorized);
-                var error = _this2.sharedService.getWalletRequest().error;
-                _this2.sharedService.mixpanel.track(mixpanel_1.MixpanelEvent.PAZE_WALLET_PAYMENT_COMPLETED, {
-                  status: error ? mixpanel_1.MixpanelPaymentCompletedStatus.FAILURE : mixpanel_1.MixpanelPaymentCompletedStatus.SUCCESS,
-                  error: error,
-                  raw_error: error
-                });
+                _this2.sharedService.updateWalletRequest(walletRequestUpdate || {}, "payment_authorized" /* EventType.PaymentAuthorized */);
               };
-              this.sharedService.processCallbacks(event_type_1.EventType.PaymentAuthorized, _extends(_extends({}, (0, paze_wallet_1.buildPaymentAuthorizedResponse)(decodedCheckout, nonceResponse)), {
+
+              this.sharedService.processCallbacks("payment_authorized" /* EventType.PaymentAuthorized */, _extends(_extends({}, (0, paze_1.buildPaymentAuthorizedResponse)(decodedCheckoutResult, nonceResponse)), {
                 complete: complete
               }));
-              _context2.next = 28;
+              _context2.next = 31;
               break;
-            case 25:
-              _context2.prev = 25;
-              _context2.t0 = _context2["catch"](19);
-              return _context2.abrupt("return", this.sharedService.handleError(error_type_1.ErrorType.PAZE_WALLET_NONCE, _context2.t0));
             case 28:
-              _context2.next = 33;
+              _context2.prev = 28;
+              _context2.t0 = _context2["catch"](20);
+              return _context2.abrupt("return", this.handleError("PAZE_NONCE" /* ErrorType.PAZE_NONCE */, _context2.t0));
+            case 31:
+              _context2.next = 36;
               break;
-            case 30:
-              _context2.prev = 30;
-              _context2.t1 = _context2["catch"](7);
-              return _context2.abrupt("return", this.sharedService.handleError(error_type_1.ErrorType.PAZE_WALLET, _context2.t1));
             case 33:
+              _context2.prev = 33;
+              _context2.t1 = _context2["catch"](6);
+              return _context2.abrupt("return", this.handleError("PAZE" /* ErrorType.PAZE */, _context2.t1));
+            case 36:
             case "end":
               return _context2.stop();
           }
-        }, _callee2, this, [[7, 30], [19, 25]]);
+        }, _callee2, this, [[6, 33], [20, 28]]);
       }));
     }
   }]);
-  return PazeWallet;
+  return Paze;
 }();
-exports["default"] = PazeWallet;
+exports["default"] = Paze;
 ;
 
-},{"../constants":40,"../enums/error-type":42,"../enums/event-type":43,"../enums/mixpanel":45,"../enums/paze-wallet":46,"../enums/wallet":47,"../helpers/common":50,"../helpers/paze-wallet":53,"jwt-decode":10,"uuid":22}],60:[function(require,module,exports){
+},{"../constants":41,"../helpers/common":44,"../helpers/paze":47,"jwt-decode":11,"uuid":22}],53:[function(require,module,exports){
 "use strict";
 
 function _extends() { _extends = Object.assign ? Object.assign.bind() : function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
-function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
+function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, _toPropertyKey(descriptor.key), descriptor); } }
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
@@ -11554,11 +5999,8 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 var uuid_1 = require("uuid");
-var mixpanel_1 = __importDefault(require("../services/mixpanel"));
 var wallet_api_1 = __importDefault(require("../services/wallet-api"));
 var helpers = __importStar(require("../helpers/common"));
-var event_type_1 = require("../enums/event-type");
-var mixpanel_2 = require("../enums/mixpanel");
 /**
  * Shared class that serves as a stateful service, managing the state of the application.
  * It also contains shared properties and methods that different services can use:
@@ -11567,7 +6009,6 @@ var mixpanel_2 = require("../enums/mixpanel");
  * 3. Wallet request: get state, create, update
  * 4. Error handling: method to handle different type of errors
  * 5. Wallet API service: send of wallet-related requests, such as validation and nonce generation
- * 6. Mixpanel service: send tracking events to Mixpanel
  * @class
  */
 var Shared = /*#__PURE__*/function () {
@@ -11590,7 +6031,7 @@ var Shared = /*#__PURE__*/function () {
         _this.processCallbacks(message.type, message);
       };
       _this.postIFrameMessage({
-        type: event_type_1.EventType.Init
+        type: "init" /* EventType.Init */
       }, _this.messageChannel.port2);
     };
     this.businessId = businessId;
@@ -11601,9 +6042,7 @@ var Shared = /*#__PURE__*/function () {
     this.messageChannel = null;
     this.buttonsContainer = null;
     this.walletRequest = walletRequest;
-    this.mixpanel = new mixpanel_1["default"](this.businessId, this.applicationId, this.sessionId);
     this.walletApi = new wallet_api_1["default"](this.businessId, this.applicationId, this.sessionId);
-    this.mixpanel.init();
   }
   /**
    * Adds a callback listener for a specific event.
@@ -11629,7 +6068,48 @@ var Shared = /*#__PURE__*/function () {
       this.listenerCallbacks[eventName] = null;
     }
     /**
-     * Handles errors and tracks them using Mixpanel.
+     * Parses error.
+     *
+     * @param {ErrorType} type - The type of the error.
+     * @param {any} originalError - The original error object.
+     * @returns {CollectError}
+     */
+  }, {
+    key: "parseError",
+    value: function parseError(type, originalError) {
+      var error = _typeof(originalError) === "object" && originalError.statusMessage ? {
+        message: originalError.statusMessage,
+        name: originalError.statusCode,
+        type: type
+      } : _typeof(originalError) === "object" && originalError.reason ? {
+        message: originalError.reason,
+        name: "Error",
+        type: type
+      } : originalError instanceof Error ? {
+        message: originalError.message,
+        name: originalError.name,
+        type: type
+      } : typeof originalError === "string" ? {
+        message: originalError,
+        type: type
+      } : _extends(_extends({}, originalError), {
+        type: type
+      });
+      return error;
+    }
+    /**
+     * Tracks error.
+     *
+     * @param {CollectError} error - The collect error object.
+     * @returns {void}
+     */
+  }, {
+    key: "trackError",
+    value: function trackError(error) {
+      console.error(error);
+    }
+    /**
+     * Handles error.
      *
      * @param {ErrorType} type - The type of the error.
      * @param {any} originalError - The original error object.
@@ -11638,24 +6118,8 @@ var Shared = /*#__PURE__*/function () {
   }, {
     key: "handleError",
     value: function handleError(type, originalError) {
-      var error = originalError instanceof Error ? {
-        message: originalError.message,
-        name: originalError.name,
-        type: type
-      } : _typeof(originalError) === "object" && originalError.statusMessage ? {
-        message: originalError.statusMessage,
-        name: originalError.statusCode,
-        type: type
-      } : typeof originalError === "string" ? {
-        message: originalError,
-        type: type
-      } : _extends(_extends({}, originalError), {
-        type: type
-      });
-      console.error(error);
-      this.mixpanel.track(mixpanel_2.MixpanelEvent.ERROR, {
-        error: error
-      });
+      var error = this.parseError(type, originalError);
+      this.trackError(error);
     }
     /**
      * Posts a message to the iframe.
@@ -11696,7 +6160,7 @@ var Shared = /*#__PURE__*/function () {
       // if no update on errors, then set errors as null and resolve all errors
       request.error = update.error;
       // if event type is payment_authorized, then only request error can be updated
-      if (event === event_type_1.EventType.PaymentAuthorized) {
+      if (event === "payment_authorized" /* EventType.PaymentAuthorized */) {
         return;
       }
       if (update.total) {
@@ -11705,10 +6169,14 @@ var Shared = /*#__PURE__*/function () {
       if (update.lineItems) {
         request.lineItems = update.lineItems;
       }
-      if (event !== event_type_1.EventType.ShippingMethodChange && ((_a = update.shippingMethods) === null || _a === void 0 ? void 0 : _a.length)) {
+      // Both ApplePay and GooglePay don't provide an ability to make shippingMethods empty if it was previously set.
+      // Even when you pass undefined or an empty array, it will still show the previous list of shipping methods.
+      // We should not update shippingMethods in the wallet request if it's undefined or an empty array
+      // to make it consistent with what we see on the UI.
+      if (event !== "shipping_method_change" /* EventType.ShippingMethodChange */ && ((_a = update.shippingMethods) === null || _a === void 0 ? void 0 : _a.length)) {
         request.shippingMethods = update.shippingMethods;
       }
-      if ((event === event_type_1.EventType.InitWallet || event === event_type_1.EventType.CouponCodeChange) && update.couponCode) {
+      if ((event === "init_wallet" /* EventType.InitWallet */ || event === "coupon_code_change" /* EventType.CouponCodeChange */) && update.couponCode) {
         request.couponCode = update.couponCode;
       }
     }
@@ -11723,9 +6191,6 @@ var Shared = /*#__PURE__*/function () {
     key: "processCallbacks",
     value: function processCallbacks(eventType, data) {
       var _a, _b;
-      if (eventType === event_type_1.EventType.Nonce) {
-        this.mixpanel.track(mixpanel_2.MixpanelEvent.NONCE_RESPONSE);
-      }
       (_b = (_a = this.listenerCallbacks)[eventType]) === null || _b === void 0 ? void 0 : _b.call(_a, data);
     }
     /**
@@ -11804,11 +6269,11 @@ var Shared = /*#__PURE__*/function () {
 }();
 exports["default"] = Shared;
 
-},{"../enums/event-type":43,"../enums/mixpanel":45,"../helpers/common":50,"../services/mixpanel":58,"../services/wallet-api":61,"uuid":22}],61:[function(require,module,exports){
+},{"../helpers/common":44,"../services/wallet-api":54,"uuid":22}],54:[function(require,module,exports){
 "use strict";
 
-function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
-function _regeneratorRuntime() { "use strict"; /*! regenerator-runtime -- Copyright (c) 2014-present, Facebook, Inc. -- license (MIT): https://github.com/facebook/regenerator/blob/main/LICENSE */ _regeneratorRuntime = function _regeneratorRuntime() { return exports; }; var exports = {}, Op = Object.prototype, hasOwn = Op.hasOwnProperty, defineProperty = Object.defineProperty || function (obj, key, desc) { obj[key] = desc.value; }, $Symbol = "function" == typeof Symbol ? Symbol : {}, iteratorSymbol = $Symbol.iterator || "@@iterator", asyncIteratorSymbol = $Symbol.asyncIterator || "@@asyncIterator", toStringTagSymbol = $Symbol.toStringTag || "@@toStringTag"; function define(obj, key, value) { return Object.defineProperty(obj, key, { value: value, enumerable: !0, configurable: !0, writable: !0 }), obj[key]; } try { define({}, ""); } catch (err) { define = function define(obj, key, value) { return obj[key] = value; }; } function wrap(innerFn, outerFn, self, tryLocsList) { var protoGenerator = outerFn && outerFn.prototype instanceof Generator ? outerFn : Generator, generator = Object.create(protoGenerator.prototype), context = new Context(tryLocsList || []); return defineProperty(generator, "_invoke", { value: makeInvokeMethod(innerFn, self, context) }), generator; } function tryCatch(fn, obj, arg) { try { return { type: "normal", arg: fn.call(obj, arg) }; } catch (err) { return { type: "throw", arg: err }; } } exports.wrap = wrap; var ContinueSentinel = {}; function Generator() {} function GeneratorFunction() {} function GeneratorFunctionPrototype() {} var IteratorPrototype = {}; define(IteratorPrototype, iteratorSymbol, function () { return this; }); var getProto = Object.getPrototypeOf, NativeIteratorPrototype = getProto && getProto(getProto(values([]))); NativeIteratorPrototype && NativeIteratorPrototype !== Op && hasOwn.call(NativeIteratorPrototype, iteratorSymbol) && (IteratorPrototype = NativeIteratorPrototype); var Gp = GeneratorFunctionPrototype.prototype = Generator.prototype = Object.create(IteratorPrototype); function defineIteratorMethods(prototype) { ["next", "throw", "return"].forEach(function (method) { define(prototype, method, function (arg) { return this._invoke(method, arg); }); }); } function AsyncIterator(generator, PromiseImpl) { function invoke(method, arg, resolve, reject) { var record = tryCatch(generator[method], generator, arg); if ("throw" !== record.type) { var result = record.arg, value = result.value; return value && "object" == _typeof(value) && hasOwn.call(value, "__await") ? PromiseImpl.resolve(value.__await).then(function (value) { invoke("next", value, resolve, reject); }, function (err) { invoke("throw", err, resolve, reject); }) : PromiseImpl.resolve(value).then(function (unwrapped) { result.value = unwrapped, resolve(result); }, function (error) { return invoke("throw", error, resolve, reject); }); } reject(record.arg); } var previousPromise; defineProperty(this, "_invoke", { value: function value(method, arg) { function callInvokeWithMethodAndArg() { return new PromiseImpl(function (resolve, reject) { invoke(method, arg, resolve, reject); }); } return previousPromise = previousPromise ? previousPromise.then(callInvokeWithMethodAndArg, callInvokeWithMethodAndArg) : callInvokeWithMethodAndArg(); } }); } function makeInvokeMethod(innerFn, self, context) { var state = "suspendedStart"; return function (method, arg) { if ("executing" === state) throw new Error("Generator is already running"); if ("completed" === state) { if ("throw" === method) throw arg; return doneResult(); } for (context.method = method, context.arg = arg;;) { var delegate = context.delegate; if (delegate) { var delegateResult = maybeInvokeDelegate(delegate, context); if (delegateResult) { if (delegateResult === ContinueSentinel) continue; return delegateResult; } } if ("next" === context.method) context.sent = context._sent = context.arg;else if ("throw" === context.method) { if ("suspendedStart" === state) throw state = "completed", context.arg; context.dispatchException(context.arg); } else "return" === context.method && context.abrupt("return", context.arg); state = "executing"; var record = tryCatch(innerFn, self, context); if ("normal" === record.type) { if (state = context.done ? "completed" : "suspendedYield", record.arg === ContinueSentinel) continue; return { value: record.arg, done: context.done }; } "throw" === record.type && (state = "completed", context.method = "throw", context.arg = record.arg); } }; } function maybeInvokeDelegate(delegate, context) { var methodName = context.method, method = delegate.iterator[methodName]; if (undefined === method) return context.delegate = null, "throw" === methodName && delegate.iterator["return"] && (context.method = "return", context.arg = undefined, maybeInvokeDelegate(delegate, context), "throw" === context.method) || "return" !== methodName && (context.method = "throw", context.arg = new TypeError("The iterator does not provide a '" + methodName + "' method")), ContinueSentinel; var record = tryCatch(method, delegate.iterator, context.arg); if ("throw" === record.type) return context.method = "throw", context.arg = record.arg, context.delegate = null, ContinueSentinel; var info = record.arg; return info ? info.done ? (context[delegate.resultName] = info.value, context.next = delegate.nextLoc, "return" !== context.method && (context.method = "next", context.arg = undefined), context.delegate = null, ContinueSentinel) : info : (context.method = "throw", context.arg = new TypeError("iterator result is not an object"), context.delegate = null, ContinueSentinel); } function pushTryEntry(locs) { var entry = { tryLoc: locs[0] }; 1 in locs && (entry.catchLoc = locs[1]), 2 in locs && (entry.finallyLoc = locs[2], entry.afterLoc = locs[3]), this.tryEntries.push(entry); } function resetTryEntry(entry) { var record = entry.completion || {}; record.type = "normal", delete record.arg, entry.completion = record; } function Context(tryLocsList) { this.tryEntries = [{ tryLoc: "root" }], tryLocsList.forEach(pushTryEntry, this), this.reset(!0); } function values(iterable) { if (iterable) { var iteratorMethod = iterable[iteratorSymbol]; if (iteratorMethod) return iteratorMethod.call(iterable); if ("function" == typeof iterable.next) return iterable; if (!isNaN(iterable.length)) { var i = -1, next = function next() { for (; ++i < iterable.length;) if (hasOwn.call(iterable, i)) return next.value = iterable[i], next.done = !1, next; return next.value = undefined, next.done = !0, next; }; return next.next = next; } } return { next: doneResult }; } function doneResult() { return { value: undefined, done: !0 }; } return GeneratorFunction.prototype = GeneratorFunctionPrototype, defineProperty(Gp, "constructor", { value: GeneratorFunctionPrototype, configurable: !0 }), defineProperty(GeneratorFunctionPrototype, "constructor", { value: GeneratorFunction, configurable: !0 }), GeneratorFunction.displayName = define(GeneratorFunctionPrototype, toStringTagSymbol, "GeneratorFunction"), exports.isGeneratorFunction = function (genFun) { var ctor = "function" == typeof genFun && genFun.constructor; return !!ctor && (ctor === GeneratorFunction || "GeneratorFunction" === (ctor.displayName || ctor.name)); }, exports.mark = function (genFun) { return Object.setPrototypeOf ? Object.setPrototypeOf(genFun, GeneratorFunctionPrototype) : (genFun.__proto__ = GeneratorFunctionPrototype, define(genFun, toStringTagSymbol, "GeneratorFunction")), genFun.prototype = Object.create(Gp), genFun; }, exports.awrap = function (arg) { return { __await: arg }; }, defineIteratorMethods(AsyncIterator.prototype), define(AsyncIterator.prototype, asyncIteratorSymbol, function () { return this; }), exports.AsyncIterator = AsyncIterator, exports.async = function (innerFn, outerFn, self, tryLocsList, PromiseImpl) { void 0 === PromiseImpl && (PromiseImpl = Promise); var iter = new AsyncIterator(wrap(innerFn, outerFn, self, tryLocsList), PromiseImpl); return exports.isGeneratorFunction(outerFn) ? iter : iter.next().then(function (result) { return result.done ? result.value : iter.next(); }); }, defineIteratorMethods(Gp), define(Gp, toStringTagSymbol, "Generator"), define(Gp, iteratorSymbol, function () { return this; }), define(Gp, "toString", function () { return "[object Generator]"; }), exports.keys = function (val) { var object = Object(val), keys = []; for (var key in object) keys.push(key); return keys.reverse(), function next() { for (; keys.length;) { var key = keys.pop(); if (key in object) return next.value = key, next.done = !1, next; } return next.done = !0, next; }; }, exports.values = values, Context.prototype = { constructor: Context, reset: function reset(skipTempReset) { if (this.prev = 0, this.next = 0, this.sent = this._sent = undefined, this.done = !1, this.delegate = null, this.method = "next", this.arg = undefined, this.tryEntries.forEach(resetTryEntry), !skipTempReset) for (var name in this) "t" === name.charAt(0) && hasOwn.call(this, name) && !isNaN(+name.slice(1)) && (this[name] = undefined); }, stop: function stop() { this.done = !0; var rootRecord = this.tryEntries[0].completion; if ("throw" === rootRecord.type) throw rootRecord.arg; return this.rval; }, dispatchException: function dispatchException(exception) { if (this.done) throw exception; var context = this; function handle(loc, caught) { return record.type = "throw", record.arg = exception, context.next = loc, caught && (context.method = "next", context.arg = undefined), !!caught; } for (var i = this.tryEntries.length - 1; i >= 0; --i) { var entry = this.tryEntries[i], record = entry.completion; if ("root" === entry.tryLoc) return handle("end"); if (entry.tryLoc <= this.prev) { var hasCatch = hasOwn.call(entry, "catchLoc"), hasFinally = hasOwn.call(entry, "finallyLoc"); if (hasCatch && hasFinally) { if (this.prev < entry.catchLoc) return handle(entry.catchLoc, !0); if (this.prev < entry.finallyLoc) return handle(entry.finallyLoc); } else if (hasCatch) { if (this.prev < entry.catchLoc) return handle(entry.catchLoc, !0); } else { if (!hasFinally) throw new Error("try statement without catch or finally"); if (this.prev < entry.finallyLoc) return handle(entry.finallyLoc); } } } }, abrupt: function abrupt(type, arg) { for (var i = this.tryEntries.length - 1; i >= 0; --i) { var entry = this.tryEntries[i]; if (entry.tryLoc <= this.prev && hasOwn.call(entry, "finallyLoc") && this.prev < entry.finallyLoc) { var finallyEntry = entry; break; } } finallyEntry && ("break" === type || "continue" === type) && finallyEntry.tryLoc <= arg && arg <= finallyEntry.finallyLoc && (finallyEntry = null); var record = finallyEntry ? finallyEntry.completion : {}; return record.type = type, record.arg = arg, finallyEntry ? (this.method = "next", this.next = finallyEntry.finallyLoc, ContinueSentinel) : this.complete(record); }, complete: function complete(record, afterLoc) { if ("throw" === record.type) throw record.arg; return "break" === record.type || "continue" === record.type ? this.next = record.arg : "return" === record.type ? (this.rval = this.arg = record.arg, this.method = "return", this.next = "end") : "normal" === record.type && afterLoc && (this.next = afterLoc), ContinueSentinel; }, finish: function finish(finallyLoc) { for (var i = this.tryEntries.length - 1; i >= 0; --i) { var entry = this.tryEntries[i]; if (entry.finallyLoc === finallyLoc) return this.complete(entry.completion, entry.afterLoc), resetTryEntry(entry), ContinueSentinel; } }, "catch": function _catch(tryLoc) { for (var i = this.tryEntries.length - 1; i >= 0; --i) { var entry = this.tryEntries[i]; if (entry.tryLoc === tryLoc) { var record = entry.completion; if ("throw" === record.type) { var thrown = record.arg; resetTryEntry(entry); } return thrown; } } throw new Error("illegal catch attempt"); }, delegateYield: function delegateYield(iterable, resultName, nextLoc) { return this.delegate = { iterator: values(iterable), resultName: resultName, nextLoc: nextLoc }, "next" === this.method && (this.arg = undefined), ContinueSentinel; } }, exports; }
+function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
+function _regeneratorRuntime() { "use strict"; /*! regenerator-runtime -- Copyright (c) 2014-present, Facebook, Inc. -- license (MIT): https://github.com/facebook/regenerator/blob/main/LICENSE */ _regeneratorRuntime = function _regeneratorRuntime() { return e; }; var t, e = {}, r = Object.prototype, n = r.hasOwnProperty, o = Object.defineProperty || function (t, e, r) { t[e] = r.value; }, i = "function" == typeof Symbol ? Symbol : {}, a = i.iterator || "@@iterator", c = i.asyncIterator || "@@asyncIterator", u = i.toStringTag || "@@toStringTag"; function define(t, e, r) { return Object.defineProperty(t, e, { value: r, enumerable: !0, configurable: !0, writable: !0 }), t[e]; } try { define({}, ""); } catch (t) { define = function define(t, e, r) { return t[e] = r; }; } function wrap(t, e, r, n) { var i = e && e.prototype instanceof Generator ? e : Generator, a = Object.create(i.prototype), c = new Context(n || []); return o(a, "_invoke", { value: makeInvokeMethod(t, r, c) }), a; } function tryCatch(t, e, r) { try { return { type: "normal", arg: t.call(e, r) }; } catch (t) { return { type: "throw", arg: t }; } } e.wrap = wrap; var h = "suspendedStart", l = "suspendedYield", f = "executing", s = "completed", y = {}; function Generator() {} function GeneratorFunction() {} function GeneratorFunctionPrototype() {} var p = {}; define(p, a, function () { return this; }); var d = Object.getPrototypeOf, v = d && d(d(values([]))); v && v !== r && n.call(v, a) && (p = v); var g = GeneratorFunctionPrototype.prototype = Generator.prototype = Object.create(p); function defineIteratorMethods(t) { ["next", "throw", "return"].forEach(function (e) { define(t, e, function (t) { return this._invoke(e, t); }); }); } function AsyncIterator(t, e) { function invoke(r, o, i, a) { var c = tryCatch(t[r], t, o); if ("throw" !== c.type) { var u = c.arg, h = u.value; return h && "object" == _typeof(h) && n.call(h, "__await") ? e.resolve(h.__await).then(function (t) { invoke("next", t, i, a); }, function (t) { invoke("throw", t, i, a); }) : e.resolve(h).then(function (t) { u.value = t, i(u); }, function (t) { return invoke("throw", t, i, a); }); } a(c.arg); } var r; o(this, "_invoke", { value: function value(t, n) { function callInvokeWithMethodAndArg() { return new e(function (e, r) { invoke(t, n, e, r); }); } return r = r ? r.then(callInvokeWithMethodAndArg, callInvokeWithMethodAndArg) : callInvokeWithMethodAndArg(); } }); } function makeInvokeMethod(e, r, n) { var o = h; return function (i, a) { if (o === f) throw new Error("Generator is already running"); if (o === s) { if ("throw" === i) throw a; return { value: t, done: !0 }; } for (n.method = i, n.arg = a;;) { var c = n.delegate; if (c) { var u = maybeInvokeDelegate(c, n); if (u) { if (u === y) continue; return u; } } if ("next" === n.method) n.sent = n._sent = n.arg;else if ("throw" === n.method) { if (o === h) throw o = s, n.arg; n.dispatchException(n.arg); } else "return" === n.method && n.abrupt("return", n.arg); o = f; var p = tryCatch(e, r, n); if ("normal" === p.type) { if (o = n.done ? s : l, p.arg === y) continue; return { value: p.arg, done: n.done }; } "throw" === p.type && (o = s, n.method = "throw", n.arg = p.arg); } }; } function maybeInvokeDelegate(e, r) { var n = r.method, o = e.iterator[n]; if (o === t) return r.delegate = null, "throw" === n && e.iterator["return"] && (r.method = "return", r.arg = t, maybeInvokeDelegate(e, r), "throw" === r.method) || "return" !== n && (r.method = "throw", r.arg = new TypeError("The iterator does not provide a '" + n + "' method")), y; var i = tryCatch(o, e.iterator, r.arg); if ("throw" === i.type) return r.method = "throw", r.arg = i.arg, r.delegate = null, y; var a = i.arg; return a ? a.done ? (r[e.resultName] = a.value, r.next = e.nextLoc, "return" !== r.method && (r.method = "next", r.arg = t), r.delegate = null, y) : a : (r.method = "throw", r.arg = new TypeError("iterator result is not an object"), r.delegate = null, y); } function pushTryEntry(t) { var e = { tryLoc: t[0] }; 1 in t && (e.catchLoc = t[1]), 2 in t && (e.finallyLoc = t[2], e.afterLoc = t[3]), this.tryEntries.push(e); } function resetTryEntry(t) { var e = t.completion || {}; e.type = "normal", delete e.arg, t.completion = e; } function Context(t) { this.tryEntries = [{ tryLoc: "root" }], t.forEach(pushTryEntry, this), this.reset(!0); } function values(e) { if (e || "" === e) { var r = e[a]; if (r) return r.call(e); if ("function" == typeof e.next) return e; if (!isNaN(e.length)) { var o = -1, i = function next() { for (; ++o < e.length;) if (n.call(e, o)) return next.value = e[o], next.done = !1, next; return next.value = t, next.done = !0, next; }; return i.next = i; } } throw new TypeError(_typeof(e) + " is not iterable"); } return GeneratorFunction.prototype = GeneratorFunctionPrototype, o(g, "constructor", { value: GeneratorFunctionPrototype, configurable: !0 }), o(GeneratorFunctionPrototype, "constructor", { value: GeneratorFunction, configurable: !0 }), GeneratorFunction.displayName = define(GeneratorFunctionPrototype, u, "GeneratorFunction"), e.isGeneratorFunction = function (t) { var e = "function" == typeof t && t.constructor; return !!e && (e === GeneratorFunction || "GeneratorFunction" === (e.displayName || e.name)); }, e.mark = function (t) { return Object.setPrototypeOf ? Object.setPrototypeOf(t, GeneratorFunctionPrototype) : (t.__proto__ = GeneratorFunctionPrototype, define(t, u, "GeneratorFunction")), t.prototype = Object.create(g), t; }, e.awrap = function (t) { return { __await: t }; }, defineIteratorMethods(AsyncIterator.prototype), define(AsyncIterator.prototype, c, function () { return this; }), e.AsyncIterator = AsyncIterator, e.async = function (t, r, n, o, i) { void 0 === i && (i = Promise); var a = new AsyncIterator(wrap(t, r, n, o), i); return e.isGeneratorFunction(r) ? a : a.next().then(function (t) { return t.done ? t.value : a.next(); }); }, defineIteratorMethods(g), define(g, u, "Generator"), define(g, a, function () { return this; }), define(g, "toString", function () { return "[object Generator]"; }), e.keys = function (t) { var e = Object(t), r = []; for (var n in e) r.push(n); return r.reverse(), function next() { for (; r.length;) { var t = r.pop(); if (t in e) return next.value = t, next.done = !1, next; } return next.done = !0, next; }; }, e.values = values, Context.prototype = { constructor: Context, reset: function reset(e) { if (this.prev = 0, this.next = 0, this.sent = this._sent = t, this.done = !1, this.delegate = null, this.method = "next", this.arg = t, this.tryEntries.forEach(resetTryEntry), !e) for (var r in this) "t" === r.charAt(0) && n.call(this, r) && !isNaN(+r.slice(1)) && (this[r] = t); }, stop: function stop() { this.done = !0; var t = this.tryEntries[0].completion; if ("throw" === t.type) throw t.arg; return this.rval; }, dispatchException: function dispatchException(e) { if (this.done) throw e; var r = this; function handle(n, o) { return a.type = "throw", a.arg = e, r.next = n, o && (r.method = "next", r.arg = t), !!o; } for (var o = this.tryEntries.length - 1; o >= 0; --o) { var i = this.tryEntries[o], a = i.completion; if ("root" === i.tryLoc) return handle("end"); if (i.tryLoc <= this.prev) { var c = n.call(i, "catchLoc"), u = n.call(i, "finallyLoc"); if (c && u) { if (this.prev < i.catchLoc) return handle(i.catchLoc, !0); if (this.prev < i.finallyLoc) return handle(i.finallyLoc); } else if (c) { if (this.prev < i.catchLoc) return handle(i.catchLoc, !0); } else { if (!u) throw new Error("try statement without catch or finally"); if (this.prev < i.finallyLoc) return handle(i.finallyLoc); } } } }, abrupt: function abrupt(t, e) { for (var r = this.tryEntries.length - 1; r >= 0; --r) { var o = this.tryEntries[r]; if (o.tryLoc <= this.prev && n.call(o, "finallyLoc") && this.prev < o.finallyLoc) { var i = o; break; } } i && ("break" === t || "continue" === t) && i.tryLoc <= e && e <= i.finallyLoc && (i = null); var a = i ? i.completion : {}; return a.type = t, a.arg = e, i ? (this.method = "next", this.next = i.finallyLoc, y) : this.complete(a); }, complete: function complete(t, e) { if ("throw" === t.type) throw t.arg; return "break" === t.type || "continue" === t.type ? this.next = t.arg : "return" === t.type ? (this.rval = this.arg = t.arg, this.method = "return", this.next = "end") : "normal" === t.type && e && (this.next = e), y; }, finish: function finish(t) { for (var e = this.tryEntries.length - 1; e >= 0; --e) { var r = this.tryEntries[e]; if (r.finallyLoc === t) return this.complete(r.completion, r.afterLoc), resetTryEntry(r), y; } }, "catch": function _catch(t) { for (var e = this.tryEntries.length - 1; e >= 0; --e) { var r = this.tryEntries[e]; if (r.tryLoc === t) { var n = r.completion; if ("throw" === n.type) { var o = n.arg; resetTryEntry(r); } return o; } } throw new Error("illegal catch attempt"); }, delegateYield: function delegateYield(e, r, n) { return this.delegate = { iterator: values(e), resultName: r, nextLoc: n }, "next" === this.method && (this.arg = t), y; } }, e; }
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, _toPropertyKey(descriptor.key), descriptor); } }
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
@@ -11845,8 +6310,6 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 var constants_1 = require("../constants");
-var wallet_1 = require("../enums/wallet");
-var event_type_1 = require("../enums/event-type");
 var common_1 = require("../helpers/common");
 ;
 ;
@@ -11887,8 +6350,9 @@ var WalletApi = /*#__PURE__*/function () {
             case 2:
               promise = new Promise(function (resolve, reject) {
                 var allOptions = (0, common_1.getAllOptions)(_this.businessId, _this.applicationId, _this.sessionId, {
-                  paymentMethods: [wallet_1.WalletType.ApplePay, wallet_1.WalletType.GooglePay]
+                  paymentMethods: ["apple_pay" /* WalletType.ApplePay */, "google_pay" /* WalletType.GooglePay */, "paze" /* WalletType.Paze */]
                 });
+
                 _this.iFrame = (0, common_1.createIFrame)(allOptions);
                 _this.messageChannel = new MessageChannel();
                 _this.originMessageChannel = _this.messageChannel.port1;
@@ -11908,7 +6372,7 @@ var WalletApi = /*#__PURE__*/function () {
                 }, constants_1.DEFAULT_TIMEOUT);
                 var eventListener = function eventListener(event) {
                   var message = (0, common_1.parseMessage)(event);
-                  if ((message === null || message === void 0 ? void 0 : message.type) === event_type_1.EventType.IFrameContentReady) {
+                  if ((message === null || message === void 0 ? void 0 : message.type) === "iframe_ready" /* EventType.IFrameContentReady */) {
                     onComplete();
                     _this.loaded = true;
                     resolve();
@@ -11921,7 +6385,7 @@ var WalletApi = /*#__PURE__*/function () {
                     return;
                   }
                   (_b = (_a = _this.iFrame) === null || _a === void 0 ? void 0 : _a.contentWindow) === null || _b === void 0 ? void 0 : _b.postMessage(JSON.stringify({
-                    type: event_type_1.EventType.Init
+                    type: "init" /* EventType.Init */
                   }), "*", [_this.iFrameMessageChannel]);
                 };
                 document.body.appendChild(_this.iFrame);
@@ -12023,7 +6487,7 @@ var WalletApi = /*#__PURE__*/function () {
         return _regeneratorRuntime().wrap(function _callee4$(_context4) {
           while (1) switch (_context4.prev = _context4.next) {
             case 0:
-              return _context4.abrupt("return", this.mountAndPostMessage(event_type_1.EventType.OpValidateApplePay, event_type_1.EventType.ValidateApplePay, event_type_1.EventType.ValidateApplePayError, options));
+              return _context4.abrupt("return", this.mountAndPostMessage("op_validate_applepay" /* EventType.OpValidateApplePay */, "validate_applepay" /* EventType.ValidateApplePay */, "validate_applepay_error" /* EventType.ValidateApplePayError */, options));
             case 1:
             case "end":
               return _context4.stop();
@@ -12038,7 +6502,7 @@ var WalletApi = /*#__PURE__*/function () {
         return _regeneratorRuntime().wrap(function _callee5$(_context5) {
           while (1) switch (_context5.prev = _context5.next) {
             case 0:
-              return _context5.abrupt("return", this.mountAndPostMessage(event_type_1.EventType.OpValidateGooglePay, event_type_1.EventType.ValidateGooglePay, event_type_1.EventType.ValidateGooglePayError, options));
+              return _context5.abrupt("return", this.mountAndPostMessage("op_validate_googlepay" /* EventType.OpValidateGooglePay */, "validate_googlepay" /* EventType.ValidateGooglePay */, "validate_googlepay_error" /* EventType.ValidateGooglePayError */, options));
             case 1:
             case "end":
               return _context5.stop();
@@ -12053,7 +6517,7 @@ var WalletApi = /*#__PURE__*/function () {
         return _regeneratorRuntime().wrap(function _callee6$(_context6) {
           while (1) switch (_context6.prev = _context6.next) {
             case 0:
-              return _context6.abrupt("return", this.mountAndPostMessage(event_type_1.EventType.OpGetWalletNonce, event_type_1.EventType.WalletNonce, event_type_1.EventType.WalletNonceError, options));
+              return _context6.abrupt("return", this.mountAndPostMessage("op_get_wallet_nonce" /* EventType.OpGetWalletNonce */, "wallet_nonce" /* EventType.WalletNonce */, "wallet_nonce_error" /* EventType.WalletNonceError */, options));
             case 1:
             case "end":
               return _context6.stop();
@@ -12067,534 +6531,4 @@ var WalletApi = /*#__PURE__*/function () {
 exports["default"] = WalletApi;
 ;
 
-},{"../constants":40,"../enums/event-type":43,"../enums/wallet":47,"../helpers/common":50}],62:[function(require,module,exports){
-"use strict";
-
-function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
-function _regeneratorRuntime() { "use strict"; /*! regenerator-runtime -- Copyright (c) 2014-present, Facebook, Inc. -- license (MIT): https://github.com/facebook/regenerator/blob/main/LICENSE */ _regeneratorRuntime = function _regeneratorRuntime() { return exports; }; var exports = {}, Op = Object.prototype, hasOwn = Op.hasOwnProperty, defineProperty = Object.defineProperty || function (obj, key, desc) { obj[key] = desc.value; }, $Symbol = "function" == typeof Symbol ? Symbol : {}, iteratorSymbol = $Symbol.iterator || "@@iterator", asyncIteratorSymbol = $Symbol.asyncIterator || "@@asyncIterator", toStringTagSymbol = $Symbol.toStringTag || "@@toStringTag"; function define(obj, key, value) { return Object.defineProperty(obj, key, { value: value, enumerable: !0, configurable: !0, writable: !0 }), obj[key]; } try { define({}, ""); } catch (err) { define = function define(obj, key, value) { return obj[key] = value; }; } function wrap(innerFn, outerFn, self, tryLocsList) { var protoGenerator = outerFn && outerFn.prototype instanceof Generator ? outerFn : Generator, generator = Object.create(protoGenerator.prototype), context = new Context(tryLocsList || []); return defineProperty(generator, "_invoke", { value: makeInvokeMethod(innerFn, self, context) }), generator; } function tryCatch(fn, obj, arg) { try { return { type: "normal", arg: fn.call(obj, arg) }; } catch (err) { return { type: "throw", arg: err }; } } exports.wrap = wrap; var ContinueSentinel = {}; function Generator() {} function GeneratorFunction() {} function GeneratorFunctionPrototype() {} var IteratorPrototype = {}; define(IteratorPrototype, iteratorSymbol, function () { return this; }); var getProto = Object.getPrototypeOf, NativeIteratorPrototype = getProto && getProto(getProto(values([]))); NativeIteratorPrototype && NativeIteratorPrototype !== Op && hasOwn.call(NativeIteratorPrototype, iteratorSymbol) && (IteratorPrototype = NativeIteratorPrototype); var Gp = GeneratorFunctionPrototype.prototype = Generator.prototype = Object.create(IteratorPrototype); function defineIteratorMethods(prototype) { ["next", "throw", "return"].forEach(function (method) { define(prototype, method, function (arg) { return this._invoke(method, arg); }); }); } function AsyncIterator(generator, PromiseImpl) { function invoke(method, arg, resolve, reject) { var record = tryCatch(generator[method], generator, arg); if ("throw" !== record.type) { var result = record.arg, value = result.value; return value && "object" == _typeof(value) && hasOwn.call(value, "__await") ? PromiseImpl.resolve(value.__await).then(function (value) { invoke("next", value, resolve, reject); }, function (err) { invoke("throw", err, resolve, reject); }) : PromiseImpl.resolve(value).then(function (unwrapped) { result.value = unwrapped, resolve(result); }, function (error) { return invoke("throw", error, resolve, reject); }); } reject(record.arg); } var previousPromise; defineProperty(this, "_invoke", { value: function value(method, arg) { function callInvokeWithMethodAndArg() { return new PromiseImpl(function (resolve, reject) { invoke(method, arg, resolve, reject); }); } return previousPromise = previousPromise ? previousPromise.then(callInvokeWithMethodAndArg, callInvokeWithMethodAndArg) : callInvokeWithMethodAndArg(); } }); } function makeInvokeMethod(innerFn, self, context) { var state = "suspendedStart"; return function (method, arg) { if ("executing" === state) throw new Error("Generator is already running"); if ("completed" === state) { if ("throw" === method) throw arg; return doneResult(); } for (context.method = method, context.arg = arg;;) { var delegate = context.delegate; if (delegate) { var delegateResult = maybeInvokeDelegate(delegate, context); if (delegateResult) { if (delegateResult === ContinueSentinel) continue; return delegateResult; } } if ("next" === context.method) context.sent = context._sent = context.arg;else if ("throw" === context.method) { if ("suspendedStart" === state) throw state = "completed", context.arg; context.dispatchException(context.arg); } else "return" === context.method && context.abrupt("return", context.arg); state = "executing"; var record = tryCatch(innerFn, self, context); if ("normal" === record.type) { if (state = context.done ? "completed" : "suspendedYield", record.arg === ContinueSentinel) continue; return { value: record.arg, done: context.done }; } "throw" === record.type && (state = "completed", context.method = "throw", context.arg = record.arg); } }; } function maybeInvokeDelegate(delegate, context) { var methodName = context.method, method = delegate.iterator[methodName]; if (undefined === method) return context.delegate = null, "throw" === methodName && delegate.iterator["return"] && (context.method = "return", context.arg = undefined, maybeInvokeDelegate(delegate, context), "throw" === context.method) || "return" !== methodName && (context.method = "throw", context.arg = new TypeError("The iterator does not provide a '" + methodName + "' method")), ContinueSentinel; var record = tryCatch(method, delegate.iterator, context.arg); if ("throw" === record.type) return context.method = "throw", context.arg = record.arg, context.delegate = null, ContinueSentinel; var info = record.arg; return info ? info.done ? (context[delegate.resultName] = info.value, context.next = delegate.nextLoc, "return" !== context.method && (context.method = "next", context.arg = undefined), context.delegate = null, ContinueSentinel) : info : (context.method = "throw", context.arg = new TypeError("iterator result is not an object"), context.delegate = null, ContinueSentinel); } function pushTryEntry(locs) { var entry = { tryLoc: locs[0] }; 1 in locs && (entry.catchLoc = locs[1]), 2 in locs && (entry.finallyLoc = locs[2], entry.afterLoc = locs[3]), this.tryEntries.push(entry); } function resetTryEntry(entry) { var record = entry.completion || {}; record.type = "normal", delete record.arg, entry.completion = record; } function Context(tryLocsList) { this.tryEntries = [{ tryLoc: "root" }], tryLocsList.forEach(pushTryEntry, this), this.reset(!0); } function values(iterable) { if (iterable) { var iteratorMethod = iterable[iteratorSymbol]; if (iteratorMethod) return iteratorMethod.call(iterable); if ("function" == typeof iterable.next) return iterable; if (!isNaN(iterable.length)) { var i = -1, next = function next() { for (; ++i < iterable.length;) if (hasOwn.call(iterable, i)) return next.value = iterable[i], next.done = !1, next; return next.value = undefined, next.done = !0, next; }; return next.next = next; } } return { next: doneResult }; } function doneResult() { return { value: undefined, done: !0 }; } return GeneratorFunction.prototype = GeneratorFunctionPrototype, defineProperty(Gp, "constructor", { value: GeneratorFunctionPrototype, configurable: !0 }), defineProperty(GeneratorFunctionPrototype, "constructor", { value: GeneratorFunction, configurable: !0 }), GeneratorFunction.displayName = define(GeneratorFunctionPrototype, toStringTagSymbol, "GeneratorFunction"), exports.isGeneratorFunction = function (genFun) { var ctor = "function" == typeof genFun && genFun.constructor; return !!ctor && (ctor === GeneratorFunction || "GeneratorFunction" === (ctor.displayName || ctor.name)); }, exports.mark = function (genFun) { return Object.setPrototypeOf ? Object.setPrototypeOf(genFun, GeneratorFunctionPrototype) : (genFun.__proto__ = GeneratorFunctionPrototype, define(genFun, toStringTagSymbol, "GeneratorFunction")), genFun.prototype = Object.create(Gp), genFun; }, exports.awrap = function (arg) { return { __await: arg }; }, defineIteratorMethods(AsyncIterator.prototype), define(AsyncIterator.prototype, asyncIteratorSymbol, function () { return this; }), exports.AsyncIterator = AsyncIterator, exports.async = function (innerFn, outerFn, self, tryLocsList, PromiseImpl) { void 0 === PromiseImpl && (PromiseImpl = Promise); var iter = new AsyncIterator(wrap(innerFn, outerFn, self, tryLocsList), PromiseImpl); return exports.isGeneratorFunction(outerFn) ? iter : iter.next().then(function (result) { return result.done ? result.value : iter.next(); }); }, defineIteratorMethods(Gp), define(Gp, toStringTagSymbol, "Generator"), define(Gp, iteratorSymbol, function () { return this; }), define(Gp, "toString", function () { return "[object Generator]"; }), exports.keys = function (val) { var object = Object(val), keys = []; for (var key in object) keys.push(key); return keys.reverse(), function next() { for (; keys.length;) { var key = keys.pop(); if (key in object) return next.value = key, next.done = !1, next; } return next.done = !0, next; }; }, exports.values = values, Context.prototype = { constructor: Context, reset: function reset(skipTempReset) { if (this.prev = 0, this.next = 0, this.sent = this._sent = undefined, this.done = !1, this.delegate = null, this.method = "next", this.arg = undefined, this.tryEntries.forEach(resetTryEntry), !skipTempReset) for (var name in this) "t" === name.charAt(0) && hasOwn.call(this, name) && !isNaN(+name.slice(1)) && (this[name] = undefined); }, stop: function stop() { this.done = !0; var rootRecord = this.tryEntries[0].completion; if ("throw" === rootRecord.type) throw rootRecord.arg; return this.rval; }, dispatchException: function dispatchException(exception) { if (this.done) throw exception; var context = this; function handle(loc, caught) { return record.type = "throw", record.arg = exception, context.next = loc, caught && (context.method = "next", context.arg = undefined), !!caught; } for (var i = this.tryEntries.length - 1; i >= 0; --i) { var entry = this.tryEntries[i], record = entry.completion; if ("root" === entry.tryLoc) return handle("end"); if (entry.tryLoc <= this.prev) { var hasCatch = hasOwn.call(entry, "catchLoc"), hasFinally = hasOwn.call(entry, "finallyLoc"); if (hasCatch && hasFinally) { if (this.prev < entry.catchLoc) return handle(entry.catchLoc, !0); if (this.prev < entry.finallyLoc) return handle(entry.finallyLoc); } else if (hasCatch) { if (this.prev < entry.catchLoc) return handle(entry.catchLoc, !0); } else { if (!hasFinally) throw new Error("try statement without catch or finally"); if (this.prev < entry.finallyLoc) return handle(entry.finallyLoc); } } } }, abrupt: function abrupt(type, arg) { for (var i = this.tryEntries.length - 1; i >= 0; --i) { var entry = this.tryEntries[i]; if (entry.tryLoc <= this.prev && hasOwn.call(entry, "finallyLoc") && this.prev < entry.finallyLoc) { var finallyEntry = entry; break; } } finallyEntry && ("break" === type || "continue" === type) && finallyEntry.tryLoc <= arg && arg <= finallyEntry.finallyLoc && (finallyEntry = null); var record = finallyEntry ? finallyEntry.completion : {}; return record.type = type, record.arg = arg, finallyEntry ? (this.method = "next", this.next = finallyEntry.finallyLoc, ContinueSentinel) : this.complete(record); }, complete: function complete(record, afterLoc) { if ("throw" === record.type) throw record.arg; return "break" === record.type || "continue" === record.type ? this.next = record.arg : "return" === record.type ? (this.rval = this.arg = record.arg, this.method = "return", this.next = "end") : "normal" === record.type && afterLoc && (this.next = afterLoc), ContinueSentinel; }, finish: function finish(finallyLoc) { for (var i = this.tryEntries.length - 1; i >= 0; --i) { var entry = this.tryEntries[i]; if (entry.finallyLoc === finallyLoc) return this.complete(entry.completion, entry.afterLoc), resetTryEntry(entry), ContinueSentinel; } }, "catch": function _catch(tryLoc) { for (var i = this.tryEntries.length - 1; i >= 0; --i) { var entry = this.tryEntries[i]; if (entry.tryLoc === tryLoc) { var record = entry.completion; if ("throw" === record.type) { var thrown = record.arg; resetTryEntry(entry); } return thrown; } } throw new Error("illegal catch attempt"); }, delegateYield: function delegateYield(iterable, resultName, nextLoc) { return this.delegate = { iterator: values(iterable), resultName: resultName, nextLoc: nextLoc }, "next" === this.method && (this.arg = undefined), ContinueSentinel; } }, exports; }
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, _toPropertyKey(descriptor.key), descriptor); } }
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
-function _toPropertyKey(arg) { var key = _toPrimitive(arg, "string"); return _typeof(key) === "symbol" ? key : String(key); }
-function _toPrimitive(input, hint) { if (_typeof(input) !== "object" || input === null) return input; var prim = input[Symbol.toPrimitive]; if (prim !== undefined) { var res = prim.call(input, hint || "default"); if (_typeof(res) !== "object") return res; throw new TypeError("@@toPrimitive must return a primitive value."); } return (hint === "string" ? String : Number)(input); }
-var __createBinding = void 0 && (void 0).__createBinding || (Object.create ? function (o, m, k, k2) {
-  if (k2 === undefined) k2 = k;
-  var desc = Object.getOwnPropertyDescriptor(m, k);
-  if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-    desc = {
-      enumerable: true,
-      get: function get() {
-        return m[k];
-      }
-    };
-  }
-  Object.defineProperty(o, k2, desc);
-} : function (o, m, k, k2) {
-  if (k2 === undefined) k2 = k;
-  o[k2] = m[k];
-});
-var __setModuleDefault = void 0 && (void 0).__setModuleDefault || (Object.create ? function (o, v) {
-  Object.defineProperty(o, "default", {
-    enumerable: true,
-    value: v
-  });
-} : function (o, v) {
-  o["default"] = v;
-});
-var __importStar = void 0 && (void 0).__importStar || function (mod) {
-  if (mod && mod.__esModule) return mod;
-  var result = {};
-  if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-  __setModuleDefault(result, mod);
-  return result;
-};
-var __awaiter = void 0 && (void 0).__awaiter || function (thisArg, _arguments, P, generator) {
-  function adopt(value) {
-    return value instanceof P ? value : new P(function (resolve) {
-      resolve(value);
-    });
-  }
-  return new (P || (P = Promise))(function (resolve, reject) {
-    function fulfilled(value) {
-      try {
-        step(generator.next(value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function rejected(value) {
-      try {
-        step(generator["throw"](value));
-      } catch (e) {
-        reject(e);
-      }
-    }
-    function step(result) {
-      result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
-    }
-    step((generator = generator.apply(thisArg, _arguments || [])).next());
-  });
-};
-var __importDefault = void 0 && (void 0).__importDefault || function (mod) {
-  return mod && mod.__esModule ? mod : {
-    "default": mod
-  };
-};
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.TokenizeJs = void 0;
-var uuid_1 = require("uuid");
-var constants = __importStar(require("./lib/constants"));
-var shared_1 = __importDefault(require("./lib/services/shared"));
-var applepay_1 = __importDefault(require("./lib/services/applepay"));
-var googlepay_1 = __importDefault(require("./lib/services/googlepay"));
-var paze_wallet_1 = __importDefault(require("./lib/services/paze-wallet"));
-var card_on_file_1 = __importDefault(require("./lib/services/card-on-file"));
-var wallet_1 = require("./lib/enums/wallet");
-var error_type_1 = require("./lib/enums/error-type");
-var event_type_1 = require("./lib/enums/event-type");
-var mixpanel_1 = require("./lib/enums/mixpanel");
-var helpers = __importStar(require("./lib/helpers/common"));
-/**
- * TokenizeJs class for managing the Poynt Collect integration.
- */
-var TokenizeJs = /*#__PURE__*/function () {
-  function TokenizeJs(businessId, applicationId, walletRequest) {
-    _classCallCheck(this, TokenizeJs);
-    this.sharedService = new shared_1["default"](businessId, applicationId, walletRequest);
-    this.applePayService = new applepay_1["default"](this.sharedService);
-    this.googlePayService = new googlepay_1["default"](this.sharedService);
-    this.pazeWalletService = new paze_wallet_1["default"](this.sharedService);
-    this.cardOnFileService = new card_on_file_1["default"](this.sharedService);
-  }
-  /**
-   * Adds a callback listener for a specific event.
-   *
-   * @param {string} eventName - The name of the event.
-   * @param {Function} callback - The callback function.
-   * @returns {void}
-   */
-  _createClass(TokenizeJs, [{
-    key: "on",
-    value: function on(eventName, callback) {
-      this.sharedService.on(eventName, callback);
-    }
-    /**
-     * Mounts the Poynt Collet to the DOM.
-     *
-     * @param {string} domElement - The DOM element ID to mount the library.
-     * @param {Document} document - The document object.
-     * @param {MountOptions} mountOptions - The mount options.
-     * @returns {void}
-     */
-  }, {
-    key: "mount",
-    value: function mount(domElement, document, mountOptions) {
-      var _a, _b, _c;
-      var options = helpers.getAllOptions(this.sharedService.businessId, this.sharedService.applicationId, this.sharedService.sessionId, mountOptions);
-      if (options.enableCardOnFile) {
-        this.cardOnFileService.mount(options.locale, options.forceSaveCardOnFile, options.cardAgreementOptions);
-      }
-      var isPaymentFormEnabled = helpers.isPaymentFormEnabled(options);
-      var applePay = (_a = options.paymentMethods) === null || _a === void 0 ? void 0 : _a.includes(wallet_1.WalletType.ApplePay);
-      var googlePay = (_b = options.paymentMethods) === null || _b === void 0 ? void 0 : _b.includes(wallet_1.WalletType.GooglePay);
-      var pazeWallet = (_c = options.paymentMethods) === null || _c === void 0 ? void 0 : _c.includes(wallet_1.WalletType.PazeWallet);
-      if (isPaymentFormEnabled) {
-        this.sharedService.mountPaymentForm(domElement, document, options);
-      }
-      if (applePay || googlePay || pazeWallet) {
-        this.sharedService.mountButtonsContainer(domElement, document, options);
-        if (applePay) {
-          this.applePayService.mount(options.buttonOptions, options.applePayButtonOptions);
-        }
-        if (googlePay) {
-          this.googlePayService.mount(options.buttonOptions, options.googlePayButtonOptions);
-        }
-        if (pazeWallet) {
-          this.pazeWalletService.mount(options.buttonOptions, options.googlePayButtonOptions);
-        }
-      }
-      if (!isPaymentFormEnabled) {
-        //process ready events in case iframe with payment form is not loaded
-        this.sharedService.processCallbacks(event_type_1.EventType.Ready, {
-          type: event_type_1.EventType.Ready,
-          data: {}
-        });
-        this.sharedService.processCallbacks(event_type_1.EventType.IFrameContentReady, {
-          type: event_type_1.EventType.IFrameContentReady,
-          data: {}
-        });
-      }
-    }
-    /**
-     * Unmounts the Poynt Collect from the DOM.
-     *
-     * @param {string} domElement - The DOM element ID to unmount the library.
-     * @param {Document} document - The document object.
-     * @returns {void}
-     */
-  }, {
-    key: "unmount",
-    value: function unmount(domElement, document) {
-      this.sharedService.unmount(domElement, document);
-      this.cardOnFileService.unmount();
-    }
-    /**
-     * Gets the iframe element.
-     *
-     * @returns {HTMLIFrameElement | null} The iframe element or null if not found.
-     */
-  }, {
-    key: "getIFrame",
-    value: function getIFrame() {
-      return this.sharedService.iFrame;
-    }
-    /**
-     * Reloads the iframe.
-     *
-     * @returns {void}
-     */
-  }, {
-    key: "reload",
-    value: function reload() {
-      var _a, _b;
-      (_b = (_a = this.sharedService.iFrame) === null || _a === void 0 ? void 0 : _a.contentWindow) === null || _b === void 0 ? void 0 : _b.location.reload();
-    }
-    /**
-     * Calls the webview to get the nonce.
-     *
-     * @param {GetNonceOptions} getNonceOptions - The options for getting the nonce.
-     * @returns {void}
-     */
-  }, {
-    key: "getNonce",
-    value: function getNonce(getNonceOptions) {
-      if (!this.sharedService.iFrame) {
-        return this.sharedService.handleError(error_type_1.ErrorType.CARD_PAYMENT, new Error("iFrame not found"));
-      }
-      if (!getNonceOptions) {
-        getNonceOptions = {};
-      }
-      getNonceOptions.requestId = (0, uuid_1.v4)();
-      this.sharedService.mixpanel.track(mixpanel_1.MixpanelEvent.NONCE_REQUEST, {
-        request_id: getNonceOptions.requestId
-      });
-      if (this.cardOnFileService.cardAgreementData) {
-        getNonceOptions.cardAgreementMetadata = this.cardOnFileService.cardAgreementData.metadata;
-      }
-      this.sharedService.postIFrameMessage({
-        type: event_type_1.EventType.OpGetNonce,
-        options: getNonceOptions
-      });
-    }
-    /**
-     * Starts a Google Pay session.
-     *
-     * @param {WalletRequestUpdate} walletRequest - The updated wallet request.
-     * @returns {void}
-     */
-  }, {
-    key: "startGooglePaySession",
-    value: function startGooglePaySession(walletRequest) {
-      this.googlePayService.startSession(walletRequest);
-    }
-    /**
-     * Starts a Apple Pay session.
-     *
-     * @param {WalletRequestUpdate} walletRequest - The updated wallet request.
-     * @returns {void}
-     */
-  }, {
-    key: "startApplePaySession",
-    value: function startApplePaySession(walletRequest) {
-      this.applePayService.startSession(walletRequest);
-    }
-    /**
-     * Starts a Paze Wallet session.
-     *
-     * @param {WalletRequestUpdate} walletRequest - The updated wallet request.
-     * @returns {void}
-     */
-  }, {
-    key: "startPazeWalletSession",
-    value: function startPazeWalletSession(walletRequest) {
-      this.pazeWalletService.startSession(walletRequest);
-    }
-    /**
-     * Aborts the current Apple Pay session.
-     *
-     * @returns {void}
-     */
-  }, {
-    key: "abortApplePaySession",
-    value: function abortApplePaySession() {
-      this.applePayService.abortSession();
-    }
-    /**
-     * Checks if wallet payment is supported based on the browser and wallet request.
-     *
-     * @returns {Promise<SupportWalletPaymentsResponse>} A promise that resolves to an object indicating wallet payment support.
-     */
-  }, {
-    key: "supportWalletPayments",
-    value: function supportWalletPayments(options) {
-      return __awaiter(this, void 0, void 0, /*#__PURE__*/_regeneratorRuntime().mark(function _callee() {
-        var result, domainName;
-        return _regeneratorRuntime().wrap(function _callee$(_context) {
-          while (1) switch (_context.prev = _context.next) {
-            case 0:
-              if (!options) {
-                options = {};
-              }
-              result = {
-                googlePay: false,
-                applePay: false,
-                pazeWallet: false
-              };
-              domainName = document.location.hostname;
-              if (!constants.DOMAIN_BLACKLIST.includes(domainName)) {
-                _context.next = 6;
-                break;
-              }
-              this.sharedService.handleError(error_type_1.ErrorType.WALLET, new Error(domainName + " is blacklisted. Please reach out GDP support."));
-              return _context.abrupt("return", result);
-            case 6:
-              _context.prev = 6;
-              _context.next = 9;
-              return Promise.all([this.applePayService.initialize(), this.googlePayService.initialize(), this.pazeWalletService.initialize(options.emailAddress)]);
-            case 9:
-              result.applePay = this.applePayService.isReady();
-              result.googlePay = this.googlePayService.isReady();
-              result.pazeWallet = this.pazeWalletService.isReady();
-              _context.next = 17;
-              break;
-            case 14:
-              _context.prev = 14;
-              _context.t0 = _context["catch"](6);
-              this.sharedService.handleError(error_type_1.ErrorType.WALLET, _context.t0);
-            case 17:
-              return _context.abrupt("return", result);
-            case 18:
-            case "end":
-              return _context.stop();
-          }
-        }, _callee, this, [[6, 14]]);
-      }));
-    }
-  }]);
-  return TokenizeJs;
-}();
-exports.TokenizeJs = TokenizeJs;
-
-},{"./lib/constants":40,"./lib/enums/error-type":42,"./lib/enums/event-type":43,"./lib/enums/mixpanel":45,"./lib/enums/wallet":47,"./lib/helpers/common":50,"./lib/services/applepay":55,"./lib/services/card-on-file":56,"./lib/services/googlepay":57,"./lib/services/paze-wallet":59,"./lib/services/shared":60,"uuid":22}],63:[function(require,module,exports){
-"use strict";
-
-function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, _toPropertyKey(descriptor.key), descriptor); } }
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); Object.defineProperty(Constructor, "prototype", { writable: false }); return Constructor; }
-function _toPropertyKey(arg) { var key = _toPrimitive(arg, "string"); return _typeof(key) === "symbol" ? key : String(key); }
-function _toPrimitive(input, hint) { if (_typeof(input) !== "object" || input === null) return input; var prim = input[Symbol.toPrimitive]; if (prim !== undefined) { var res = prim.call(input, hint || "default"); if (_typeof(res) !== "object") return res; throw new TypeError("@@toPrimitive must return a primitive value."); } return (hint === "string" ? String : Number)(input); }
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.PoyntCollect = void 0;
-var qs_1 = require("qs");
-var event_type_1 = require("./lib/enums/event-type");
-var IFRAME_NAME = "poynt-collect-iframe";
-// v1 poynt collect for mangomint/moolah
-var PoyntCollect = /*#__PURE__*/function () {
-  function PoyntCollect(apiKey, applicationId) {
-    _classCallCheck(this, PoyntCollect);
-    this.apiKey = apiKey;
-    this.applicationId = applicationId;
-    this.iFrame = null;
-    this.listenerCallbacks = {};
-    this.isV2 = false;
-    var self = this;
-    this.eventCallbackHandler = function eventCallbackHandler(event) {
-      var data = JSON.parse(event.data);
-      var type = data.type;
-      var callbacks = self.listenerCallbacks[type] || [];
-      callbacks.forEach(function (callback) {
-        callback(data);
-      });
-    };
-  }
-  _createClass(PoyntCollect, [{
-    key: "on",
-    value: function on(eventName, callback) {
-      if (!this.listenerCallbacks[eventName]) {
-        this.listenerCallbacks[eventName] = [];
-      }
-      this.listenerCallbacks[eventName].push(callback);
-    }
-  }, {
-    key: "getIFrame",
-    value: function getIFrame() {
-      return this.iFrame;
-    }
-  }, {
-    key: "populateUrlOptionsDefaults",
-    value: function populateUrlOptionsDefaults(options) {
-      if (options.style === undefined) {
-        options.style = {
-          container: {},
-          input: {
-            firstName: {},
-            lastName: {},
-            email: {}
-          }
-        };
-      }
-      if (options.displayComponents) {
-        if (options.displayComponents.submitButton === undefined) {
-          options.displayComponents.submitButton = false;
-        }
-        if (options.displayComponents.firstName === undefined) {
-          options.displayComponents.firstName = false;
-        }
-        if (options.displayComponents.lastName === undefined) {
-          options.displayComponents.lastName = false;
-        }
-        if (options.displayComponents.zipCode === undefined) {
-          options.displayComponents.zipCode = false;
-        }
-        if (options.displayComponents.emailAddress === undefined) {
-          options.displayComponents.emailAddress = false;
-        }
-      } else {
-        options.displayComponents = {
-          submitButton: false,
-          firstName: false,
-          lastName: false,
-          zipCode: false,
-          emailAddress: false
-        };
-      }
-      if (options.emailReceipt === undefined) {
-        options.emailReceipt = true;
-      }
-    }
-  }, {
-    key: "mount",
-    value: function mount(domElement, document, mountOptions) {
-      var iFrameUrl = "https://cdn.poynt.net/ci/collect/index.html";
-      this.iFrame = document.createElement("iframe");
-      this.iFrame.setAttribute("name", IFRAME_NAME);
-      this.iFrame.setAttribute("id", IFRAME_NAME);
-      var form = document.getElementById(domElement);
-      form === null || form === void 0 ? void 0 : form.appendChild(this.iFrame);
-      var allOptions = mountOptions || {};
-      this.populateUrlOptionsDefaults(allOptions);
-      allOptions.apiKey = this.apiKey;
-      allOptions.applicationId = this.applicationId;
-      allOptions.parentUrl = window.location.hostname;
-      allOptions.isV2 = this.isV2;
-      var urlParams = (0, qs_1.stringify)(allOptions);
-      iFrameUrl += "?" + urlParams + "&breakcache=" + new Date().toISOString();
-      // console.log("iframeUrl", iFrameUrl);
-      if (mountOptions) {
-        if (mountOptions.style && mountOptions.iFrame) {
-          this.iFrame.style.cssText = mountOptions.iFrame;
-          if (mountOptions.iFrame.height) {
-            this.iFrame.style["height"] = mountOptions.iFrame.height;
-          }
-          if (mountOptions.iFrame.width) {
-            this.iFrame.style["width"] = mountOptions.iFrame.width;
-          }
-          if (mountOptions.iFrame.border) {
-            this.iFrame.style["border"] = mountOptions.iFrame.border;
-          }
-          if (mountOptions.iFrame.borderRadius) {
-            this.iFrame.style["borderRadius"] = mountOptions.iFrame.borderRadius;
-          }
-          if (mountOptions.iFrame.boxShadow) {
-            this.iFrame.style["boxShadow"] = mountOptions.iFrame.boxShadow;
-          }
-        }
-      }
-      // setup the listener once iframe is mounted
-      this.iFrame.contentWindow.parent.addEventListener("message", this.eventCallbackHandler, "*");
-      // Note: 'iFrameUrl' might not be available.
-      //       May want to check url availability here and set some error url.
-      this.iFrame.setAttribute("src", iFrameUrl);
-    }
-    /**
-     * Calls webview to create a transaction.
-     * @param createTransactionOptions
-     * @deprecated only tokenized transactions will be supported
-     */
-  }, {
-    key: "createTransaction",
-    value: function createTransaction(createTransactionOptions) {
-      // console.log("createTransaction", createTransactionOptions);
-      if (!createTransactionOptions || createTransactionOptions.amount === undefined) {
-        throw new Error("Amount needs to be specified");
-      }
-      if (this.iFrame) {
-        this.iFrame.contentWindow.postMessage({
-          type: event_type_1.EventType.OpCreateTransaction,
-          options: createTransactionOptions
-        }, "*");
-      }
-    }
-    /**
-     * Calls webview to create a token.
-     * @param createTokenOptions
-     */
-  }, {
-    key: "createToken",
-    value: function createToken(createTokenOptions) {
-      // console.log("createToken", createTokenOptions);
-      if (this.iFrame) {
-        this.iFrame.contentWindow.postMessage({
-          type: event_type_1.EventType.OpCreateToken,
-          options: createTokenOptions
-        }, "*");
-      }
-    }
-    // Create sale or auth transaction using card token.
-  }, {
-    key: "createTokenTransaction",
-    value: function createTokenTransaction(createTokenTransactionOptions) {
-      if (this.iFrame) {
-        this.iFrame.contentWindow.postMessage({
-          type: event_type_1.EventType.OpCreateTokenTransaction,
-          options: createTokenTransactionOptions
-        }, "*");
-      }
-    }
-    /**
-     * Reloads the iFrame.
-     */
-  }, {
-    key: "reload",
-    value: function reload() {
-      if (this.iFrame) {
-        this.iFrame.contentWindow.location.reload();
-      }
-    }
-    /**
-     * Unmounts
-     */
-  }, {
-    key: "unmount",
-    value: function unmount(domElement, document) {
-      // console.log("unmounting");
-      if (this.iFrame) {
-        this.iFrame.contentWindow.parent.removeEventListener("message", this.eventCallbackHandler, "*");
-        if (domElement && document) {
-          var form = document.getElementById(domElement);
-          form === null || form === void 0 ? void 0 : form.removeChild(this.iFrame);
-        }
-        this.iFrame = null;
-      }
-    }
-  }]);
-  return PoyntCollect;
-}();
-exports.PoyntCollect = PoyntCollect;
-
-},{"./lib/enums/event-type":43,"qs":17}]},{},[38]);
+},{"../constants":41,"../helpers/common":44}]},{},[38]);

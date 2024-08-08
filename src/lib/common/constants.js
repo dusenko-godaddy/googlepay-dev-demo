@@ -77,7 +77,7 @@ const constants = {
       line2: true,
       city: true,
       territory: true,
-      // countryCode: true,
+      countryCode: true,
       ecommerceFirstName: true,
       ecommerceLastName: true,
       ecommerceEmailAddress: true,
@@ -88,6 +88,7 @@ const constants = {
       // shippingCity: true,
       // shippingTerritory: true,
       // shippingZip: true,
+      securePaymentNote: true,
     },
     additionalFieldsToValidate: [
       "zipCode",

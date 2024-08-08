@@ -8,6 +8,8 @@
 /.pnp
 .pnp.js
 
+/src/lib/collect.js
+
 # testing
 /coverage
 
