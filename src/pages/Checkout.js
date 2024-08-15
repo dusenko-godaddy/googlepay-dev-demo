@@ -56,7 +56,7 @@ const Checkout = () => {
       supportCouponCode: true,
       paymentMethods: {
         card: true,
-        ach: true,
+        // ach: true,
         googlePay: true,
         applePay: true,
         paze: true,

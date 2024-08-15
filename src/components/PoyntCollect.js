@@ -1,4 +1,5 @@
 import $ from 'jquery';
+import ReactDOM from 'react-dom';
 import { useAlert } from 'react-alert';
 import Button from 'react-bootstrap-button-loader';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
@@ -18,6 +19,8 @@ const parseMesasge = (event) => {
 
   if (event?.data?.error?.source === 'submit') {
     const message = event.data.error.message;
+
+    console.log('submit error: ', event.data.error);
 
     if (event.data.error.type === 'card_on_file') {
       return {
@@ -65,6 +68,16 @@ const PoyntCollect = ({setLoading, options, collectId, onNonce, cartItems, cartT
       // countryCode: "US",
     });
   };
+  
+  const button = (
+    <Button 
+      loading={buttonLoading} 
+      onClick={() => getNonce()}
+      id={collectId + "_button"}
+    >
+      Pay
+    </Button>
+  );
 
   useEffect(() => {
     order.current = createOrder(cartItems, cartTotal, couponCode);
@@ -171,6 +184,12 @@ const PoyntCollect = ({setLoading, options, collectId, onNonce, cartItems, cartT
               }
             },
           },
+          buttonsContainerOptions: {
+            style: {
+              "flex-wrap": "wrap",
+              "margin": "0 auto",
+            },
+          },
           pazeButtonOptions: {
             color: 'default',
           },
@@ -184,6 +203,29 @@ const PoyntCollect = ({setLoading, options, collectId, onNonce, cartItems, cartT
     collect.current.on("iframe_ready", () => {
       if (setLoading) {
         setLoading(false);
+      }
+
+      if (options.paymentMethods?.card || options.paymentMethods?.ach) {
+        const container = document.createElement("div");
+        container.id = "collect-button-container";
+
+        const walletButtonsContainer = document.getElementById("wallet-buttons-container");
+
+        if (walletButtonsContainer) {
+          walletButtonsContainer.prepend(container);
+
+          ReactDOM.render(button, container);
+
+          return;
+        }
+
+        const collectContainer = document.getElementById(collectId);
+
+        if (collectContainer) {
+          collectContainer.append(container);
+
+          ReactDOM.render(button, collectContainer);
+        }
       }
     });
 
@@ -422,20 +464,8 @@ const PoyntCollect = ({setLoading, options, collectId, onNonce, cartItems, cartT
     onNonce
   ]);
 
-  const button = (
-    <Button 
-      className="bg-green-500 px-16 w-full py-2 rounded-md m-2 font-bold text-md order-2 sm:w-auto" 
-      loading={buttonLoading} 
-      onClick={() => getNonce()}
-      id={collectId + "_button"}
-    >
-      Pay with card
-    </Button>
-  );
-
   return ( 
-    <div id={collectId} className="poynt-collect flex flex-wrap justify-end max-w-90 collect-wallet:w-full sm:collect-wallet:w-auto">
-      {(options.paymentMethods?.card || options.paymentMethods?.ach) ? button : null}
+    <div id={collectId} className="poynt-collect flex flex-wrap justify-end w-100 collect-wallet:w-full sm:collect-wallet:w-auto">
     </div>
   );
 };

@@ -10,7 +10,7 @@ import SuccessPage from "./pages/SuccessPage";
 
 import CartIcon from './components/CartIcon';
 
-// import "./lib/collect.js";
+import "./lib/collect.js";
 
 // window.chargeEndpoint = 'http://localhost:1347/collect/charge';
 
