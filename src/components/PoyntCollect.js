@@ -328,9 +328,8 @@ const PoyntCollect = ({setLoading, options, collectId, onNonce, cartItems, cartT
       }
     });
 
-    collect.current.on("payment_method_change", (event) => {
-      console.log("payment_method_change", event);
-      event.updateWith({});
+    collect.current.on("payment_method_selected", (event) => {
+      console.log("payment_method_selected", event);
     });
 
     collect.current.on("payment_authorized", async (event) => {

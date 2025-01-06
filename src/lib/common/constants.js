@@ -3,10 +3,12 @@
 const constants = {
   poyntCollect: {
     businessId: "01776564-e3e2-45ea-8f5d-db2440ed4ba8", //DEV
+    // businessId: "f5c16fe7-be6e-4fac-98fa-6174fa518491", // DEV (DENYS USENKO BUSINESS)
     // businessId: "f36d3d71-5249-45c5-9104-38b07fe84f30", //TEST US
     // businessId: "ee606574-dcb8-4805-9461-f823081d2737", //TEST CA
     // businessId: "f36d3d71-5249-45c5-9104-38b07fe84f30", //OTE
     applicationId: "urn:aid:9c2cc0f7-e2ed-4617-b57c-88dd0b36c3d8", //DEV
+    // applicationId: "urn:aid:0568c0f5-aaef-4114-8d9e-7d4abe4eac40", // DEV (DENYS USENKO BUSINESS)
     // applicationId: "urn:aid:8f0096f7-fd60-4fb4-8eae-51ec75739866", //TEST
     // applicationId: "urn:aid:b666c3a2-ccc3-4acb-a166-eb905258f42b", //OTE
     // applicationId: "urn:aid:postman-runner",
@@ -21,11 +23,21 @@ const constants = {
     },
     inlineErrors: true,
     enableCardOnFile: true,
-    // forceSaveCardOnFile: false,
+    forceSaveCardOnFile: false,
     cardAgreementOptions: {
+      // templateType: "INSTANT_PAYOUT",
       businessName: "GoDaddy",
       businessWebsite: "https://www.godaddy.com/",
       businessPhone: "(555) 555-5555",
+      style: {
+        agreementContainer: {
+          "color": '#111111',
+          "font-family": '"GD Sherpa", "objektiv-mk2", "Proxima Nova", "Myriad Pro", -apple-system, Helvetica',
+        },
+        businessPhoneText: {
+          'font-weight': '600',
+        },
+      },
     },
     // savedCards: [
     //   {
@@ -91,7 +103,7 @@ const constants = {
       securePaymentNote: true,
     },
     additionalFieldsToValidate: [
-      "zipCode",
+      // "zipCode",
       "firstName",
       "lastName",
       "emailAddress",
@@ -125,6 +137,19 @@ const constants = {
       width: "100%",
       height: "425px",
       border: "0px",
+    },
+    customCss: {
+      container: `
+        color: #111111;
+        font-family: "GD Sherpa", "objektiv-mk2", "Proxima Nova", "Myriad Pro", -apple-system, Helvetica;
+        height: auto;
+        flex-flow: row wrap;
+        justify-content: normal;
+        align-content: center;
+        gap: 2%;
+        width: 520px;
+        margin: 0 auto;
+      `,
     },
     // customCss: {
     //   container: {
